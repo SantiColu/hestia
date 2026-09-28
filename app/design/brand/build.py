@@ -28,10 +28,17 @@ from fontTools.varLib import instancer
 BRAND = Path(__file__).resolve().parent
 APP = BRAND.parents[1]
 ICONS = APP / "src-tauri" / "icons"
-FONT = APP / "node_modules/@fontsource-variable/inter/files/inter-latin-opsz-normal.woff2"
+FONTS = APP / "node_modules/@fontsource-variable"
+INTER = FONTS / "inter/files/inter-latin-opsz-normal.woff2"
+MONO = FONTS / "jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2"
 
 # Graphite tokens (app/src/styles.css): --text, --hot, --surface, --border.
 FG, HOT, SURFACE, BORDER = "#E4E7EB", "#EC7A48", "#161A20", "#272D36"
+BG = "#0F1216"  # --bg
+MUTED = "#98A0AC"  # --text-muted
+SUBTLE = "#667080"  # --subtle-foreground
+SURFACE_2, BORDER_STRONG = "#1D222A", "#38404B"
+TAGLINE = "Prediseño del control térmico de satélites"
 
 # Mark geometry in cap-height units: 100 tall, 88 wide. Two solar arrays tilted
 # toward the sun, a boom, and the bus (the hearth) at the center.
@@ -80,9 +87,13 @@ def fmt(v: float) -> str:
     return f"{v:.2f}".rstrip("0").rstrip(".")
 
 
-def estia_paths() -> tuple[str, tuple[float, float, float, float]]:
-    """Shape "estia" in Inter Display SemiBold after the mark, as SVG path data."""
-    font = instancer.instantiateVariableFont(TTFont(FONT), {"opsz": 32, "wght": 600})
+def shape(text: str, font: Path, axes: dict[str, int], x: float) -> tuple[str, list[float]]:
+    """Shape `text` in a variable `font` as SVG path data, cap height 100, baseline at y = 100.
+
+    `x` is where the first glyph's ink starts. Returns the path data and the ink
+    box as [x0, y0, x1, y1].
+    """
+    font = instancer.instantiateVariableFont(TTFont(font), axes)
     font.flavor = None
     buf = io.BytesIO()
     font.save(buf)
@@ -100,12 +111,12 @@ def estia_paths() -> tuple[str, tuple[float, float, float, float]]:
     upm = font["head"].unitsPerEm
 
     shaped = hb.Buffer()
-    shaped.add_str("estia")
+    shaped.add_str(text)
     shaped.guess_segment_properties()
     hb.shape(hb.Font(hb.Face(data)), shaped, {"kern": True})
 
-    x = MARK_W + GAP - bounds(order[shaped.glyph_infos[0].codepoint])[0] * s
-    d, box = [], [0.0, 0.0, float(MARK_W), float(MARK_H)]
+    x -= bounds(order[shaped.glyph_infos[0].codepoint])[0] * s
+    d, box = [], [x, 0.0, x, float(MARK_H)]
     for info, pos in zip(shaped.glyph_infos, shaped.glyph_positions, strict=True):
         name = order[info.codepoint]
         transform = (s, 0, 0, -s, x + pos.x_offset * s, MARK_H - pos.y_offset * s)
@@ -115,7 +126,87 @@ def estia_paths() -> tuple[str, tuple[float, float, float, float]]:
         if b := bounds(name, transform):
             box = [min(box[0], b[0]), min(box[1], b[1]), max(box[2], b[2]), max(box[3], b[3])]
         x += pos.x_advance * s + TRACKING * upm * s
-    return "".join(d), (box[0], box[1], box[2] - box[0], box[3] - box[1])
+    return "".join(d), box
+
+
+def estia_paths() -> tuple[str, tuple[float, float, float, float]]:
+    """Shape "estia" in Inter Display SemiBold after the mark, as SVG path data."""
+    d, b = shape("estia", INTER, {"opsz": 32, "wght": 600}, MARK_W + GAP)
+    box = [min(0, b[0]), min(0, b[1]), max(MARK_W, b[2]), max(MARK_H, b[3])]
+    return d, (box[0], box[1], box[2] - box[0], box[3] - box[1])
+
+
+def label(text: str, cx: float, baseline: float, rotate: bool = False) -> str:
+    """Dimension label in JetBrains Mono, 9 px cap height, centered on `cx`."""
+    d, box = shape(text, MONO, {"wght": 400}, 0)
+    k = 9 / MARK_H
+    x, y = cx - (box[2] - box[0]) * k / 2, baseline - 9
+    g = f'<path fill="{SUBTLE}" d="{d}"/>'
+    t = f"translate({fmt(x)} {fmt(y)}) scale({fmt(k)})"
+    if rotate:
+        t = f"rotate(-90 {fmt(cx)} {fmt(baseline - 4.5)}) {t}"
+    return f'<g transform="{t}">{g}</g>'
+
+
+def banner(logo: str, logo_box: tuple[float, float, float, float]) -> str:
+    """README banner: the logo on a drawing grid, dimensioned in cap-height units."""
+    w, h, r = 1280, 320, 12
+    tag, tag_box = shape(TAGLINE, INTER, {"opsz": 14, "wght": 400}, 0)
+    k, tag_k = 72 / MARK_H, 17 / MARK_H  # cap heights in px
+    logo_w, tag_w = logo_box[2] * k, (tag_box[2] - tag_box[0]) * tag_k
+    x0, top, tag_y = (w - logo_w) / 2 - logo_box[0] * k, 98, 206  # cap tops
+    bottom = top + MARK_H * k
+
+    # Grid: 32 px cells, a stronger line every 4, centered on the banner.
+    cx, cy = w / 2, h / 2
+    minor, major = [], []
+    for i in range(-20, 21):
+        for pos, lim, horiz in ((cx + 32 * i, w, False), (cy + 32 * i, h, True)):
+            if 0 < pos < lim:
+                line = f"M0 {pos + 0.5:g}H{w}" if horiz else f"M{pos + 0.5:g} 0V{h}"
+                (major if i % 4 == 0 else minor).append(line)
+    grid = (
+        f'<path stroke="{SURFACE}" d="{"".join(minor)}"/>'
+        f'<path stroke="{SURFACE_2}" d="{"".join(major)}"/>'
+    )
+
+    # Dimensions: chained widths above (mark, gap, text), cap height at the left.
+    stops = [x0, x0 + MARK_W * k, x0 + (MARK_W + GAP) * k, x0 + logo_w]
+    values = [MARK_W, GAP, round(logo_box[2]) - MARK_W - GAP]
+    dim_y, ext_x = top - 22, x0 - 26
+
+    def tick(x: float, y: float) -> str:
+        return f"M{fmt(x - 3)} {fmt(y + 3)}L{fmt(x + 3)} {fmt(y - 3)}"
+
+    lines = [f"M{fmt(stops[0])} {fmt(dim_y)}H{fmt(stops[-1])}"]
+    lines += [f"M{fmt(x)} {fmt(top - 30)}V{fmt(top - 6)}" + tick(x, dim_y) for x in stops]
+    lines += [f"M{fmt(ext_x - 8)} {fmt(y)}H{fmt(x0 - 6)}" + tick(ext_x, y) for y in (top, bottom)]
+    lines.append(f"M{fmt(ext_x)} {fmt(top)}V{fmt(bottom)}")
+    labels = [
+        label(str(v), (a + b) / 2, dim_y - 7)
+        for v, a, b in zip(values, stops, stops[1:], strict=False)
+    ]
+    labels.append(label(str(MARK_H), ext_x - 8, (top + bottom) / 2 + 4.5, rotate=True))
+
+    # Registration crosses in the corners.
+    cross = "".join(
+        f"M{fmt(x - 5)} {fmt(y)}H{fmt(x + 5)}M{fmt(x)} {fmt(y - 5)}V{fmt(y + 5)}"
+        for x in (24, w - 24)
+        for y in (24, h - 24)
+    )
+
+    return (
+        f'<defs><clipPath id="plate"><rect width="{w}" height="{h}" rx="{r}"/></clipPath></defs>'
+        f'<rect width="{w}" height="{h}" rx="{r}" fill="{BG}"/>'
+        f'<g clip-path="url(#plate)" fill="none" stroke-width="1">{grid}</g>'
+        f'<path fill="none" stroke="{BORDER_STRONG}" d="{"".join(lines)}{cross}"/>'
+        + "".join(labels)
+        + f'<g transform="translate({fmt(x0)} {fmt(top)}) scale({fmt(k)})">{logo}</g>'
+        f'<g transform="translate({fmt((w - tag_w) / 2)} {fmt(tag_y)}) scale({fmt(tag_k)})">'
+        f'<path fill="{MUTED}" d="{tag}"/></g>'
+        f'<rect x="0.5" y="0.5" width="{w - 1}" height="{h - 1}" rx="{r - 0.5}" fill="none" '
+        f'stroke="{BORDER}"/>'
+    )
 
 
 def app_icon() -> str:
@@ -142,6 +233,9 @@ def main() -> None:
         "hestia-logo-mono.svg": svg(
             logo_box,
             mark("currentColor", "currentColor") + f'<path fill="currentColor" d="{text}"/>',
+        ),
+        "hestia-banner.svg": svg(
+            "0 0 1280 320", banner(mark(FG, HOT) + f'<path fill="{FG}" d="{text}"/>', box)
         ),
         "hestia-app-icon.svg": svg("0 0 1024 1024", app_icon()),
         "hestia-icon-32.svg": svg(

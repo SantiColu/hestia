@@ -12,6 +12,7 @@ La marca es una H que también es un satélite: dos paneles solares inclinados h
 | `hestia-mark-mono.svg`                     | Marca en un color (`currentColor`). Para cualquier fondo.                  |
 | `hestia-logo.svg`                          | Logotipo a color (marca + `estia`, texto en curvas).                       |
 | `hestia-logo-mono.svg`                     | Logotipo en un color (`currentColor`).                                     |
+| `hestia-banner.svg`                        | Banner del README (1280 × 320): logotipo acotado sobre grilla, en curvas.  |
 | `hestia-app-icon.svg`                      | Ícono de app (1024, grilla de macOS). Fuente de `src-tauri/icons/`.        |
 | `hestia-icon-32.svg`, `hestia-icon-16.svg` | Ícono ajustado al píxel para 32 y 16 px. El de 32 es `public/favicon.svg`. |
 | `build.py`                                 | Genera todo lo anterior, el favicon y los íconos de Tauri.                 |
