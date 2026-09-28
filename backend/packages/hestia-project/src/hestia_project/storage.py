@@ -1,0 +1,224 @@
+"""``.hestia`` file format (ADR 0010): one SQLite database per project.
+
+Saving builds the whole database in memory and copies it with SQLite's online backup API to a
+temporary file next to the target, which then atomically replaces the target. A crash while
+saving never leaves a half-written project.
+"""
+
+import contextlib
+import json
+import os
+import sqlite3
+import tempfile
+from pathlib import Path
+
+from pydantic import ValidationError
+
+from hestia_project import __version__
+from hestia_project.errors import ProjectFileError
+from hestia_project.history import Change, ChangeRecord
+from hestia_project.model import SCHEMA_VERSION, Cell, Link, Position, Project, System
+
+FILE_EXTENSION = ".hestia"
+APPLICATION_ID = 0x48535441  # "HSTA": identifies Hestia files (PRAGMA application_id).
+
+_SCHEMA = """
+CREATE TABLE meta (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+);
+CREATE TABLE systems (
+    id         TEXT PRIMARY KEY,
+    ord        INTEGER NOT NULL,
+    name       TEXT NOT NULL,
+    position_x REAL NOT NULL,
+    position_y REAL NOT NULL
+);
+CREATE TABLE cells (
+    id         TEXT PRIMARY KEY,
+    system_id  TEXT NOT NULL REFERENCES systems(id),
+    ord        INTEGER NOT NULL,
+    stage      TEXT NOT NULL,
+    name       TEXT NOT NULL,
+    status     TEXT NOT NULL,
+    provenance TEXT
+);
+CREATE TABLE links (
+    id             TEXT PRIMARY KEY,
+    source_cell_id TEXT NOT NULL REFERENCES cells(id),
+    target_cell_id TEXT NOT NULL REFERENCES cells(id),
+    input          TEXT NOT NULL,
+    UNIQUE (target_cell_id, input)
+);
+CREATE TABLE changes (
+    seq         INTEGER PRIMARY KEY,
+    id          TEXT NOT NULL UNIQUE,
+    change      TEXT NOT NULL,
+    before      TEXT NOT NULL,
+    after       TEXT NOT NULL
+);
+"""
+
+
+def _build(conn: sqlite3.Connection, project: Project, history: list[ChangeRecord]) -> None:
+    conn.executescript(_SCHEMA)
+    conn.execute(f"PRAGMA application_id = {APPLICATION_ID}")
+    conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+    conn.executemany(
+        "INSERT INTO meta (key, value) VALUES (?, ?)",
+        [
+            ("format", "hestia"),
+            ("schema_version", str(SCHEMA_VERSION)),
+            ("project_id", project.id),
+            ("name", project.name),
+            ("written_by", f"hestia_project {__version__}"),
+        ],
+    )
+    conn.executemany(
+        "INSERT INTO systems VALUES (?, ?, ?, ?, ?)",
+        [(s.id, i, s.name, s.position.x, s.position.y) for i, s in enumerate(project.systems)],
+    )
+    # Cells keep project order; within each system it matches ``System.cell_ids``.
+    conn.executemany(
+        "INSERT INTO cells VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [
+            (
+                c.id,
+                c.system_id,
+                i,
+                c.stage.value,
+                c.name,
+                c.status.value,
+                c.provenance.model_dump_json() if c.provenance else None,
+            )
+            for i, c in enumerate(project.cells)
+        ],
+    )
+    conn.executemany(
+        "INSERT INTO links VALUES (?, ?, ?, ?)",
+        [(lk.id, lk.source_cell_id, lk.target_cell_id, lk.input.value) for lk in project.links],
+    )
+    conn.executemany(
+        "INSERT INTO changes VALUES (?, ?, ?, ?, ?)",
+        [
+            (
+                r.change.seq,
+                r.change.id,
+                r.change.model_dump_json(),
+                r.before.model_dump_json(),
+                r.after.model_dump_json(),
+            )
+            for r in history
+        ],
+    )
+    conn.commit()
+
+
+def write_project(path: Path, project: Project, history: list[ChangeRecord]) -> None:
+    """Write the project to ``path`` atomically (backup API + rename)."""
+    path = path.resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    os.close(fd)
+    tmp = Path(tmp_name)
+    try:
+        memory = sqlite3.connect(":memory:")
+        try:
+            _build(memory, project, history)
+            target = sqlite3.connect(tmp)
+            try:
+                memory.backup(target)
+            finally:
+                target.close()
+        finally:
+            memory.close()
+        os.replace(tmp, path)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
+
+
+def read_project(path: Path) -> tuple[Project, list[ChangeRecord]]:
+    """Read a ``.hestia`` file. Raises ``ProjectFileError`` if it is not a valid project."""
+    if not path.is_file():
+        raise ProjectFileError(f"No existe el archivo {str(path)!r}.", path=str(path))
+    try:
+        conn = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True)
+    except sqlite3.Error as exc:
+        raise ProjectFileError(f"No se pudo abrir {path.name}: {exc}", path=str(path)) from exc
+    try:
+        return _read(conn, path)
+    except sqlite3.DatabaseError as exc:
+        raise ProjectFileError(
+            f"{path.name} no es un proyecto de Hestia válido.", path=str(path)
+        ) from exc
+    except (ValidationError, ValueError, KeyError) as exc:
+        raise ProjectFileError(f"{path.name} está dañado: {exc}", path=str(path)) from exc
+    finally:
+        with contextlib.suppress(sqlite3.Error):
+            conn.close()
+
+
+def _read(conn: sqlite3.Connection, path: Path) -> tuple[Project, list[ChangeRecord]]:
+    (app_id,) = conn.execute("PRAGMA application_id").fetchone()
+    if app_id != APPLICATION_ID:
+        raise ProjectFileError(f"{path.name} no es un proyecto de Hestia.", path=str(path))
+    (version,) = conn.execute("PRAGMA user_version").fetchone()
+    if version > SCHEMA_VERSION:
+        raise ProjectFileError(
+            f"{path.name} usa el esquema v{version}; esta versión de Hestia admite hasta "
+            f"v{SCHEMA_VERSION}.",
+            path=str(path),
+            schema_version=version,
+        )
+    meta = dict(conn.execute("SELECT key, value FROM meta").fetchall())
+    systems: list[System] = []
+    by_id: dict[str, System] = {}
+    for sid, name, x, y in conn.execute(
+        "SELECT id, name, position_x, position_y FROM systems ORDER BY ord"
+    ):
+        system = System(id=sid, name=name, position=Position(x=x, y=y))
+        systems.append(system)
+        by_id[sid] = system
+    cells: list[Cell] = []
+    for cid, system_id, stage, name, status, provenance in conn.execute(
+        "SELECT id, system_id, stage, name, status, provenance FROM cells ORDER BY ord"
+    ):
+        cells.append(
+            Cell.model_validate(
+                {
+                    "id": cid,
+                    "system_id": system_id,
+                    "stage": stage,
+                    "name": name,
+                    "status": status,
+                    "provenance": json.loads(provenance) if provenance else None,
+                }
+            )
+        )
+        by_id[system_id].cell_ids.append(cid)
+    links = [
+        Link.model_validate({"id": lid, "source_cell_id": src, "target_cell_id": dst, "input": inp})
+        for lid, src, dst, inp in conn.execute(
+            "SELECT id, source_cell_id, target_cell_id, input FROM links ORDER BY rowid"
+        )
+    ]
+    project = Project(
+        schema_version=SCHEMA_VERSION,
+        id=meta["project_id"],
+        name=meta["name"],
+        systems=systems,
+        cells=cells,
+        links=links,
+    )
+    history = [
+        ChangeRecord(
+            change=Change.model_validate_json(change),
+            before=Project.model_validate_json(before),
+            after=Project.model_validate_json(after),
+        )
+        for change, before, after in conn.execute(
+            "SELECT change, before, after FROM changes ORDER BY seq"
+        )
+    ]
+    return project, history
