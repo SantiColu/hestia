@@ -26,9 +26,18 @@
 
 ## Cambios
 
-- Toda escritura (web o MCP) registra autor y justificación.
+- Toda escritura (UI o MCP) registra autor y justificación.
 - Todo cálculo físico nuevo lleva test contra referencia citada, con tolerancia explícita.
 - Decisiones de arquitectura → ADR en `docs/adr/`.
+
+## Commits
+
+Formato `tipo(scope): mensaje`, siempre en **inglés** y en **modo imperativo**.
+
+- `feat(app): add stage node component` — no `added` ni `adds`.
+- Scope = módulo afectado (`app`, `api`, `core`, `project`, `adapters`, `mcp`, `docs`…). Si el cambio es global, sin scope: `feat: move UI to a desktop app`.
+- `fix` describe **el problema**, no lo que se hizo: `fix(api): health endpoint returns 500 when version is missing`, no `fix(api): handle missing version`.
+- Otros tipos con la misma forma: `docs`, `refactor`, `test`, `chore`, `build`, `ci`.
 
 ## Estilo
 
