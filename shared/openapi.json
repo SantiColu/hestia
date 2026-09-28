@@ -1,1 +1,3291 @@
-{}
+{
+  "components": {
+    "schemas": {
+      "ActorKind": {
+        "enum": [
+          "human",
+          "agent"
+        ],
+        "title": "ActorKind",
+        "type": "string"
+      },
+      "AddCellRequest": {
+        "properties": {
+          "justification": {
+            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "title": "Justification",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/StageType"
+          }
+        },
+        "required": [
+          "justification",
+          "stage"
+        ],
+        "title": "AddCellRequest",
+        "type": "object"
+      },
+      "ApiError": {
+        "description": "Error body. ``code`` is stable (e.g. ``project_locked``); ``message`` is for people.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ApiError",
+        "type": "object"
+      },
+      "Author": {
+        "description": "Who made a change. Humans and agents are shown the same way in the UI.",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/ActorKind"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ],
+        "title": "Author",
+        "type": "object"
+      },
+      "BranchRequest": {
+        "description": "Create a system from a template or stage, fed by the cell in the path.",
+        "properties": {
+          "justification": {
+            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "title": "Justification",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Canvas position. Placed automatically when omitted."
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StageType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "template": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplateId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "justification"
+        ],
+        "title": "BranchRequest",
+        "type": "object"
+      },
+      "Catalog": {
+        "properties": {
+          "phases": {
+            "items": {
+              "$ref": "#/components/schemas/PhaseInfo"
+            },
+            "title": "Phases",
+            "type": "array"
+          },
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/StageInfo"
+            },
+            "title": "Stages",
+            "type": "array"
+          },
+          "templates": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateInfo"
+            },
+            "title": "Templates",
+            "type": "array"
+          }
+        },
+        "required": [
+          "phases",
+          "stages",
+          "templates"
+        ],
+        "title": "Catalog",
+        "type": "object"
+      },
+      "Cell": {
+        "description": "An instance of a stage type inside a system.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Provenance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stage": {
+            "$ref": "#/components/schemas/StageType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CellStatus",
+            "default": "never_run"
+          },
+          "system_id": {
+            "title": "System Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "system_id",
+          "stage",
+          "name"
+        ],
+        "title": "Cell",
+        "type": "object"
+      },
+      "CellIds": {
+        "properties": {
+          "cell_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cell Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cell_ids"
+        ],
+        "title": "CellIds",
+        "type": "object"
+      },
+      "CellStatus": {
+        "enum": [
+          "up_to_date",
+          "outdated",
+          "failed",
+          "never_run"
+        ],
+        "title": "CellStatus",
+        "type": "string"
+      },
+      "Change": {
+        "description": "One entry of the project history.",
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "created_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Created Ids",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "justification": {
+            "title": "Justification",
+            "type": "string"
+          },
+          "operation": {
+            "$ref": "#/components/schemas/Operation"
+          },
+          "outdated_cell_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Outdated Cell Ids",
+            "type": "array"
+          },
+          "reverts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reverts"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "seq",
+          "timestamp",
+          "author",
+          "justification",
+          "operation",
+          "summary"
+        ],
+        "title": "Change",
+        "type": "object"
+      },
+      "CloseProjectRequest": {
+        "properties": {
+          "discard_unsaved": {
+            "default": false,
+            "title": "Discard Unsaved",
+            "type": "boolean"
+          }
+        },
+        "title": "CloseProjectRequest",
+        "type": "object"
+      },
+      "CreateSystemRequest": {
+        "description": "Create a system from a template (``template``) or with a single cell (``stage``).",
+        "properties": {
+          "justification": {
+            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "title": "Justification",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Canvas position. Placed automatically when omitted."
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StageType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "template": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplateId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "justification"
+        ],
+        "title": "CreateSystemRequest",
+        "type": "object"
+      },
+      "DocumentState": {
+        "description": "File-level state of the open project.",
+        "properties": {
+          "can_redo": {
+            "title": "Can Redo",
+            "type": "boolean"
+          },
+          "can_undo": {
+            "title": "Can Undo",
+            "type": "boolean"
+          },
+          "dirty": {
+            "title": "Dirty",
+            "type": "boolean"
+          },
+          "file_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Name"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "redo_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Redo Summary"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "undo_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Undo Summary"
+          }
+        },
+        "required": [
+          "path",
+          "file_name",
+          "dirty",
+          "revision",
+          "can_undo",
+          "can_redo",
+          "undo_summary",
+          "redo_summary"
+        ],
+        "title": "DocumentState",
+        "type": "object"
+      },
+      "DuplicateSystemRequest": {
+        "properties": {
+          "justification": {
+            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "title": "Justification",
+            "type": "string"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "justification"
+        ],
+        "title": "DuplicateSystemRequest",
+        "type": "object"
+      },
+      "Link": {
+        "description": "Feeds the output of ``source_cell_id`` into the ``input`` of ``target_cell_id``.\n\nEach stage type has one output, so the input is named after the source stage type.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input": {
+            "$ref": "#/components/schemas/StageType"
+          },
+          "source_cell_id": {
+            "title": "Source Cell Id",
+            "type": "string"
+          },
+          "target_cell_id": {
+            "title": "Target Cell Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_cell_id",
+          "target_cell_id",
+          "input"
+        ],
+        "title": "Link",
+        "type": "object"
+      },
+      "LinkRequest": {
+        "properties": {
+          "justification": {
+            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "title": "Justification",
+            "type": "string"
+          },
+          "source_cell_id": {
+            "title": "Source Cell Id",
+            "type": "string"
+          },
+          "target_cell_id": {
+            "title": "Target Cell Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "justification",
+          "source_cell_id",
+          "target_cell_id"
+        ],
+        "title": "LinkRequest",
+        "type": "object"
+      },
+      "MoveSystemRequest": {
+        "properties": {
+          "justification": {
+            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "title": "Justification",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/Position"
+          }
+        },
+        "required": [
+          "justification",
+          "position"
+        ],
+        "title": "MoveSystemRequest",
+        "type": "object"
+      },
+      "MutationResult": {
+        "properties": {
+          "change": {
+            "$ref": "#/components/schemas/Change"
+          },
+          "view": {
+            "$ref": "#/components/schemas/ProjectView"
+          }
+        },
+        "required": [
+          "change",
+          "view"
+        ],
+        "title": "MutationResult",
+        "type": "object"
+      },
+      "NewProjectRequest": {
+        "properties": {
+          "discard_unsaved": {
+            "default": false,
+            "description": "Replace an open project even if it has unsaved changes.",
+            "title": "Discard Unsaved",
+            "type": "boolean"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "NewProjectRequest",
+        "type": "object"
+      },
+      "OpenProjectRequest": {
+        "properties": {
+          "discard_unsaved": {
+            "default": false,
+            "title": "Discard Unsaved",
+            "type": "boolean"
+          },
+          "force": {
+            "default": false,
+            "description": "Take over the file even if another instance holds its lock.",
+            "title": "Force",
+            "type": "boolean"
+          },
+          "path": {
+            "description": "Absolute path of the .hestia file.",
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "OpenProjectRequest",
+        "type": "object"
+      },
+      "Operation": {
+        "enum": [
+          "create_system",
+          "add_cell",
+          "link",
+          "unlink",
+          "branch",
+          "rename_system",
+          "rename_cell",
+          "move_system",
+          "duplicate_system",
+          "delete_system",
+          "delete_cell",
+          "undo",
+          "redo"
+        ],
+        "title": "Operation",
+        "type": "string"
+      },
+      "Phase": {
+        "enum": [
+          "phase_0",
+          "phase_1"
+        ],
+        "title": "Phase",
+        "type": "string"
+      },
+      "PhaseInfo": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/Phase"
+          },
+          "template": {
+            "$ref": "#/components/schemas/TemplateId"
+          }
+        },
+        "required": [
+          "phase",
+          "name",
+          "template"
+        ],
+        "title": "PhaseInfo",
+        "type": "object"
+      },
+      "Position": {
+        "description": "Canvas position of a system, in schematic units (px at zoom 1).",
+        "properties": {
+          "x": {
+            "title": "X",
+            "type": "number"
+          },
+          "y": {
+            "title": "Y",
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y"
+        ],
+        "title": "Position",
+        "type": "object"
+      },
+      "Project": {
+        "properties": {
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/Cell"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/Link"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "systems": {
+            "items": {
+              "$ref": "#/components/schemas/System"
+            },
+            "title": "Systems",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "Project",
+        "type": "object"
+      },
+      "ProjectView": {
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/DocumentState"
+          },
+          "project": {
+            "$ref": "#/components/schemas/Project"
+          }
+        },
+        "required": [
+          "project",
+          "document"
+        ],
+        "title": "ProjectView",
+        "type": "object"
+      },
+      "Provenance": {
+        "description": "What produced a cell's current outputs. Empty until stages can run.",
+        "properties": {
+          "code_version": {
+            "title": "Code Version",
+            "type": "string"
+          },
+          "input_cell_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Input Cell Ids",
+            "type": "array"
+          },
+          "produced_at": {
+            "format": "date-time",
+            "title": "Produced At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "produced_at",
+          "code_version"
+        ],
+        "title": "Provenance",
+        "type": "object"
+      },
+      "RecentProject": {
+        "properties": {
+          "exists": {
+            "title": "Exists",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "opened_at": {
+            "format": "date-time",
+            "title": "Opened At",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "name",
+          "opened_at",
+          "exists"
+        ],
+        "title": "RecentProject",
+        "type": "object"
+      },
+      "RemoveRecentRequest": {
+        "properties": {
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "RemoveRecentRequest",
+        "type": "object"
+      },
+      "RenameRequest": {
+        "properties": {
+          "justification": {
+            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "title": "Justification",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "justification",
+          "name"
+        ],
+        "title": "RenameRequest",
+        "type": "object"
+      },
+      "SaveAsRequest": {
+        "properties": {
+          "path": {
+            "description": "Target path. The .hestia extension is added if missing.",
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "title": "SaveAsRequest",
+        "type": "object"
+      },
+      "Session": {
+        "description": "What this API instance has open. ``project`` is null when nothing is open.",
+        "properties": {
+          "project": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectView"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "project"
+        ],
+        "title": "Session",
+        "type": "object"
+      },
+      "StageInfo": {
+        "properties": {
+          "inputs": {
+            "items": {
+              "$ref": "#/components/schemas/StageType"
+            },
+            "title": "Inputs",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "number": {
+            "title": "Number",
+            "type": "string"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/Phase"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/StageType"
+          }
+        },
+        "required": [
+          "stage",
+          "phase",
+          "number",
+          "name",
+          "inputs"
+        ],
+        "title": "StageInfo",
+        "type": "object"
+      },
+      "StageType": {
+        "enum": [
+          "mission",
+          "environment",
+          "global_balance",
+          "tcs_concept",
+          "discretization",
+          "couplings",
+          "load_cases",
+          "solution",
+          "margins",
+          "sensitivity"
+        ],
+        "title": "StageType",
+        "type": "string"
+      },
+      "System": {
+        "description": "Named group of cells. ``cell_ids`` keeps display order.",
+        "properties": {
+          "cell_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cell Ids",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/Position"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "position"
+        ],
+        "title": "System",
+        "type": "object"
+      },
+      "TemplateId": {
+        "enum": [
+          "phase_0",
+          "phase_1"
+        ],
+        "title": "TemplateId",
+        "type": "string"
+      },
+      "TemplateInfo": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "$ref": "#/components/schemas/TemplateId"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phase": {
+            "$ref": "#/components/schemas/Phase"
+          },
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/StageType"
+            },
+            "title": "Stages",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "phase",
+          "name",
+          "description",
+          "stages"
+        ],
+        "title": "TemplateInfo",
+        "type": "object"
+      },
+      "WriteRequest": {
+        "properties": {
+          "justification": {
+            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "title": "Justification",
+            "type": "string"
+          }
+        },
+        "required": [
+          "justification"
+        ],
+        "title": "WriteRequest",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Hestia API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/catalog": {
+      "get": {
+        "description": "Stage types, phases and templates, with the inputs each stage type accepts.",
+        "operationId": "get_catalog",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Catalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Catalog",
+        "tags": [
+          "catalog"
+        ]
+      }
+    },
+    "/events": {
+      "get": {
+        "description": "Server-Sent Events with every project event (``ProjectEvent``), whoever caused it.\n\nThe first event is ``connected``, carrying the current revision. Clients refetch the\nsession when they receive an event.",
+        "operationId": "stream_events",
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "itemSchema": {
+                  "properties": {
+                    "data": {
+                      "type": "string"
+                    },
+                    "event": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string"
+                    },
+                    "retry": {
+                      "minimum": 0,
+                      "type": "integer"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Stream Events",
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Liveness probe. No domain logic.",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Health",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/project/branch-targets": {
+      "get": {
+        "description": "Cells onto which a template or stage can be dropped to branch. Pass exactly one.",
+        "operationId": "list_branch_targets",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "template",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TemplateId"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Template"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stage",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/StageType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stage"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CellIds"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "List Branch Targets",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/cells/{cell_id}": {
+      "delete": {
+        "description": "Delete a cell and its links (an emptied system is deleted). Requires a justification.",
+        "operationId": "delete_cell",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cell_id",
+            "required": true,
+            "schema": {
+              "title": "Cell Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Delete Cell",
+        "tags": [
+          "schematic"
+        ]
+      },
+      "patch": {
+        "operationId": "rename_cell",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cell_id",
+            "required": true,
+            "schema": {
+              "title": "Cell Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Rename Cell",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/cells/{cell_id}/branch": {
+      "post": {
+        "description": "Create a new system (template or stage) fed by this cell.",
+        "operationId": "branch_cell",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cell_id",
+            "required": true,
+            "schema": {
+              "title": "Cell Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BranchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Branch Cell",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/cells/{cell_id}/link-targets": {
+      "get": {
+        "description": "Cells this cell could feed with a new link right now.",
+        "operationId": "list_link_targets",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cell_id",
+            "required": true,
+            "schema": {
+              "title": "Cell Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CellIds"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "List Link Targets",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/close": {
+      "post": {
+        "description": "Close the project. Fails with ``unsaved_changes`` unless discarding.",
+        "operationId": "close_project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloseProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Close Project",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/project/history": {
+      "get": {
+        "description": "Every change of the project, oldest first, with author and justification.",
+        "operationId": "get_history",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Change"
+                  },
+                  "title": "Response Get History",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Get History",
+        "tags": [
+          "history"
+        ]
+      }
+    },
+    "/project/links": {
+      "post": {
+        "description": "Feed the output of one cell into an input of another (validated by the workflow).",
+        "operationId": "link_cells",
+        "parameters": [
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Link Cells",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/links/{link_id}": {
+      "delete": {
+        "description": "Remove a link; its target and everything downstream become outdated.",
+        "operationId": "unlink_cells",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "link_id",
+            "required": true,
+            "schema": {
+              "title": "Link Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Unlink Cells",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/new": {
+      "post": {
+        "description": "Start an empty, unsaved project. Fails with ``unsaved_changes`` unless discarding.",
+        "operationId": "new_project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "New Project",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/project/open": {
+      "post": {
+        "description": "Open a .hestia file. Fails with ``project_locked`` (423) if another instance has it.",
+        "operationId": "open_project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenProjectRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Open Project",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/project/redo": {
+      "post": {
+        "description": "Redo the last undone change.",
+        "operationId": "redo",
+        "parameters": [
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Redo",
+        "tags": [
+          "history"
+        ]
+      }
+    },
+    "/project/save": {
+      "post": {
+        "description": "Save to the current file. Fails with ``no_path`` if it was never saved.",
+        "operationId": "save_project",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Save Project",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/project/save-as": {
+      "post": {
+        "description": "Save to a new file and keep working on it.",
+        "operationId": "save_project_as",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectView"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Save Project As",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/project/systems": {
+      "post": {
+        "description": "Create a system from a phase template (cells already linked) or with one cell.",
+        "operationId": "create_system",
+        "parameters": [
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSystemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Create System",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/systems/{system_id}": {
+      "delete": {
+        "description": "Delete a system, its cells and their links. Requires a justification.",
+        "operationId": "delete_system",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Delete System",
+        "tags": [
+          "schematic"
+        ]
+      },
+      "patch": {
+        "operationId": "rename_system",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Rename System",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/systems/{system_id}/cells": {
+      "post": {
+        "description": "Add a cell to a system; it is linked to cells of that system when unambiguous.",
+        "operationId": "add_cell",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddCellRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Add Cell",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/systems/{system_id}/duplicate": {
+      "post": {
+        "description": "Copy a system with its cells, internal links and incoming links.",
+        "operationId": "duplicate_system",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DuplicateSystemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Duplicate System",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/systems/{system_id}/move": {
+      "post": {
+        "description": "Move a system on the canvas.",
+        "operationId": "move_system",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system_id",
+            "required": true,
+            "schema": {
+              "title": "System Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveSystemRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Move System",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/undo": {
+      "post": {
+        "description": "Undo the last change of this session (recorded in the history as well).",
+        "operationId": "undo",
+        "parameters": [
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WriteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Undo",
+        "tags": [
+          "history"
+        ]
+      }
+    },
+    "/recents": {
+      "delete": {
+        "description": "Forget a recent project (the file is not touched).",
+        "operationId": "remove_recent_project",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveRecentRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecentProject"
+                  },
+                  "title": "Response Remove Recent Project",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Remove Recent Project",
+        "tags": [
+          "files"
+        ]
+      },
+      "get": {
+        "description": "Recently opened projects, newest first. ``exists`` is false for moved or deleted files.",
+        "operationId": "list_recent_projects",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecentProject"
+                  },
+                  "title": "Response List Recent Projects",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "List Recent Projects",
+        "tags": [
+          "files"
+        ]
+      }
+    },
+    "/session": {
+      "get": {
+        "description": "The open project (schematic and file state), or null if none is open.",
+        "operationId": "get_session",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Session"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Get Session",
+        "tags": [
+          "files"
+        ]
+      }
+    }
+  }
+}
