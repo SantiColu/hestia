@@ -154,6 +154,12 @@ def list_link_targets(cell_id: str, workspace: WorkspaceDep) -> CellIds:
     return CellIds(cell_ids=workspace.query(lambda p: ops.link_targets(p, cell_id)))
 
 
+@router.get("/cells/{cell_id}/branch-options", operation_id="list_branch_options")
+def list_branch_options(cell_id: str, workspace: WorkspaceDep) -> list[Blueprint]:
+    """Templates and stages that can be branched from this cell."""
+    return workspace.query(lambda p: ops.branch_options(p, cell_id))
+
+
 @router.get("/branch-targets", operation_id="list_branch_targets")
 def list_branch_targets(
     workspace: WorkspaceDep,

@@ -80,6 +80,33 @@
         "title": "Author",
         "type": "object"
       },
+      "Blueprint": {
+        "description": "What to create: a template (whole phase) or a single stage. Exactly one is set.",
+        "properties": {
+          "stage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StageType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "template": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplateId"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "Blueprint",
+        "type": "object"
+      },
       "BranchRequest": {
         "description": "Create a system from a template or stage, fed by the cell in the path.",
         "properties": {
@@ -1510,6 +1537,83 @@
           }
         },
         "summary": "Branch Cell",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/cells/{cell_id}/branch-options": {
+      "get": {
+        "description": "Templates and stages that can be branched from this cell.",
+        "operationId": "list_branch_options",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cell_id",
+            "required": true,
+            "schema": {
+              "title": "Cell Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Blueprint"
+                  },
+                  "title": "Response List Branch Options",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "List Branch Options",
         "tags": [
           "schematic"
         ]

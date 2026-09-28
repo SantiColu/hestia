@@ -108,6 +108,13 @@ def test_branch_and_targets(opened: TestClient) -> None:
         {"source": lk["source_cell_id"], "target": lk["target_cell_id"]} for lk in project["links"]
     ]
 
+    options = opened.get(f"/project/cells/{f0['global_balance']['id']}/branch-options").json()
+    assert options == [
+        {"template": "phase_1", "stage": None},
+        {"template": None, "stage": "tcs_concept"},
+        {"template": None, "stage": "solution"},
+    ]
+
     invalid = opened.post(
         f"/project/cells/{f0['tcs_concept']['id']}/branch",
         json={"template": "phase_1", "justification": ""},

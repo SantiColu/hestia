@@ -261,6 +261,12 @@ async def branch_cell(
     )
 
 
+@_tool("list_branch_options")
+async def list_branch_options(cell_id: str) -> list[Json]:
+    """Templates and stages that can be branched from `cell_id`."""
+    return await call("list_branch_options", path={"cell_id": cell_id})
+
+
 @_tool("list_branch_targets")
 async def list_branch_targets(
     template: TemplateId | None = None, stage: StageType | None = None

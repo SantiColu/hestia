@@ -38,6 +38,7 @@ OPERATIONS: dict[str, tuple[str, str]] = {
     "delete_cell": ("DELETE", "/project/cells/{cell_id}"),
     "branch_cell": ("POST", "/project/cells/{cell_id}/branch"),
     "list_link_targets": ("GET", "/project/cells/{cell_id}/link-targets"),
+    "list_branch_options": ("GET", "/project/cells/{cell_id}/branch-options"),
     "list_branch_targets": ("GET", "/project/branch-targets"),
     "link_cells": ("POST", "/project/links"),
     "unlink_cells": ("DELETE", "/project/links/{link_id}"),

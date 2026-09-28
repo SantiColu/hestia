@@ -322,6 +322,13 @@ def branch_targets(project: Project, blueprint: Blueprint) -> list[str]:
     return [cell.id for cell in project.cells if cell.stage in open_inputs]
 
 
+def branch_options(project: Project, cell_id: str) -> list[Blueprint]:
+    """Templates and stages that can be branched from ``cell_id`` (see ``branch``)."""
+    cell = get_cell(project, cell_id)
+    candidates = [Blueprint(template=t) for t in TEMPLATES] + [Blueprint(stage=s) for s in STAGES]
+    return [b for b in candidates if cell.stage in blueprint_open_inputs(b)]
+
+
 # ---------------------------------------------------------------- operations
 
 

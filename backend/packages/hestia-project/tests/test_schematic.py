@@ -7,6 +7,7 @@ from hestia_project.schematic import (
     Blueprint,
     add_cell,
     branch,
+    branch_options,
     branch_targets,
     check_link,
     create_system,
@@ -268,6 +269,18 @@ def test_branch_targets(phase0: Project) -> None:
     assert branch_targets(phase0, PHASE_0) == []
     assert branch_targets(phase0, Blueprint(stage=S.TCS_CONCEPT)) == [f0[S.GLOBAL_BALANCE].id]
     assert branch_targets(phase0, Blueprint(stage=S.MISSION)) == []
+
+
+def test_branch_options(phase0: Project) -> None:
+    f0 = cells_by_stage(phase0, "F0")
+    options = branch_options(phase0, f0[S.MISSION].id)
+    assert options == [
+        PHASE_1,
+        Blueprint(stage=S.ENVIRONMENT),
+        Blueprint(stage=S.DISCRETIZATION),
+        Blueprint(stage=S.MARGINS),
+    ]
+    assert branch_options(phase0, f0[S.TCS_CONCEPT].id) == []
 
 
 # ---------------------------------------------------------------- rename, move, duplicate, delete

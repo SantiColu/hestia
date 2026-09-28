@@ -21,7 +21,9 @@ def captured(monkeypatch: pytest.MonkeyPatch) -> Iterator[Captured]:
 
     def handler(request: httpx.Request) -> httpx.Response:
         requests.append(request)
-        body: Any = [] if request.url.path in ("/recents", "/project/history") else {"ok": True}
+        lists = ("/recents", "/project/history")
+        is_list = request.url.path in lists or request.url.path.endswith("/branch-options")
+        body: Any = [] if is_list else {"ok": True}
         return httpx.Response(200, json=body)
 
     def client() -> httpx.AsyncClient:
@@ -109,6 +111,7 @@ CASES: list[tuple[str, dict[str, Any], str, str, dict[str, Any] | None]] = [
         {"template": None, "stage": "environment", "name": None, **J},
     ),
     ("list_link_targets", {"cell_id": "c1"}, "GET", "/project/cells/c1/link-targets", None),
+    ("list_branch_options", {"cell_id": "c1"}, "GET", "/project/cells/c1/branch-options", None),
     ("list_branch_targets", {"template": "phase_1"}, "GET", "/project/branch-targets", None),
     (
         "link_cells",

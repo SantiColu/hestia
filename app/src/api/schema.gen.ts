@@ -128,6 +128,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/project/cells/{cell_id}/branch-options": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Branch Options
+     * @description Templates and stages that can be branched from this cell.
+     */
+    get: operations["list_branch_options"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/project/cells/{cell_id}/link-targets": {
     parameters: {
       query?: never;
@@ -535,6 +555,14 @@ export interface components {
       kind: components["schemas"]["ActorKind"];
       /** Name */
       name: string;
+    };
+    /**
+     * Blueprint
+     * @description What to create: a template (whole phase) or a single stage. Exactly one is set.
+     */
+    Blueprint: {
+      stage?: components["schemas"]["StageType"] | null;
+      template?: components["schemas"]["TemplateId"] | null;
     };
     /**
      * BranchRequest
@@ -1218,6 +1246,64 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["MutationResult"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Locked */
+      423: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  list_branch_options: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cell_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Blueprint"][];
         };
       };
       /** @description Not Found */
