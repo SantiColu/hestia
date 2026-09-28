@@ -1,1 +1,4294 @@
-{"version":"2.19","imports":{"lib":"./hestia.lib.pen"},"children":[]}
+{
+  "version": "2.19",
+  "children": [
+    {
+      "type": "frame",
+      "id": "J6NGb2",
+      "x": 0,
+      "y": 0,
+      "name": "Workspace",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$lib:bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "HAjoQ",
+          "name": "TopBar",
+          "width": "fill_container",
+          "height": 44,
+          "fill": "$lib:surface",
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 10,
+          "padding": [
+            0,
+            10,
+            0,
+            14
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "Nte9v",
+              "type": "ref",
+              "ref": "lib:FKqyv",
+              "name": "Mark",
+              "width": 21.12,
+              "height": 24,
+              "descendants": {
+                "lib:bTJGf": {
+                  "width": 21.12,
+                  "height": 24
+                },
+                "lib:i7fk8e": {
+                  "width": 21.12,
+                  "height": 24
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "IoEda",
+              "name": "Menubar",
+              "height": 28,
+              "padding": [
+                0,
+                6
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "J8Xf9",
+                  "name": "Archivo",
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "O4QuK",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Archivo",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "LdAzh",
+                  "name": "Editar",
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SRqWl",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Editar",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gPW4m",
+                  "name": "Ver",
+                  "opacity": 0.4,
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "dVlZw",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Ver",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hm3RE",
+                  "name": "Proyecto",
+                  "opacity": 0.4,
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "OQRtt",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Proyecto",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "qdgoN",
+                  "name": "Ayuda",
+                  "opacity": 0.4,
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "UqO8h",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Ayuda",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "JaBWu",
+              "name": "Divider",
+              "fill": "$lib:border",
+              "width": 1,
+              "height": 16
+            },
+            {
+              "type": "frame",
+              "id": "HQldN",
+              "name": "File",
+              "gap": 6,
+              "padding": [
+                0,
+                0,
+                0,
+                8
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "V72DTI",
+                  "name": "File",
+                  "fill": "$lib:text",
+                  "content": "SAT-M1.hestia",
+                  "fontFamily": "$lib:font-sans",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "ellipse",
+                  "id": "LwAjt",
+                  "name": "Unsaved",
+                  "fill": "$lib:text-muted",
+                  "width": 6,
+                  "height": 6
+                },
+                {
+                  "id": "gph54",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Save (Ctrl+S)",
+                  "strokeWidth": 0,
+                  "opacity": 1,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "save",
+                      "fill": "$lib:text-muted"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "LfLxE",
+              "name": "Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "abNlR",
+              "name": "Tools",
+              "gap": 2,
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "Lc5kw",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Paleta de comandos (Ctrl+K)",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "search",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "P2p0Y",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Comparar",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "columns-2",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "o7VHYx",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Informe",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "file-text",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "cCdbv",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Exportar a NX",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "file-output",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "wbgnr",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Stefan",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "bot",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "UBlwh",
+              "name": "Divider tools",
+              "fill": "$lib:border",
+              "width": 1,
+              "height": 16
+            },
+            {
+              "id": "QFySh",
+              "type": "ref",
+              "ref": "lib:X50Xt9",
+              "name": "OutdatedSummary",
+              "descendants": {
+                "lib:XSPu2": {
+                  "content": "3 desactualizadas"
+                }
+              }
+            },
+            {
+              "id": "wC8bB",
+              "type": "ref",
+              "ref": "lib:Q65sw",
+              "name": "UpdateAll",
+              "descendants": {
+                "lib:mK0VC": {
+                  "icon": "refresh-cw"
+                },
+                "lib:X1JEg": {
+                  "content": "Actualizar todo"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "tCXf4",
+          "name": "Main",
+          "width": "fill_container",
+          "height": "fill_container",
+          "children": [
+            {
+              "type": "frame",
+              "id": "dz8wp",
+              "name": "Toolbox",
+              "clip": true,
+              "width": 232,
+              "height": "fill_container",
+              "fill": "$lib:surface",
+              "stroke": "$lib:border",
+              "strokeWidth": {
+                "right": 1
+              },
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Q8hTmS",
+                  "name": "Header",
+                  "width": "fill_container",
+                  "height": 36,
+                  "stroke": "$lib:border",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qigFo",
+                      "name": "Title",
+                      "fill": "$lib:text",
+                      "content": "Toolbox",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "J5Y8dE",
+                  "name": "Items",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": 8,
+                  "children": [
+                    {
+                      "id": "r21Ao",
+                      "type": "ref",
+                      "ref": "lib:f801rh",
+                      "name": "Fase 0",
+                      "width": "fill_container",
+                      "descendants": {
+                        "lib:SsT3T": {
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "WCtko",
+                              "name": "Stages",
+                              "slot": [
+                                "lib:z7oKv",
+                                "lib:Bwbh6"
+                              ],
+                              "width": "fill_container",
+                              "stroke": "$lib:border",
+                              "strokeWidth": {
+                                "left": 1
+                              },
+                              "layout": "vertical",
+                              "padding": [
+                                2,
+                                0,
+                                2,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "id": "AcF9o",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Misión",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "satellite"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Misión"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "WaISS",
+                                  "type": "ref",
+                                  "ref": "lib:Bwbh6",
+                                  "name": "Entorno",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:q9j5v": {
+                                      "icon": "sun"
+                                    },
+                                    "lib:sjiwU": {
+                                      "content": "Entorno"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "SSQtD",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Balance global",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "scale"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Balance global"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "qMnoT",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Concepto TCS",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "lightbulb"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Concepto TCS"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "id": "QXW2o",
+                      "type": "ref",
+                      "ref": "lib:f801rh",
+                      "name": "Fase 1",
+                      "width": "fill_container",
+                      "descendants": {
+                        "lib:z8d6k1": {
+                          "content": "Fase 1"
+                        },
+                        "lib:ByVDn": {
+                          "content": "Modelo nodal"
+                        },
+                        "lib:SsT3T": {
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "wMwik",
+                              "name": "Stages",
+                              "slot": [
+                                "lib:z7oKv",
+                                "lib:Bwbh6"
+                              ],
+                              "width": "fill_container",
+                              "stroke": "$lib:border",
+                              "strokeWidth": {
+                                "left": 1
+                              },
+                              "layout": "vertical",
+                              "padding": [
+                                2,
+                                0,
+                                2,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "id": "VJxob",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Discretización",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "grid-3x3"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Discretización"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "pizAq",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Acoplamientos",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "link-2"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Acoplamientos"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "fwJGu",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Casos de carga",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "thermometer"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Casos de carga"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "Lygx7",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Solución",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "sigma"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Solución"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "Sf55K",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Márgenes",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "ruler"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Márgenes"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "Y4lPle",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Sensibilidad",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "chart-no-axes-column"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Sensibilidad"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AfbKo",
+                      "name": "Group POST-PROCESO",
+                      "width": "fill_container",
+                      "padding": [
+                        10,
+                        4,
+                        2,
+                        4
+                      ],
+                      "children": [
+                        {
+                          "id": "veE1p",
+                          "type": "ref",
+                          "ref": "lib:z5nZlX",
+                          "name": "SectionLabel",
+                          "descendants": {
+                            "lib:LcI6R": {
+                              "content": "POST-PROCESO"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "i71sKG",
+                      "type": "ref",
+                      "ref": "lib:z7oKv",
+                      "name": "Comparación",
+                      "width": "fill_container",
+                      "descendants": {
+                        "lib:ZWF2x": {
+                          "icon": "columns-2"
+                        },
+                        "lib:qKKSj": {
+                          "content": "Comparación"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Rl746",
+                  "name": "Hint",
+                  "width": "fill_container",
+                  "padding": [
+                    8,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "R6Net",
+                      "name": "Text",
+                      "fill": "$lib:text-subtle",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Arrastrá una fase para crearla completa, o una etapa sola. Soltala sobre una celda para ramificar.",
+                      "lineHeight": 1.4,
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "S9Sj02",
+              "name": "Schematic",
+              "clip": true,
+              "width": "fill_container",
+              "height": "fill_container",
+              "fill": "$lib:bg",
+              "layout": "none",
+              "children": [
+                {
+                  "id": "jbCNX",
+                  "type": "ref",
+                  "ref": "lib:nGqMS",
+                  "name": "Fase 0 · base",
+                  "x": 48,
+                  "y": 64,
+                  "width": 224,
+                  "descendants": {
+                    "lib:sFNTU": {
+                      "content": "Fase 0 · base"
+                    },
+                    "lib:dDcCN": {
+                      "type": "frame",
+                      "id": "o54OTL",
+                      "name": "Cells",
+                      "slot": [
+                        "lib:KX37O",
+                        "lib:jRUNQ",
+                        "lib:ewIWT",
+                        "lib:jNbE9"
+                      ],
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "id": "o4pyd9",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Misión",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "0.1",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Misión"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-check",
+                              "fill": "$lib:ok"
+                            }
+                          }
+                        },
+                        {
+                          "id": "SdE6z",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Entorno LEO 600",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "0.2",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Entorno LEO 600"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-check",
+                              "fill": "$lib:ok"
+                            }
+                          }
+                        },
+                        {
+                          "id": "WSi8z",
+                          "type": "ref",
+                          "ref": "lib:jRUNQ",
+                          "name": "Balance global",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:w3Vfj": {
+                              "content": "0.3",
+                              "enabled": false
+                            },
+                            "lib:Mc9wI": {
+                              "content": "Balance global"
+                            },
+                            "lib:ZY3B5": {
+                              "icon": "refresh-cw",
+                              "fill": "$lib:warn"
+                            }
+                          }
+                        },
+                        {
+                          "id": "fw8Xw",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Concepto TCS",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "0.4",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Concepto TCS"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-dashed",
+                              "fill": "$lib:idle"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "id": "i5VLpW",
+                  "type": "ref",
+                  "ref": "lib:nGqMS",
+                  "name": "Entorno · SSO 800",
+                  "x": 448,
+                  "y": 64,
+                  "width": 224,
+                  "descendants": {
+                    "lib:sFNTU": {
+                      "content": "Entorno · SSO 800"
+                    },
+                    "lib:dDcCN": {
+                      "type": "frame",
+                      "id": "L22RIh",
+                      "name": "Cells",
+                      "slot": [
+                        "lib:KX37O",
+                        "lib:jRUNQ",
+                        "lib:ewIWT",
+                        "lib:jNbE9"
+                      ],
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "id": "fOzgj",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Entorno",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "0.2",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Entorno"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-dashed",
+                              "fill": "$lib:idle"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "id": "ObxUX",
+                  "type": "ref",
+                  "ref": "lib:nGqMS",
+                  "name": "Fase 1 · A",
+                  "x": 448,
+                  "y": 174,
+                  "width": 224,
+                  "descendants": {
+                    "lib:sFNTU": {
+                      "content": "Fase 1 · A"
+                    },
+                    "lib:dDcCN": {
+                      "type": "frame",
+                      "id": "zE5TC",
+                      "name": "Cells",
+                      "slot": [
+                        "lib:KX37O",
+                        "lib:jRUNQ",
+                        "lib:ewIWT",
+                        "lib:jNbE9"
+                      ],
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "id": "ZJN04",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Discretización",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.1",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Discretización"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-check",
+                              "fill": "$lib:ok"
+                            }
+                          }
+                        },
+                        {
+                          "id": "wiZud",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Acoplamientos",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.2",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Acoplamientos"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-check",
+                              "fill": "$lib:ok"
+                            }
+                          }
+                        },
+                        {
+                          "id": "IjkWc",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Casos de carga",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.3",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Casos de carga"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-check",
+                              "fill": "$lib:ok"
+                            }
+                          }
+                        },
+                        {
+                          "id": "B0SG6",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Solución",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.4",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Solución"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "refresh-cw",
+                              "fill": "$lib:warn"
+                            }
+                          }
+                        },
+                        {
+                          "id": "NGM8N",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Márgenes",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.5",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Márgenes"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "refresh-cw",
+                              "fill": "$lib:warn"
+                            }
+                          }
+                        },
+                        {
+                          "id": "lIyIW",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Sensibilidad",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.6",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Sensibilidad"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-dashed",
+                              "fill": "$lib:idle"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "id": "t8f3Q5",
+                  "type": "ref",
+                  "ref": "lib:V4Tqm",
+                  "name": "Link 0.1→SSO",
+                  "x": 272,
+                  "y": 107,
+                  "width": 176,
+                  "height": 8
+                },
+                {
+                  "id": "G7Ouc",
+                  "type": "ref",
+                  "ref": "lib:Zeqol",
+                  "name": "Link 0.1→1.1",
+                  "x": 272,
+                  "y": 111,
+                  "width": 176,
+                  "height": 114,
+                  "descendants": {
+                    "lib:YIOfE": {
+                      "width": 132
+                    }
+                  }
+                },
+                {
+                  "id": "dvfhz",
+                  "type": "ref",
+                  "ref": "lib:Zeqol",
+                  "name": "Link 0.2→1.3",
+                  "x": 272,
+                  "y": 141,
+                  "width": 176,
+                  "height": 144,
+                  "descendants": {
+                    "lib:YIOfE": {
+                      "width": 88
+                    }
+                  }
+                },
+                {
+                  "id": "fMdMw",
+                  "type": "ref",
+                  "ref": "lib:Zeqol",
+                  "name": "Link 0.3→1.4",
+                  "x": 272,
+                  "y": 171,
+                  "width": 176,
+                  "height": 144,
+                  "descendants": {
+                    "lib:YIOfE": {
+                      "width": 44
+                    },
+                    "lib:paXzG": {
+                      "stroke": "$lib:accent"
+                    },
+                    "lib:uQzoW": {
+                      "fill": "$lib:accent"
+                    },
+                    "lib:SOBwT": {
+                      "fill": "$lib:accent"
+                    }
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "XAL3a",
+                  "x": 16,
+                  "y": 644,
+                  "name": "Zoom",
+                  "height": 28,
+                  "fill": "$lib:surface",
+                  "cornerRadius": "$lib:radius",
+                  "stroke": "$lib:border",
+                  "strokeWidth": 1,
+                  "gap": 2,
+                  "padding": [
+                    0,
+                    4
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "X6QQ7z",
+                      "name": "Out",
+                      "height": 24,
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "c4kAR",
+                          "name": "Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "minus",
+                          "library": "lucide",
+                          "fill": "$lib:text-muted"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MbQjQ",
+                      "name": "Pct",
+                      "height": 24,
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "wdmBA",
+                          "name": "Value",
+                          "fill": "$lib:text-muted",
+                          "content": "100 %",
+                          "fontFamily": "$lib:font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NtK1p",
+                      "name": "In",
+                      "height": 24,
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "mEoQ5",
+                          "name": "Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "plus",
+                          "library": "lucide",
+                          "fill": "$lib:text-muted"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "owj9m",
+                      "name": "Fit",
+                      "height": 24,
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "I3hS7c",
+                          "name": "Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "maximize",
+                          "library": "lucide",
+                          "fill": "$lib:text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "H3zf9",
+              "name": "Dock",
+              "clip": true,
+              "width": 340,
+              "height": "fill_container",
+              "fill": "$lib:surface",
+              "stroke": "$lib:border",
+              "strokeWidth": {
+                "left": 1
+              },
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "e3m0Ad",
+                  "name": "Tabs",
+                  "width": "fill_container",
+                  "height": 36,
+                  "stroke": "$lib:border",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "gap": 4,
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "id": "cIk2h",
+                      "type": "ref",
+                      "ref": "lib:WzxnJ",
+                      "name": "Propiedades",
+                      "descendants": {
+                        "lib:V8oaaB": {
+                          "content": "Propiedades"
+                        }
+                      }
+                    },
+                    {
+                      "id": "CigGb",
+                      "type": "ref",
+                      "ref": "lib:nk9rJ",
+                      "name": "Agentes",
+                      "descendants": {
+                        "lib:KqxRR": {
+                          "content": "Agentes · 1"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "zkUbR",
+          "name": "BottomPanel",
+          "clip": true,
+          "width": "fill_container",
+          "height": 168,
+          "fill": "$lib:surface",
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "top": 1
+          },
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "x7ofa",
+              "name": "Tabs",
+              "width": "fill_container",
+              "height": 36,
+              "stroke": "$lib:border",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "gap": 4,
+              "padding": [
+                0,
+                8
+              ],
+              "alignItems": "end",
+              "children": [
+                {
+                  "id": "b4BMW",
+                  "type": "ref",
+                  "ref": "lib:WzxnJ",
+                  "name": "Mensajes",
+                  "descendants": {
+                    "lib:V8oaaB": {
+                      "content": "Mensajes"
+                    }
+                  }
+                },
+                {
+                  "id": "C3DIc",
+                  "type": "ref",
+                  "ref": "lib:nk9rJ",
+                  "name": "Corridas",
+                  "descendants": {
+                    "lib:KqxRR": {
+                      "content": "Corridas · 0"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ZJFGE",
+              "name": "Messages",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 2,
+              "padding": [
+                8,
+                16
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "I3uIX",
+                  "name": "Msg 14:32",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "rGBBL",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:32",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "jTh1o",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "info",
+                      "library": "lucide",
+                      "fill": "$lib:text-subtle"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ixeLp",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Stefan modificó Balance global (radiator_area_m2 0.42 → 0.48 m²). Desactualizadas: Balance global, Solución, Márgenes.",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "fgfVc",
+                  "name": "Msg 14:21",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "NtznP",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:21",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "L6aVY",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "git-branch-plus",
+                      "library": "lucide",
+                      "fill": "$lib:text-subtle"
+                    },
+                    {
+                      "type": "text",
+                      "id": "LZPg6",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Sistema «Entorno · SSO 800» creado desde Misión.",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "R6TlG4",
+                  "name": "Msg 14:05",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "u4i2FY",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:05",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "R13jfa",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle-check",
+                      "library": "lucide",
+                      "fill": "$lib:ok"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fzKzu",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Balance global actualizada en 0.8 s.",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pHNId",
+                  "name": "Msg 14:04",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "I9Bpu",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:04",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "FaYA3",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "triangle-alert",
+                      "library": "lucide",
+                      "fill": "$lib:warn"
+                    },
+                    {
+                      "type": "text",
+                      "id": "VFCdb",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Entorno LEO 600: β máx. 72.0° cerca del límite de la tabla de flujos (75°).",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Y2ZTC",
+      "x": 1540,
+      "y": 0,
+      "name": "Inicio",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$lib:bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "DW25A",
+          "name": "TopBar",
+          "width": "fill_container",
+          "height": 44,
+          "fill": "$lib:surface",
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "padding": [
+            0,
+            16
+          ],
+          "alignItems": "center"
+        },
+        {
+          "type": "frame",
+          "id": "XfkoZ",
+          "name": "Body",
+          "width": "fill_container",
+          "height": "fill_container",
+          "padding": [
+            96,
+            0,
+            0,
+            0
+          ],
+          "justifyContent": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Gp6tT",
+              "name": "Content",
+              "width": 720,
+              "layout": "vertical",
+              "gap": 40,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "o40zt",
+                  "name": "Heading",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "id": "ooDzm",
+                      "type": "ref",
+                      "ref": "lib:EgLZk",
+                      "name": "Logo",
+                      "width": 151.62481680508063,
+                      "height": 40,
+                      "descendants": {
+                        "lib:DBtrg": {
+                          "width": 151.62481680508063,
+                          "height": 40
+                        },
+                        "lib:zYhfg": {
+                          "width": 151.62481680508063,
+                          "height": 40
+                        },
+                        "lib:y90Is4": {
+                          "width": 151.62481680508063,
+                          "height": 40
+                        }
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "tfJIo",
+                      "name": "Subtitle",
+                      "fill": "$lib:text-muted",
+                      "content": "Prediseño del control térmico de satélites medianos · fases 0 y 1",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jTGvn",
+                  "name": "Actions",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "id": "Vu7o0",
+                      "type": "ref",
+                      "ref": "lib:f5TP7",
+                      "name": "New",
+                      "descendants": {
+                        "lib:dSmUX": {
+                          "icon": "plus"
+                        },
+                        "lib:k4ylJz": {
+                          "content": "Nuevo proyecto"
+                        }
+                      }
+                    },
+                    {
+                      "id": "uy7wr",
+                      "type": "ref",
+                      "ref": "lib:PdhU0",
+                      "name": "Open",
+                      "descendants": {
+                        "lib:SrT13": {
+                          "icon": "folder-open"
+                        },
+                        "lib:i14zc": {
+                          "content": "Abrir .hestia…"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "u4dA3",
+                  "name": "Recent",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "q4Ez8n",
+                      "name": "Header",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "id": "sPuol",
+                          "type": "ref",
+                          "ref": "lib:z5nZlX",
+                          "name": "SectionLabel",
+                          "descendants": {
+                            "lib:LcI6R": {
+                              "content": "RECIENTES"
+                            }
+                          }
+                        },
+                        {
+                          "type": "text",
+                          "id": "iXDR3",
+                          "name": "Count",
+                          "fill": "$lib:text-subtle",
+                          "content": "4 proyectos",
+                          "fontFamily": "$lib:font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "peuih",
+                      "name": "List",
+                      "width": "fill_container",
+                      "stroke": "$lib:border",
+                      "strokeWidth": {
+                        "top": 1
+                      },
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "mG3os",
+                          "name": "SAT-M1.hestia",
+                          "width": "fill_container",
+                          "height": 52,
+                          "fill": "$lib:surface",
+                          "stroke": "$lib:border",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "gap": 12,
+                          "padding": [
+                            0,
+                            12
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "eea6x",
+                              "name": "Icon",
+                              "width": 16,
+                              "height": 16,
+                              "icon": "file",
+                              "library": "lucide",
+                              "fill": "$lib:text-muted"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "c6aGk",
+                              "name": "Body",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 3,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "kWnwE",
+                                  "name": "Name",
+                                  "fill": "$lib:text",
+                                  "content": "SAT-M1.hestia",
+                                  "fontFamily": "$lib:font-sans",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "CBTT8",
+                                  "name": "Path",
+                                  "fill": "$lib:text-subtle",
+                                  "content": "~/proyectos/sat-m1/",
+                                  "fontFamily": "$lib:font-mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "NpgNA",
+                              "name": "Systems",
+                              "fill": "$lib:text-subtle",
+                              "content": "3 sistemas",
+                              "fontFamily": "$lib:font-mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "WMoY3",
+                              "name": "Modified",
+                              "fill": "$lib:text-muted",
+                              "textGrowth": "fixed-width",
+                              "width": 96,
+                              "content": "hoy 14:32",
+                              "textAlign": "right",
+                              "fontFamily": "$lib:font-mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CqRAP",
+                          "name": "SAT-M1 · trade radiador.hestia",
+                          "width": "fill_container",
+                          "height": 52,
+                          "stroke": "$lib:border",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "gap": 12,
+                          "padding": [
+                            0,
+                            12
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "EayzI",
+                              "name": "Icon",
+                              "width": 16,
+                              "height": 16,
+                              "icon": "file",
+                              "library": "lucide",
+                              "fill": "$lib:text-muted"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Bulnh",
+                              "name": "Body",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 3,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "j1oRYl",
+                                  "name": "Name",
+                                  "fill": "$lib:text",
+                                  "content": "SAT-M1 · trade radiador.hestia",
+                                  "fontFamily": "$lib:font-sans",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "b2QEV8",
+                                  "name": "Path",
+                                  "fill": "$lib:text-subtle",
+                                  "content": "~/proyectos/sat-m1/trades/",
+                                  "fontFamily": "$lib:font-mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "n0mYF",
+                              "name": "Systems",
+                              "fill": "$lib:text-subtle",
+                              "content": "5 sistemas",
+                              "fontFamily": "$lib:font-mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "i2uvCf",
+                              "name": "Modified",
+                              "fill": "$lib:text-muted",
+                              "textGrowth": "fixed-width",
+                              "width": 96,
+                              "content": "ayer 18:10",
+                              "textAlign": "right",
+                              "fontFamily": "$lib:font-mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "hskF7",
+                          "name": "Demo LEO 600.hestia",
+                          "width": "fill_container",
+                          "height": 52,
+                          "stroke": "$lib:border",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "gap": 12,
+                          "padding": [
+                            0,
+                            12
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "mtkfq",
+                              "name": "Icon",
+                              "width": 16,
+                              "height": 16,
+                              "icon": "file",
+                              "library": "lucide",
+                              "fill": "$lib:text-muted"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "NVDEs",
+                              "name": "Body",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 3,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "UyDJ2",
+                                  "name": "Name",
+                                  "fill": "$lib:text",
+                                  "content": "Demo LEO 600.hestia",
+                                  "fontFamily": "$lib:font-sans",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "ql3zj",
+                                  "name": "Path",
+                                  "fill": "$lib:text-subtle",
+                                  "content": "~/ejemplos/",
+                                  "fontFamily": "$lib:font-mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "rOhC6",
+                              "name": "Systems",
+                              "fill": "$lib:text-subtle",
+                              "content": "2 sistemas",
+                              "fontFamily": "$lib:font-mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "m0vBdk",
+                              "name": "Modified",
+                              "fill": "$lib:text-muted",
+                              "textGrowth": "fixed-width",
+                              "width": 96,
+                              "content": "12 sep 2026",
+                              "textAlign": "right",
+                              "fontFamily": "$lib:font-mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "XdGEv",
+                          "name": "EOS-2 preliminar.hestia",
+                          "width": "fill_container",
+                          "height": 52,
+                          "stroke": "$lib:border",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "gap": 12,
+                          "padding": [
+                            0,
+                            12
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "Ag71Y",
+                              "name": "Icon",
+                              "width": 16,
+                              "height": 16,
+                              "icon": "file-x",
+                              "library": "lucide",
+                              "fill": "$lib:text-subtle"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "t9MqqK",
+                              "name": "Body",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 3,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "henr6",
+                                  "name": "Name",
+                                  "fill": "$lib:text-muted",
+                                  "content": "EOS-2 preliminar.hestia",
+                                  "fontFamily": "$lib:font-sans",
+                                  "fontSize": 13,
+                                  "fontWeight": "500"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "D4lTrE",
+                                  "name": "Path",
+                                  "fill": "$lib:text-subtle",
+                                  "content": "/mnt/equipo/eos-2/ · archivo no encontrado",
+                                  "fontFamily": "$lib:font-mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "plRj3",
+                              "name": "Modified",
+                              "fill": "$lib:text-muted",
+                              "textGrowth": "fixed-width",
+                              "width": 96,
+                              "content": "03 sep 2026",
+                              "textAlign": "right",
+                              "fontFamily": "$lib:font-mono",
+                              "fontSize": 11,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "UWwFg",
+          "name": "Footer",
+          "width": "fill_container",
+          "height": 32,
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "top": 1
+          },
+          "gap": 8,
+          "padding": [
+            0,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "uYz5d",
+              "name": "Dot",
+              "fill": "$lib:ok",
+              "width": 6,
+              "height": 6
+            },
+            {
+              "type": "text",
+              "id": "pssRL",
+              "name": "Api",
+              "fill": "$lib:text-subtle",
+              "content": "API local conectada",
+              "fontFamily": "$lib:font-mono",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "Rv5v7",
+              "name": "Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "text",
+              "id": "thl3e",
+              "name": "Version",
+              "fill": "$lib:text-subtle",
+              "content": "v0.1.0",
+              "fontFamily": "$lib:font-mono",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "KwVIU",
+      "x": 3080,
+      "y": 0,
+      "name": "Inicio · primer uso",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$lib:bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "bYfUz",
+          "name": "TopBar",
+          "width": "fill_container",
+          "height": 44,
+          "fill": "$lib:surface",
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "bottom": 1
+          }
+        },
+        {
+          "type": "frame",
+          "id": "gLokB",
+          "name": "Stage",
+          "clip": true,
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "none",
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "lSeMt",
+              "x": 0,
+              "y": 132,
+              "name": "Guide cap",
+              "fill": "$lib:border",
+              "width": 1440,
+              "height": 1
+            },
+            {
+              "type": "rectangle",
+              "id": "b4yEOc",
+              "x": 0,
+              "y": 372,
+              "name": "Guide base",
+              "fill": "$lib:border",
+              "width": 1440,
+              "height": 1
+            },
+            {
+              "type": "rectangle",
+              "id": "BO5Uz",
+              "x": 614.4,
+              "y": 40,
+              "name": "Guide left",
+              "fill": "$lib:border",
+              "width": 1,
+              "height": 388
+            },
+            {
+              "type": "rectangle",
+              "id": "fzFE3",
+              "x": 825.5999999999999,
+              "y": 40,
+              "name": "Guide right",
+              "fill": "$lib:border",
+              "width": 1,
+              "height": 388
+            },
+            {
+              "type": "rectangle",
+              "id": "perM0",
+              "x": 825.5999999999999,
+              "y": 252,
+              "name": "Guide core axis",
+              "fill": "$lib:border-strong",
+              "width": 196,
+              "height": 1
+            },
+            {
+              "type": "rectangle",
+              "id": "t4IZNd",
+              "x": 1021.5999999999999,
+              "y": 248,
+              "name": "Leader tick",
+              "fill": "$lib:border-strong",
+              "width": 1,
+              "height": 9
+            },
+            {
+              "type": "frame",
+              "id": "SlP0f",
+              "x": 1033.6,
+              "y": 237,
+              "name": "Core note",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "B0ZG1I",
+                  "name": "Label",
+                  "fill": "$lib:text-subtle",
+                  "content": "NÚCLEO",
+                  "fontFamily": "$lib:font-mono",
+                  "fontSize": 10,
+                  "fontWeight": "normal",
+                  "letterSpacing": 0.6
+                },
+                {
+                  "type": "text",
+                  "id": "KeUkP",
+                  "name": "Value",
+                  "fill": "$lib:text-muted",
+                  "content": "T 20 °C · 22 × 22",
+                  "fontFamily": "$lib:font-mono",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "cDZFn",
+              "x": 614.4,
+              "y": 104,
+              "name": "Dim width",
+              "fill": "$lib:border-strong",
+              "width": 211.2,
+              "height": 1
+            },
+            {
+              "type": "rectangle",
+              "id": "X6k5D",
+              "x": 614.4,
+              "y": 100,
+              "name": "Dim tick L",
+              "fill": "$lib:border-strong",
+              "width": 1,
+              "height": 9
+            },
+            {
+              "type": "rectangle",
+              "id": "P7eu5",
+              "x": 824.5999999999999,
+              "y": 100,
+              "name": "Dim tick R",
+              "fill": "$lib:border-strong",
+              "width": 1,
+              "height": 9
+            },
+            {
+              "type": "frame",
+              "id": "D06Ic0",
+              "x": 614.4,
+              "y": 84,
+              "name": "Dim width label",
+              "width": 211.2,
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "MDkia",
+                  "name": "Value",
+                  "fill": "$lib:text-subtle",
+                  "content": "88",
+                  "fontFamily": "$lib:font-mono",
+                  "fontSize": 10,
+                  "fontWeight": "normal",
+                  "letterSpacing": 0.6
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "uDQbm",
+              "x": 578.4,
+              "y": 132,
+              "name": "Dim height",
+              "fill": "$lib:border-strong",
+              "width": 1,
+              "height": 240
+            },
+            {
+              "type": "rectangle",
+              "id": "ZDJ35",
+              "x": 574.4,
+              "y": 132,
+              "name": "Dim tick T",
+              "fill": "$lib:border-strong",
+              "width": 9,
+              "height": 1
+            },
+            {
+              "type": "rectangle",
+              "id": "wCqtp",
+              "x": 574.4,
+              "y": 371,
+              "name": "Dim tick B",
+              "fill": "$lib:border-strong",
+              "width": 9,
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "G0gk6s",
+              "x": 538.4,
+              "y": 244,
+              "name": "Dim height label",
+              "width": 32,
+              "justifyContent": "end",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "stjwG",
+                  "name": "Value",
+                  "fill": "$lib:text-subtle",
+                  "content": "100",
+                  "fontFamily": "$lib:font-mono",
+                  "fontSize": 10,
+                  "fontWeight": "normal",
+                  "letterSpacing": 0.6
+                }
+              ]
+            },
+            {
+              "id": "E4qGS",
+              "type": "ref",
+              "ref": "lib:FKqyv",
+              "name": "Mark",
+              "x": 614.4,
+              "y": 132,
+              "width": 211.2,
+              "height": 240,
+              "descendants": {
+                "lib:bTJGf": {
+                  "width": 211.2,
+                  "height": 240
+                },
+                "lib:i7fk8e": {
+                  "width": 211.2,
+                  "height": 240
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "DPUYS",
+              "x": 0,
+              "y": 444,
+              "name": "Copy",
+              "width": 1440,
+              "layout": "vertical",
+              "gap": 14,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "cmoJJ",
+                  "name": "Heading",
+                  "fill": "$lib:text",
+                  "content": "Todo empieza por el núcleo",
+                  "fontFamily": "$lib:font-sans",
+                  "fontSize": 30,
+                  "fontWeight": "600",
+                  "letterSpacing": -0.3
+                },
+                {
+                  "type": "text",
+                  "id": "lDxwP",
+                  "name": "Lead",
+                  "fill": "$lib:text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": 470,
+                  "content": "Creá un proyecto para dimensionar el control térmico de tu satélite: de la viabilidad al modelo nodal.",
+                  "lineHeight": 1.5,
+                  "textAlign": "center",
+                  "fontFamily": "$lib:font-sans",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "JoVBh",
+                  "name": "Actions",
+                  "gap": 12,
+                  "padding": [
+                    18,
+                    0,
+                    0,
+                    0
+                  ],
+                  "children": [
+                    {
+                      "id": "T8gvY",
+                      "type": "ref",
+                      "ref": "lib:f5TP7",
+                      "name": "New",
+                      "descendants": {
+                        "lib:dSmUX": {
+                          "icon": "plus"
+                        },
+                        "lib:k4ylJz": {
+                          "content": "Nuevo proyecto"
+                        }
+                      }
+                    },
+                    {
+                      "id": "GJXaV",
+                      "type": "ref",
+                      "ref": "lib:PdhU0",
+                      "name": "Open",
+                      "descendants": {
+                        "lib:SrT13": {
+                          "icon": "folder-open"
+                        },
+                        "lib:i14zc": {
+                          "content": "Abrir .hestia…"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "eeWCn",
+                  "name": "Hint",
+                  "fill": "$lib:text-subtle",
+                  "content": "Cada proyecto es un archivo .hestia: guardalo junto a la documentación de la misión.",
+                  "fontFamily": "$lib:font-sans",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "kKodv",
+              "x": 1136,
+              "y": 714,
+              "name": "Title block",
+              "width": 280,
+              "stroke": "$lib:border",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "uR1lP",
+                  "name": "HESTIA",
+                  "width": "fill_container",
+                  "height": 28,
+                  "stroke": "$lib:border",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "gap": 12,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "t3u9Uq",
+                      "name": "Key",
+                      "fill": "$lib:text-subtle",
+                      "textGrowth": "fixed-width",
+                      "width": 52,
+                      "content": "HESTIA",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 0.6
+                    },
+                    {
+                      "type": "text",
+                      "id": "nh86w",
+                      "name": "Value",
+                      "fill": "$lib:text-muted",
+                      "content": "TCS · prediseño",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "MwYTD",
+                  "name": "FASES",
+                  "width": "fill_container",
+                  "height": 28,
+                  "stroke": "$lib:border",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "gap": 12,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "X3UDO5",
+                      "name": "Key",
+                      "fill": "$lib:text-subtle",
+                      "textGrowth": "fixed-width",
+                      "width": 52,
+                      "content": "FASES",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 0.6
+                    },
+                    {
+                      "type": "text",
+                      "id": "QtgHo",
+                      "name": "Value",
+                      "fill": "$lib:text-muted",
+                      "content": "0 viabilidad · 1 nodal",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DgaRD",
+                  "name": "HOJA",
+                  "width": "fill_container",
+                  "height": 28,
+                  "stroke": "$lib:border",
+                  "gap": 12,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Y6n7b",
+                      "name": "Key",
+                      "fill": "$lib:text-subtle",
+                      "textGrowth": "fixed-width",
+                      "width": 52,
+                      "content": "HOJA",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 10,
+                      "fontWeight": "normal",
+                      "letterSpacing": 0.6
+                    },
+                    {
+                      "type": "text",
+                      "id": "k9Hec",
+                      "name": "Value",
+                      "fill": "$lib:text-muted",
+                      "content": "1 / 1",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ntxZu",
+          "name": "Footer",
+          "width": "fill_container",
+          "height": 32,
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "top": 1
+          },
+          "gap": 8,
+          "padding": [
+            0,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "ellipse",
+              "id": "YImyg",
+              "name": "Dot",
+              "fill": "$lib:ok",
+              "width": 6,
+              "height": 6
+            },
+            {
+              "type": "text",
+              "id": "HCxO4",
+              "name": "Api",
+              "fill": "$lib:text-subtle",
+              "content": "API local conectada",
+              "fontFamily": "$lib:font-mono",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            },
+            {
+              "type": "frame",
+              "id": "hvdRE",
+              "name": "Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "text",
+              "id": "vCt1X",
+              "name": "Version",
+              "fill": "$lib:text-subtle",
+              "content": "v0.1.0",
+              "fontFamily": "$lib:font-mono",
+              "fontSize": 11,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Z2xOKk",
+      "x": 0,
+      "y": 1000,
+      "name": "Workspace · menú Archivo",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$lib:bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "rbKtw",
+          "name": "TopBar",
+          "width": "fill_container",
+          "height": 44,
+          "fill": "$lib:surface",
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 10,
+          "padding": [
+            0,
+            10,
+            0,
+            14
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "FD7Z3",
+              "type": "ref",
+              "ref": "lib:FKqyv",
+              "name": "Mark",
+              "width": 21.12,
+              "height": 24,
+              "descendants": {
+                "lib:bTJGf": {
+                  "width": 21.12,
+                  "height": 24
+                },
+                "lib:i7fk8e": {
+                  "width": 21.12,
+                  "height": 24
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "QSUjJ",
+              "name": "Menubar",
+              "height": 28,
+              "padding": [
+                0,
+                6
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Uyn2W",
+                  "name": "Archivo",
+                  "height": 28,
+                  "fill": "$lib:surface-2",
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "dQ3NL",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Archivo",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "kJtYt",
+                  "name": "Editar",
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Urugs",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Editar",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jytRC",
+                  "name": "Ver",
+                  "opacity": 0.4,
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "u5MnNR",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Ver",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "L1qaWv",
+                  "name": "Proyecto",
+                  "opacity": 0.4,
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "S8BuPx",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Proyecto",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nyL29",
+                  "name": "Ayuda",
+                  "opacity": 0.4,
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "e2iFs",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Ayuda",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "ARj7j",
+              "name": "Divider",
+              "fill": "$lib:border",
+              "width": 1,
+              "height": 16
+            },
+            {
+              "type": "frame",
+              "id": "y9GUCK",
+              "name": "File",
+              "gap": 6,
+              "padding": [
+                0,
+                0,
+                0,
+                8
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "jDkWC",
+                  "name": "File",
+                  "fill": "$lib:text",
+                  "content": "SAT-M1.hestia",
+                  "fontFamily": "$lib:font-sans",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "ellipse",
+                  "id": "zEYhU",
+                  "name": "Unsaved",
+                  "fill": "$lib:text-muted",
+                  "width": 6,
+                  "height": 6
+                },
+                {
+                  "id": "L0XfMS",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Save (Ctrl+S)",
+                  "strokeWidth": 0,
+                  "opacity": 1,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "save",
+                      "fill": "$lib:text-muted"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "jsMgg",
+              "name": "Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "VIsXL",
+              "name": "Tools",
+              "gap": 2,
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "MP79v",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Paleta de comandos (Ctrl+K)",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "search",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "O4pGbP",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Comparar",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "columns-2",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "ULcGu",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Informe",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "file-text",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "AahJq",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Exportar a NX",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "file-output",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "HF9rr",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Stefan",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "bot",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "YmaoF",
+              "name": "Divider tools",
+              "fill": "$lib:border",
+              "width": 1,
+              "height": 16
+            },
+            {
+              "id": "f7PTed",
+              "type": "ref",
+              "ref": "lib:X50Xt9",
+              "name": "OutdatedSummary",
+              "descendants": {
+                "lib:XSPu2": {
+                  "content": "3 desactualizadas"
+                }
+              }
+            },
+            {
+              "id": "xeO4l",
+              "type": "ref",
+              "ref": "lib:Q65sw",
+              "name": "UpdateAll",
+              "descendants": {
+                "lib:mK0VC": {
+                  "icon": "refresh-cw"
+                },
+                "lib:X1JEg": {
+                  "content": "Actualizar todo"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "QEfOq",
+          "name": "Main",
+          "width": "fill_container",
+          "height": "fill_container",
+          "children": [
+            {
+              "type": "frame",
+              "id": "nHIpr",
+              "name": "Toolbox",
+              "clip": true,
+              "width": 232,
+              "height": "fill_container",
+              "fill": "$lib:surface",
+              "stroke": "$lib:border",
+              "strokeWidth": {
+                "right": 1
+              },
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "jF0Lj",
+                  "name": "Header",
+                  "width": "fill_container",
+                  "height": 36,
+                  "stroke": "$lib:border",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "TEEU4",
+                      "name": "Title",
+                      "fill": "$lib:text",
+                      "content": "Toolbox",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "s6EjG4",
+                  "name": "Items",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": 8,
+                  "children": [
+                    {
+                      "id": "bEIkX",
+                      "type": "ref",
+                      "ref": "lib:f801rh",
+                      "name": "Fase 0",
+                      "width": "fill_container",
+                      "descendants": {
+                        "lib:SsT3T": {
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Pr7hN",
+                              "name": "Stages",
+                              "width": "fill_container",
+                              "stroke": "$lib:border",
+                              "strokeWidth": {
+                                "left": 1
+                              },
+                              "layout": "vertical",
+                              "padding": [
+                                2,
+                                0,
+                                2,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "id": "hSRLg",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Misión",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "satellite"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Misión"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "pldmX",
+                                  "type": "ref",
+                                  "ref": "lib:Bwbh6",
+                                  "name": "Entorno",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:q9j5v": {
+                                      "icon": "sun"
+                                    },
+                                    "lib:sjiwU": {
+                                      "content": "Entorno"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "noK7b",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Balance global",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "scale"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Balance global"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "UoriP",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Concepto TCS",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "lightbulb"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Concepto TCS"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "id": "AQvKw",
+                      "type": "ref",
+                      "ref": "lib:f801rh",
+                      "name": "Fase 1",
+                      "width": "fill_container",
+                      "descendants": {
+                        "lib:z8d6k1": {
+                          "content": "Fase 1"
+                        },
+                        "lib:ByVDn": {
+                          "content": "Modelo nodal"
+                        },
+                        "lib:SsT3T": {
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cbIoc",
+                              "name": "Stages",
+                              "width": "fill_container",
+                              "stroke": "$lib:border",
+                              "strokeWidth": {
+                                "left": 1
+                              },
+                              "layout": "vertical",
+                              "padding": [
+                                2,
+                                0,
+                                2,
+                                6
+                              ],
+                              "children": [
+                                {
+                                  "id": "A5dSDK",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Discretización",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "grid-3x3"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Discretización"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "npncQ",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Acoplamientos",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "link-2"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Acoplamientos"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "uXdBM",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Casos de carga",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "thermometer"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Casos de carga"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "ljJQF",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Solución",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "sigma"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Solución"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "FW0GZ",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Márgenes",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "ruler"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Márgenes"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "Lqwxi",
+                                  "type": "ref",
+                                  "ref": "lib:z7oKv",
+                                  "name": "Sensibilidad",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:ZWF2x": {
+                                      "icon": "chart-no-axes-column"
+                                    },
+                                    "lib:qKKSj": {
+                                      "content": "Sensibilidad"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "V1Gaj",
+                      "name": "Group POST-PROCESO",
+                      "width": "fill_container",
+                      "padding": [
+                        10,
+                        4,
+                        2,
+                        4
+                      ],
+                      "children": [
+                        {
+                          "id": "U9Sihe",
+                          "type": "ref",
+                          "ref": "lib:z5nZlX",
+                          "name": "SectionLabel",
+                          "descendants": {
+                            "lib:LcI6R": {
+                              "content": "POST-PROCESO"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "id": "G4Scm",
+                      "type": "ref",
+                      "ref": "lib:z7oKv",
+                      "name": "Comparación",
+                      "width": "fill_container",
+                      "descendants": {
+                        "lib:ZWF2x": {
+                          "icon": "columns-2"
+                        },
+                        "lib:qKKSj": {
+                          "content": "Comparación"
+                        }
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "V2M0an",
+                  "name": "Hint",
+                  "width": "fill_container",
+                  "padding": [
+                    8,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "CTUxY",
+                      "name": "Text",
+                      "fill": "$lib:text-subtle",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Arrastrá una fase para crearla completa, o una etapa sola. Soltala sobre una celda para ramificar.",
+                      "lineHeight": 1.4,
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "m0T34",
+              "name": "Schematic",
+              "clip": true,
+              "width": "fill_container",
+              "height": "fill_container",
+              "fill": "$lib:bg",
+              "layout": "none",
+              "children": [
+                {
+                  "id": "MkQ9z",
+                  "type": "ref",
+                  "ref": "lib:nGqMS",
+                  "name": "Fase 0 · base",
+                  "x": 48,
+                  "y": 64,
+                  "width": 224,
+                  "descendants": {
+                    "lib:sFNTU": {
+                      "content": "Fase 0 · base"
+                    },
+                    "lib:dDcCN": {
+                      "type": "frame",
+                      "id": "Y9G7y",
+                      "name": "Cells",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "id": "mW5SW",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Misión",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "0.1",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Misión"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-check",
+                              "fill": "$lib:ok"
+                            }
+                          }
+                        },
+                        {
+                          "id": "Uhscj",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Entorno LEO 600",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "0.2",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Entorno LEO 600"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-check",
+                              "fill": "$lib:ok"
+                            }
+                          }
+                        },
+                        {
+                          "id": "O15Yuu",
+                          "type": "ref",
+                          "ref": "lib:jRUNQ",
+                          "name": "Balance global",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:w3Vfj": {
+                              "content": "0.3",
+                              "enabled": false
+                            },
+                            "lib:Mc9wI": {
+                              "content": "Balance global"
+                            },
+                            "lib:ZY3B5": {
+                              "icon": "refresh-cw",
+                              "fill": "$lib:warn"
+                            }
+                          }
+                        },
+                        {
+                          "id": "LJYjq",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Concepto TCS",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "0.4",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Concepto TCS"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-dashed",
+                              "fill": "$lib:idle"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "id": "C8IIOG",
+                  "type": "ref",
+                  "ref": "lib:nGqMS",
+                  "name": "Entorno · SSO 800",
+                  "x": 448,
+                  "y": 64,
+                  "width": 224,
+                  "descendants": {
+                    "lib:sFNTU": {
+                      "content": "Entorno · SSO 800"
+                    },
+                    "lib:dDcCN": {
+                      "type": "frame",
+                      "id": "GmNC8",
+                      "name": "Cells",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "id": "Lr2x5",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Entorno",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "0.2",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Entorno"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-dashed",
+                              "fill": "$lib:idle"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "id": "c0Nh0c",
+                  "type": "ref",
+                  "ref": "lib:nGqMS",
+                  "name": "Fase 1 · A",
+                  "x": 448,
+                  "y": 174,
+                  "width": 224,
+                  "descendants": {
+                    "lib:sFNTU": {
+                      "content": "Fase 1 · A"
+                    },
+                    "lib:dDcCN": {
+                      "type": "frame",
+                      "id": "ZLkpa",
+                      "name": "Cells",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "id": "d0Kb4",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Discretización",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.1",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Discretización"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-check",
+                              "fill": "$lib:ok"
+                            }
+                          }
+                        },
+                        {
+                          "id": "jl7ER",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Acoplamientos",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.2",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Acoplamientos"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-check",
+                              "fill": "$lib:ok"
+                            }
+                          }
+                        },
+                        {
+                          "id": "JdsdB",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Casos de carga",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.3",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Casos de carga"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-check",
+                              "fill": "$lib:ok"
+                            }
+                          }
+                        },
+                        {
+                          "id": "ePk0e",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Solución",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.4",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Solución"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "refresh-cw",
+                              "fill": "$lib:warn"
+                            }
+                          }
+                        },
+                        {
+                          "id": "R66819",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Márgenes",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.5",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Márgenes"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "refresh-cw",
+                              "fill": "$lib:warn"
+                            }
+                          }
+                        },
+                        {
+                          "id": "w2JWY",
+                          "type": "ref",
+                          "ref": "lib:KX37O",
+                          "name": "Sensibilidad",
+                          "width": "fill_container",
+                          "descendants": {
+                            "lib:vlykA": {
+                              "content": "1.6",
+                              "enabled": false
+                            },
+                            "lib:P9Hxv": {
+                              "content": "Sensibilidad"
+                            },
+                            "lib:jBLSo": {
+                              "icon": "circle-dashed",
+                              "fill": "$lib:idle"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "id": "Cmydv",
+                  "type": "ref",
+                  "ref": "lib:V4Tqm",
+                  "name": "Link 0.1→SSO",
+                  "x": 272,
+                  "y": 107,
+                  "width": 176,
+                  "height": 8
+                },
+                {
+                  "id": "S8IFY",
+                  "type": "ref",
+                  "ref": "lib:Zeqol",
+                  "name": "Link 0.1→1.1",
+                  "x": 272,
+                  "y": 111,
+                  "width": 176,
+                  "height": 114,
+                  "descendants": {
+                    "lib:YIOfE": {
+                      "width": 132
+                    }
+                  }
+                },
+                {
+                  "id": "YPjRS",
+                  "type": "ref",
+                  "ref": "lib:Zeqol",
+                  "name": "Link 0.2→1.3",
+                  "x": 272,
+                  "y": 141,
+                  "width": 176,
+                  "height": 144,
+                  "descendants": {
+                    "lib:YIOfE": {
+                      "width": 88
+                    }
+                  }
+                },
+                {
+                  "id": "DssOa",
+                  "type": "ref",
+                  "ref": "lib:Zeqol",
+                  "name": "Link 0.3→1.4",
+                  "x": 272,
+                  "y": 171,
+                  "width": 176,
+                  "height": 144,
+                  "descendants": {
+                    "lib:YIOfE": {
+                      "width": 44
+                    },
+                    "lib:paXzG": {
+                      "stroke": "$lib:accent"
+                    },
+                    "lib:uQzoW": {
+                      "fill": "$lib:accent"
+                    },
+                    "lib:SOBwT": {
+                      "fill": "$lib:accent"
+                    }
+                  }
+                },
+                {
+                  "type": "frame",
+                  "id": "cHKsR",
+                  "x": 16,
+                  "y": 644,
+                  "name": "Zoom",
+                  "height": 28,
+                  "fill": "$lib:surface",
+                  "cornerRadius": "$lib:radius",
+                  "stroke": "$lib:border",
+                  "strokeWidth": 1,
+                  "gap": 2,
+                  "padding": [
+                    0,
+                    4
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "c7sUAC",
+                      "name": "Out",
+                      "height": 24,
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "BBM9S",
+                          "name": "Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "minus",
+                          "library": "lucide",
+                          "fill": "$lib:text-muted"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "x39U3D",
+                      "name": "Pct",
+                      "height": 24,
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "SS5gt",
+                          "name": "Value",
+                          "fill": "$lib:text-muted",
+                          "content": "100 %",
+                          "fontFamily": "$lib:font-mono",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Qtmhj",
+                      "name": "In",
+                      "height": 24,
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "DCLao",
+                          "name": "Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "plus",
+                          "library": "lucide",
+                          "fill": "$lib:text-muted"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OIbro",
+                      "name": "Fit",
+                      "height": 24,
+                      "padding": [
+                        0,
+                        6
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "HPXFV",
+                          "name": "Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "maximize",
+                          "library": "lucide",
+                          "fill": "$lib:text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "NMiBv",
+              "name": "Dock",
+              "clip": true,
+              "width": 340,
+              "height": "fill_container",
+              "fill": "$lib:surface",
+              "stroke": "$lib:border",
+              "strokeWidth": {
+                "left": 1
+              },
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "w4YcK",
+                  "name": "Tabs",
+                  "width": "fill_container",
+                  "height": 36,
+                  "stroke": "$lib:border",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "gap": 4,
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "end",
+                  "children": [
+                    {
+                      "id": "l4wp4",
+                      "type": "ref",
+                      "ref": "lib:WzxnJ",
+                      "name": "Propiedades",
+                      "descendants": {
+                        "lib:V8oaaB": {
+                          "content": "Propiedades"
+                        }
+                      }
+                    },
+                    {
+                      "id": "V6rhC",
+                      "type": "ref",
+                      "ref": "lib:nk9rJ",
+                      "name": "Agentes",
+                      "descendants": {
+                        "lib:KqxRR": {
+                          "content": "Agentes · 1"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "L4oZB",
+          "name": "BottomPanel",
+          "clip": true,
+          "width": "fill_container",
+          "height": 168,
+          "fill": "$lib:surface",
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "top": 1
+          },
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "JGfPc",
+              "name": "Tabs",
+              "width": "fill_container",
+              "height": 36,
+              "stroke": "$lib:border",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "gap": 4,
+              "padding": [
+                0,
+                8
+              ],
+              "alignItems": "end",
+              "children": [
+                {
+                  "id": "w0O2IH",
+                  "type": "ref",
+                  "ref": "lib:WzxnJ",
+                  "name": "Mensajes",
+                  "descendants": {
+                    "lib:V8oaaB": {
+                      "content": "Mensajes"
+                    }
+                  }
+                },
+                {
+                  "id": "XrL4W",
+                  "type": "ref",
+                  "ref": "lib:nk9rJ",
+                  "name": "Corridas",
+                  "descendants": {
+                    "lib:KqxRR": {
+                      "content": "Corridas · 0"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "WolqG",
+              "name": "Messages",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 2,
+              "padding": [
+                8,
+                16
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "S4DHa",
+                  "name": "Msg 14:32",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "euKC5",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:32",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "GKE80",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "info",
+                      "library": "lucide",
+                      "fill": "$lib:text-subtle"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ohIwB",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Stefan modificó Balance global (radiator_area_m2 0.42 → 0.48 m²). Desactualizadas: Balance global, Solución, Márgenes.",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "G9fg52",
+                  "name": "Msg 14:21",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "uSHLt",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:21",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "jezd2",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "git-branch-plus",
+                      "library": "lucide",
+                      "fill": "$lib:text-subtle"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Q1W1iN",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Sistema «Entorno · SSO 800» creado desde Misión.",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DOeEi",
+                  "name": "Msg 14:05",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "AvRQS",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:05",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "DLJ1J",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle-check",
+                      "library": "lucide",
+                      "fill": "$lib:ok"
+                    },
+                    {
+                      "type": "text",
+                      "id": "YuizO",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Balance global actualizada en 0.8 s.",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "WZI9n",
+                  "name": "Msg 14:04",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mxU4m",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:04",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "YmlbM",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "triangle-alert",
+                      "library": "lucide",
+                      "fill": "$lib:warn"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Mz8PW",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Entorno LEO 600: β máx. 72.0° cerca del límite de la tabla de flujos (75°).",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "kvaXW",
+          "layoutPosition": "absolute",
+          "x": 51.120000000000005,
+          "y": 40,
+          "name": "Menu Archivo",
+          "width": 260,
+          "fill": "$lib:surface-2",
+          "cornerRadius": "$lib:radius",
+          "stroke": "$lib:border-strong",
+          "strokeWidth": 1,
+          "layout": "vertical",
+          "gap": 2,
+          "padding": 4,
+          "children": [
+            {
+              "id": "x9005",
+              "type": "ref",
+              "ref": "lib:g80NVO",
+              "name": "Nuevo proyecto",
+              "width": "fill_container",
+              "opacity": 1,
+              "descendants": {
+                "lib:hjRBk": {
+                  "icon": "file-plus"
+                },
+                "lib:eyC2B": {
+                  "content": "Nuevo proyecto"
+                },
+                "lib:GFGSG": {
+                  "content": "Ctrl+N"
+                }
+              }
+            },
+            {
+              "id": "qNa3A",
+              "type": "ref",
+              "ref": "lib:g80NVO",
+              "name": "Abrir…",
+              "width": "fill_container",
+              "opacity": 1,
+              "descendants": {
+                "lib:hjRBk": {
+                  "icon": "folder-open"
+                },
+                "lib:eyC2B": {
+                  "content": "Abrir…"
+                },
+                "lib:GFGSG": {
+                  "content": "Ctrl+O"
+                }
+              }
+            },
+            {
+              "id": "FM1pu",
+              "type": "ref",
+              "ref": "lib:g80NVO",
+              "name": "Recientes",
+              "width": "fill_container",
+              "opacity": 1,
+              "descendants": {
+                "lib:hjRBk": {
+                  "icon": "history"
+                },
+                "lib:eyC2B": {
+                  "content": "Recientes"
+                },
+                "lib:GFGSG": {
+                  "content": "›"
+                }
+              }
+            },
+            {
+              "id": "nwXfd",
+              "type": "ref",
+              "ref": "lib:TGBst",
+              "name": "Divider",
+              "width": "fill_container"
+            },
+            {
+              "id": "x0zj0",
+              "type": "ref",
+              "ref": "lib:g80NVO",
+              "name": "Guardar",
+              "width": "fill_container",
+              "opacity": 1,
+              "descendants": {
+                "lib:hjRBk": {
+                  "icon": "save"
+                },
+                "lib:eyC2B": {
+                  "content": "Guardar"
+                },
+                "lib:GFGSG": {
+                  "content": "Ctrl+S"
+                }
+              }
+            },
+            {
+              "id": "lfYuP",
+              "type": "ref",
+              "ref": "lib:g80NVO",
+              "name": "Guardar como…",
+              "width": "fill_container",
+              "opacity": 1,
+              "descendants": {
+                "lib:hjRBk": {
+                  "icon": "save-all"
+                },
+                "lib:eyC2B": {
+                  "content": "Guardar como…"
+                },
+                "lib:GFGSG": {
+                  "content": "Ctrl+Shift+S"
+                }
+              }
+            },
+            {
+              "id": "a1Ivn9",
+              "type": "ref",
+              "ref": "lib:TGBst",
+              "name": "Divider",
+              "width": "fill_container"
+            },
+            {
+              "id": "bidT5",
+              "type": "ref",
+              "ref": "lib:g80NVO",
+              "name": "Exportar a NX…",
+              "width": "fill_container",
+              "opacity": 0.4,
+              "descendants": {
+                "lib:hjRBk": {
+                  "icon": "file-output"
+                },
+                "lib:eyC2B": {
+                  "content": "Exportar a NX…"
+                },
+                "lib:GFGSG": {
+                  "content": "pronto"
+                }
+              }
+            },
+            {
+              "id": "K6OwU",
+              "type": "ref",
+              "ref": "lib:g80NVO",
+              "name": "Generar informe…",
+              "width": "fill_container",
+              "opacity": 0.4,
+              "descendants": {
+                "lib:hjRBk": {
+                  "icon": "file-text"
+                },
+                "lib:eyC2B": {
+                  "content": "Generar informe…"
+                },
+                "lib:GFGSG": {
+                  "content": "pronto"
+                }
+              }
+            },
+            {
+              "id": "k6a4S",
+              "type": "ref",
+              "ref": "lib:TGBst",
+              "name": "Divider",
+              "width": "fill_container"
+            },
+            {
+              "id": "it52d",
+              "type": "ref",
+              "ref": "lib:g80NVO",
+              "name": "Cerrar proyecto",
+              "width": "fill_container",
+              "opacity": 1,
+              "descendants": {
+                "lib:hjRBk": {
+                  "icon": "x"
+                },
+                "lib:eyC2B": {
+                  "content": "Cerrar proyecto"
+                },
+                "lib:GFGSG": {
+                  "content": "Ctrl+W"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "imports": {
+    "lib": "hestia.lib.pen"
+  },
+  "fileToken": "9471d981-b543-45d4-b7d7-2883d66e18b9"
+}
