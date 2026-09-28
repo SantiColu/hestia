@@ -1,0 +1,153 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* The app is dark-only: tokens live in :root and no `.dark` class is ever set,
+   so shadcn's `dark:` overrides stay inactive. */
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Hestia · Graphite (dark only). Source of truth: app/design/hestia.lib.pen (Tokens frame).
+ * shadcn semantic names are mapped onto Graphite tokens:
+ *   primary  = Graphite accent (action / selection)
+ *   accent   = shadcn hover surface (Graphite surface-2), NOT the Graphite accent
+ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Graphite tokens without a shadcn equivalent */
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border-strong: var(--border-strong);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-error: var(--error);
+  --color-error-soft: var(--error-soft);
+  --color-idle: var(--idle);
+  --color-idle-soft: var(--idle-soft);
+  --color-hot: var(--hot);
+  --color-cold: var(--cold);
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: dark;
+
+  /* Graphite */
+  --bg: #0f1216;
+  --surface: #161a20;
+  --surface-2: #1d222a;
+  --border: #272d36;
+  --border-strong: #38404b;
+  --text: #e4e7eb;
+  --text-muted: #98a0ac;
+  --subtle-foreground: #667080;
+  --primary-soft: #1a2438;
+  --ok: #4fb477;
+  --ok-soft: #14261c;
+  --warn: #d9a441;
+  --warn-soft: #2a2213;
+  --error: #e5625a;
+  --error-soft: #2d1817;
+  --idle: #7c8594;
+  --idle-soft: #1d2129;
+  --hot: #ec7a48;
+  --cold: #5aa0ee;
+
+  /* shadcn semantic tokens */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface-2);
+  --popover-foreground: var(--text);
+  --primary: #5b8def;
+  --primary-foreground: #0b0e12;
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-muted);
+  --accent: var(--surface-2);
+  --accent-foreground: var(--text);
+  --destructive: var(--error);
+  --input: var(--border-strong);
+  --ring: #5b8def;
+  --radius: 4px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply bg-background font-sans;
+  }
+  /* Every clickable element shows a pointer; disabled ones show not-allowed. */
+  :where(
+    button,
+    a[href],
+    label[for],
+    summary,
+    select,
+    [role="button"],
+    [role="tab"],
+    [role="menuitem"],
+    [role="menuitemcheckbox"],
+    [role="menuitemradio"],
+    [role="option"],
+    [role="checkbox"],
+    [role="switch"],
+    [role="radio"],
+    [role="combobox"]
+  ) {
+    cursor: pointer;
+  }
+  :where(
+    button,
+    [role="button"],
+    [role="tab"],
+    [role="menuitem"],
+    [role="option"],
+    [role="checkbox"],
+    [role="switch"],
+    [role="combobox"]
+  ):is(:disabled, [aria-disabled="true"], [data-disabled]) {
+    cursor: not-allowed;
+  }
+}

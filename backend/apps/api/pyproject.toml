@@ -1,7 +1,7 @@
 [project]
 name = "hestia-api"
 version = "0.1.0"
-description = "Hestia REST API (FastAPI). Single entry point for web and MCP clients."
+description = "Hestia REST API (FastAPI). Single entry point for UI and MCP clients."
 requires-python = ">=3.12,<3.13"
 dependencies = ["hestia-core", "hestia-project", "hestia-adapters", "fastapi>=0.115", "uvicorn[standard]>=0.30"]
 

@@ -11,5 +11,5 @@ description: Agrega o modifica un endpoint de la API de Hestia manteniendo el co
 3. **Contrato**: skill `regenerate-contract` (actualiza `shared/openapi.json` y el cliente TS). Commiteá el diff del contrato junto con el endpoint.
 4. **Tool MCP** en `mcp/src/hestia_mcp/`: una tool por operación (o una tool de grano grueso que compone operaciones de la API, nunca lógica propia). Si escribe, exige `justification`. Test que verifique el mapeo.
 5. **Web**: si la operación es usable por humanos, agregar su uso vía el cliente generado.
-6. **Paridad**: TODO: test automático de paridad API ↔ MCP ↔ web (no existe todavía). Hasta entonces, pedí revisión al subagente `parity-checker`.
+6. **Paridad**: TODO: test automático de paridad API ↔ MCP ↔ UI (no existe todavía). Hasta entonces, pedí revisión al subagente `parity-checker`.
 7. `make test && make lint`.

@@ -1,6 +1,6 @@
 # Workflow: fases 0 y 1
 
-El proyecto es un grafo de etapas (modelo Ansys Workbench). Cada etapa tiene entradas, salidas tipadas (artefactos con esquema versionado), estado y procedencia.
+Catálogo de **tipos de etapa**. En el proyecto, cada etapa se instancia como una **celda** dentro de un **sistema**, y las celdas se conectan con **vínculos** (esquemático tipo Ansys Workbench, ver [ADR 0009](adr/0009-esquematico-de-proyecto.md)). Cada celda tiene entradas, salidas tipadas (artefactos con esquema versionado), estado y procedencia. Puede haber varias celdas del mismo tipo (ramas y variantes).
 
 **Estados:** `up_to_date` (actualizada) · `outdated` (desactualizada) · `failed` (fallida) · `never_run` (nunca corrida). Cambiar una entrada aguas arriba marca como `outdated` todo lo que depende de ella.
 
@@ -15,8 +15,6 @@ El proyecto es un grafo de etapas (modelo Ansys Workbench). Cada etapa tiene ent
 | 0.3 | `global_balance` | Nodo único, rango de temperatura, área de radiador, potencia de heaters |
 | 0.4 | `tcs_concept` | Alternativas, trade-off, arquitectura. Itera a 0.3 |
 
-**Gate:** cierre de fase 0 (revisión).
-
 ## Fase 1 · dimensionamiento nodal
 
 | # | id | Contenido |
@@ -28,11 +26,11 @@ El proyecto es un grafo de etapas (modelo Ansys Workbench). Cada etapa tiene ent
 | 1.5 | `margins` | Por unidad y caso, criterios ECSS, unidades críticas |
 | 1.6 | `sensitivity` | Drivers de diseño, variantes. Itera a 1.1 |
 
-**Gate:** cierre de fase 1 → pase a Siemens NX.
+Al terminar la fase 1 los resultados pasan a Siemens NX.
 
-## Dependencias
+## Vínculos válidos
 
-Dentro de cada fase, cada etapa depende de la anterior. Iteraciones: 0.4 → 0.3, 1.6 → 1.1.
+Dentro de cada fase, cada etapa se alimenta de la anterior. Las plantillas «Fase 0» y «Fase 1» crean estas cadenas ya vinculadas; también se pueden crear celdas sueltas y vincularlas a mano. Una salida puede alimentar a varias celdas.
 
 Transferencias entre fases:
 
@@ -44,17 +42,16 @@ Transferencias entre fases:
 | 0.1 `mission` | 1.5 `margins` | Límites de temperatura para márgenes |
 
 ```
-0.1 mission ─▶ 0.2 environment ─▶ 0.3 global_balance ◀─▶ 0.4 tcs_concept ─▶ [gate 0]
+0.1 mission ─▶ 0.2 environment ─▶ 0.3 global_balance ─▶ 0.4 tcs_concept
   │  │               │                    │
   │  │               │                    └──────────────────────┐
   │  └───────────────┼───────────────────────────────┐           │
   ▼                  ▼                               ▼           ▼
-1.1 discretization ─▶ 1.2 couplings ─▶ 1.3 load_cases ─▶ 1.4 solution ─▶ 1.5 margins ─▶ 1.6 sensitivity ─▶ [gate 1] ─▶ NX
-  ▲                                                                                        │
-  └────────────────────────────────────────────────────────────────────────────────────────┘
+1.1 discretization ─▶ 1.2 couplings ─▶ 1.3 load_cases ─▶ 1.4 solution ─▶ 1.5 margins ─▶ 1.6 sensitivity ─▶ NX
 ```
 
 ## Pendientes
 
-- TODO: semántica exacta de los gates (quién aprueba, qué bloquea, qué pasa si algo se desactualiza tras cerrar).
-- TODO: cómo se modelan las iteraciones (0.4↔0.3, 1.6→1.1) sin ciclos en el grafo de dependencias.
+- Iteraciones (0.4 → 0.3, 1.6 → 1.1): no son vínculos; se resuelven editando aguas arriba o ramificando (ADR 0009). El grafo es acíclico.
+- Sin gates de revisión por ahora: todo es editable siempre.
+- TODO: formato del sistema de comparación y tipos detallados de cada entrada/salida.

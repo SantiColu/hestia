@@ -15,7 +15,7 @@ __pycache__/
 build/
 dist/
 
-# Node (see also web/.gitignore)
+# Node (see also app/.gitignore)
 node_modules/
 
 # Env

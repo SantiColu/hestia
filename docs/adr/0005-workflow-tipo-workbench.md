@@ -1,6 +1,6 @@
 # 0005. Modelo de workflow tipo Workbench
 
-- **Estado:** aceptado
+- **Estado:** aceptado · ampliado por 0009 (celdas, vínculos, sistemas; sin gates)
 - **Fecha:** 2026-09-28
 
 ## Contexto

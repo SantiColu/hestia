@@ -1,6 +1,6 @@
 # 0004. Stack Next.js (interfaz) + FastAPI (dominio) en monorepo
 
-- **Estado:** aceptado
+- **Estado:** reemplazado parcialmente por 0008 (frontend Next.js → React + Vite, app de escritorio)
 - **Fecha:** 2026-09-28
 
 ## Contexto

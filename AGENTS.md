@@ -11,7 +11,7 @@ Aplicación de escritorio local (ADR 0008): cada proyecto es un archivo `.hestia
 3. Paridad humano-agente: toda operación de la UI existe como tool MCP y viceversa.
 4. Los agentes nunca calculan números por su cuenta. Todo resultado físico sale de `hestia_core` (determinístico, testeado).
 5. Un solo contrato: modelos pydantic → OpenAPI (`shared/openapi.json`) → cliente TS de la UI y tools MCP.
-6. Workflow tipo Ansys Workbench: grafo de etapas con entradas/salidas tipadas, estado (actualizada / desactualizada / fallida / nunca corrida) y procedencia. Un cambio aguas arriba desactualiza lo dependiente.
+6. Esquemático tipo Ansys Workbench (ADR 0009): celdas (etapas instanciadas) agrupadas en sistemas y conectadas por vínculos tipados. Cada celda tiene estado (actualizada / desactualizada / fallida / nunca corrida) y procedencia. Un cambio aguas arriba desactualiza lo dependiente. Sin gates: todo es editable.
 7. Todo cambio tiene autor (humano o agente) y justificación, con historial y deshacer.
 
 ## Módulos
@@ -43,4 +43,4 @@ Aplicación de escritorio local (ADR 0008): cada proyecto es un archivo `.hestia
 
 ## Más contexto
 
-`docs/architecture.md`, `docs/workflow-fases-0-1.md`, `docs/conventions.md`, `docs/adr/`. Cada módulo tiene su propio `AGENTS.md`.
+`docs/architecture.md`, `docs/workflow-fases-0-1.md`, `docs/ux-workspace.md`, `docs/conventions.md`, `docs/adr/`. Cada módulo tiene su propio `AGENTS.md`.
