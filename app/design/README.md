@@ -37,16 +37,16 @@ Oscuro, minimalista, de ingeniería. Sin gradientes, glow ni decoración. El col
 
 ## Componentes
 
-| Grupo      | Componentes                                                                                                                     |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Buttons    | `Button/{Primary,Secondary,Ghost,Danger,Icon}` y variantes `/sm`                                                                |
-| Forms      | `Field/{Number,Number/Error,Select,Text,Justification}`, `Checkbox/{On,Off}`, `Toggle/{On,Off}`, `Segment/{Active,Default}`     |
-| Feedback   | `Status/{UpToDate,Outdated,Failed,NeverRun,Running}`, `Tag/{Hot,Cold,Neutral}`, `Alert/{Info,Warning,Error,Success}`, `Tooltip` |
-| Navigation | `Tab/{Active,Default}`, `SectionLabel`, `NavItem`, `NavItem/Active`, `Breadcrumb`                                               |
-| Data       | `Table/{HeaderCell,Cell}`, `Metric`, `KeyValue`, `Avatar`, `EmptyState`                                                         |
+| Grupo      | Componentes                                                                                                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Buttons    | `Button/{Primary,Secondary,Ghost,Danger,Icon}` y variantes `/sm`                                                                                                                      |
+| Forms      | `Field/{Number,Number/Error,Select,Text,Justification}`, `Checkbox/{On,Off}`, `Toggle/{On,Off}`, `Segment/{Active,Default}`                                                           |
+| Feedback   | `Status/{UpToDate,Outdated,Failed,NeverRun,Running}`, `Tag/{Hot,Cold,Neutral}`, `Alert/{Info,Warning,Error,Success}`, `Tooltip`                                                       |
+| Navigation | `Tab/{Active,Default}`, `SectionLabel`, `NavItem`, `NavItem/Active`, `Breadcrumb`                                                                                                     |
+| Data       | `Table/{HeaderCell,Cell}`, `Metric`, `KeyValue`, `Avatar`, `EmptyState`                                                                                                               |
 | Workflow   | `SystemBlock`, `SystemCell`, `SystemCell/{Selected,Outdated,DropTarget}`, `Link/{Straight,Elbow}`, `ToolboxGroup`, `ToolboxItem`, `ToolboxItem/Hover`, `HistoryItem`, `ProvenanceRow` |
-| Overlays   | `Menu`, `MenuItem`, `MenuItem/Danger`, `MenuDivider`, `Dialog` (confirmación con justificación)                                 |
-| Brand      | `Brand/Mark`, `Brand/Logo`, `Brand/Icon` (32 px, ajustado al píxel, para tamaños < 24 px)                                       |
+| Overlays   | `Menu`, `MenuItem`, `MenuItem/Danger`, `MenuDivider`, `Dialog` (confirmación con justificación)                                                                                       |
+| Brand      | `Brand/Mark`, `Brand/Logo`, `Brand/Icon` (32 px, ajustado al píxel, para tamaños < 24 px)                                                                                             |
 
 **Esquemático** (ADR 0009):
 
