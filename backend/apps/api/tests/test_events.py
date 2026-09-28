@@ -80,7 +80,9 @@ def test_sse_stream_reports_changes_from_any_client(live_api: str) -> None:
     ):
         assert stream.headers["content-type"].startswith("text/event-stream")
         lines = stream.iter_lines()
-        assert _next_event(lines) == ("connected", {"revision": None})
+        event, data = _next_event(lines)
+        assert event == "connected"
+        assert data["type"] == "connected" and data["revision"] is None
 
         client.post("/project/new", json={})
         event, data = _next_event(lines)

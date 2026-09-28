@@ -57,7 +57,8 @@
         },
         "required": [
           "code",
-          "message"
+          "message",
+          "details"
         ],
         "title": "ApiError",
         "type": "object"
@@ -104,6 +105,10 @@
             ]
           }
         },
+        "required": [
+          "template",
+          "stage"
+        ],
         "title": "Blueprint",
         "type": "object"
       },
@@ -233,7 +238,9 @@
           "id",
           "system_id",
           "stage",
-          "name"
+          "name",
+          "status",
+          "provenance"
         ],
         "title": "Cell",
         "type": "object"
@@ -327,7 +334,10 @@
           "author",
           "justification",
           "operation",
-          "summary"
+          "summary",
+          "created_ids",
+          "outdated_cell_ids",
+          "reverts"
         ],
         "title": "Change",
         "type": "object"
@@ -500,6 +510,18 @@
         ],
         "title": "DuplicateSystemRequest",
         "type": "object"
+      },
+      "EventType": {
+        "enum": [
+          "connected",
+          "project_created",
+          "project_opened",
+          "project_saved",
+          "project_closed",
+          "project_changed"
+        ],
+        "title": "EventType",
+        "type": "string"
       },
       "Link": {
         "description": "Feeds the output of ``source_cell_id`` into the ``input`` of ``target_cell_id``.\n\nEach stage type has one output, so the input is named after the source stage type.",
@@ -740,10 +762,73 @@
           }
         },
         "required": [
+          "schema_version",
           "id",
-          "name"
+          "name",
+          "systems",
+          "cells",
+          "links"
         ],
         "title": "Project",
+        "type": "object"
+      },
+      "ProjectEvent": {
+        "description": "Notification for real-time clients. ``change`` is set for ``project_changed``.",
+        "properties": {
+          "change": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Change"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/EventType"
+          }
+        },
+        "required": [
+          "type",
+          "timestamp",
+          "message",
+          "revision",
+          "path",
+          "change"
+        ],
+        "title": "ProjectEvent",
         "type": "object"
       },
       "ProjectView": {
@@ -784,7 +869,8 @@
         },
         "required": [
           "produced_at",
-          "code_version"
+          "code_version",
+          "input_cell_ids"
         ],
         "title": "Provenance",
         "type": "object"
@@ -959,7 +1045,8 @@
         "required": [
           "id",
           "name",
-          "position"
+          "position",
+          "cell_ids"
         ],
         "title": "System",
         "type": "object"
@@ -1052,7 +1139,7 @@
     },
     "/events": {
       "get": {
-        "description": "Server-Sent Events with every project event (``ProjectEvent``), whoever caused it.\n\nThe first event is ``connected``, carrying the current revision. Clients refetch the\nsession when they receive an event.",
+        "description": "Server-Sent Events: one ``ProjectEvent`` per change of the workspace, whoever caused it.\n\nThe SSE event name is the event ``type``. The first event is ``connected`` with the current\nrevision. Clients refetch the session when they receive an event.",
         "operationId": "stream_events",
         "responses": {
           "200": {
@@ -1061,6 +1148,10 @@
                 "itemSchema": {
                   "properties": {
                     "data": {
+                      "contentMediaType": "application/json",
+                      "contentSchema": {
+                        "$ref": "#/components/schemas/ProjectEvent"
+                      },
                       "type": "string"
                     },
                     "event": {
@@ -1074,6 +1165,9 @@
                       "type": "integer"
                     }
                   },
+                  "required": [
+                    "data"
+                  ],
                   "type": "object"
                 }
               }

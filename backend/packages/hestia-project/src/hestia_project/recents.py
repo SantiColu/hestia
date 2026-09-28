@@ -5,12 +5,14 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
-from pydantic import BaseModel, TypeAdapter, ValidationError
+from pydantic import TypeAdapter, ValidationError
+
+from hestia_project.base import Schema
 
 MAX_RECENTS = 12
 
 
-class RecentEntry(BaseModel):
+class RecentEntry(Schema):
     path: str
     name: str
     opened_at: datetime

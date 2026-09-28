@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from hestia_project.base import Schema
 from hestia_project.model import Project
 
 
@@ -14,7 +15,7 @@ class ActorKind(StrEnum):
     AGENT = "agent"
 
 
-class Author(BaseModel):
+class Author(Schema):
     """Who made a change. Humans and agents are shown the same way in the UI."""
 
     kind: ActorKind
@@ -43,7 +44,7 @@ JUSTIFICATION_REQUIRED: frozenset[Operation] = frozenset(
 """Destructive operations: an empty justification is rejected. Elsewhere it may be empty."""
 
 
-class Change(BaseModel):
+class Change(Schema):
     """One entry of the project history."""
 
     id: str

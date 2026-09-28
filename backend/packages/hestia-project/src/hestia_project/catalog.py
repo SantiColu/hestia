@@ -9,7 +9,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 
-from pydantic import BaseModel
+from hestia_project.base import Schema
 
 
 class Phase(StrEnum):
@@ -108,7 +108,7 @@ def accepts(target: StageType, source: StageType) -> bool:
 # ---------------------------------------------------------------- public catalog (API)
 
 
-class StageInfo(BaseModel):
+class StageInfo(Schema):
     stage: StageType
     phase: Phase
     number: str
@@ -116,7 +116,7 @@ class StageInfo(BaseModel):
     inputs: list[StageType]
 
 
-class TemplateInfo(BaseModel):
+class TemplateInfo(Schema):
     id: TemplateId
     phase: Phase
     name: str
@@ -124,13 +124,13 @@ class TemplateInfo(BaseModel):
     stages: list[StageType]
 
 
-class PhaseInfo(BaseModel):
+class PhaseInfo(Schema):
     phase: Phase
     name: str
     template: TemplateId
 
 
-class Catalog(BaseModel):
+class Catalog(Schema):
     phases: list[PhaseInfo]
     stages: list[StageInfo]
     templates: list[TemplateInfo]

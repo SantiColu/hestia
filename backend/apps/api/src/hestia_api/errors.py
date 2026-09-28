@@ -4,8 +4,9 @@ from typing import Any
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from hestia_project.base import Schema
 from hestia_project.errors import (
     InvalidOperationError,
     JustificationRequiredError,
@@ -21,7 +22,7 @@ from hestia_project.errors import (
 )
 
 
-class ApiError(BaseModel):
+class ApiError(Schema):
     """Error body. ``code`` is stable (e.g. ``project_locked``); ``message`` is for people."""
 
     code: str

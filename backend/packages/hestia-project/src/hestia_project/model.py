@@ -3,8 +3,9 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from hestia_project.base import Schema
 from hestia_project.catalog import StageType
 
 SCHEMA_VERSION = 1
@@ -18,14 +19,14 @@ class CellStatus(StrEnum):
     NEVER_RUN = "never_run"
 
 
-class Position(BaseModel):
+class Position(Schema):
     """Canvas position of a system, in schematic units (px at zoom 1)."""
 
     x: float
     y: float
 
 
-class Provenance(BaseModel):
+class Provenance(Schema):
     """What produced a cell's current outputs. Empty until stages can run."""
 
     produced_at: datetime
@@ -33,7 +34,7 @@ class Provenance(BaseModel):
     input_cell_ids: list[str] = Field(default_factory=list[str])
 
 
-class Cell(BaseModel):
+class Cell(Schema):
     """An instance of a stage type inside a system."""
 
     id: str
@@ -44,7 +45,7 @@ class Cell(BaseModel):
     provenance: Provenance | None = None
 
 
-class System(BaseModel):
+class System(Schema):
     """Named group of cells. ``cell_ids`` keeps display order."""
 
     id: str
@@ -53,7 +54,7 @@ class System(BaseModel):
     cell_ids: list[str] = Field(default_factory=list[str])
 
 
-class Link(BaseModel):
+class Link(Schema):
     """Feeds the output of ``source_cell_id`` into the ``input`` of ``target_cell_id``.
 
     Each stage type has one output, so the input is named after the source stage type.
@@ -65,7 +66,7 @@ class Link(BaseModel):
     input: StageType
 
 
-class Project(BaseModel):
+class Project(Schema):
     schema_version: int = SCHEMA_VERSION
     id: str
     name: str

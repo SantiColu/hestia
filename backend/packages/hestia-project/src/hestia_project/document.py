@@ -5,8 +5,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
-from pydantic import BaseModel
-
+from hestia_project.base import Schema
 from hestia_project.errors import (
     JustificationRequiredError,
     NothingToRedoError,
@@ -25,7 +24,7 @@ from hestia_project.schematic import Outcome
 DEFAULT_PROJECT_NAME = "Sin título"
 
 
-class DocumentState(BaseModel):
+class DocumentState(Schema):
     """File-level state of the open project."""
 
     path: str | None
@@ -39,7 +38,7 @@ class DocumentState(BaseModel):
     redo_summary: str | None
 
 
-class ProjectView(BaseModel):
+class ProjectView(Schema):
     project: Project
     document: DocumentState
 

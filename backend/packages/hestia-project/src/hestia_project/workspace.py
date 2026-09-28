@@ -12,8 +12,9 @@ from enum import StrEnum
 from pathlib import Path
 from typing import TypeVar
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
+from hestia_project.base import Schema
 from hestia_project.document import ProjectDocument, ProjectView
 from hestia_project.errors import (
     NoPathError,
@@ -31,6 +32,8 @@ T = TypeVar("T")
 
 
 class EventType(StrEnum):
+    CONNECTED = "connected"
+    """First event of every stream; not emitted by the workspace."""
     PROJECT_CREATED = "project_created"
     PROJECT_OPENED = "project_opened"
     PROJECT_SAVED = "project_saved"
@@ -38,7 +41,7 @@ class EventType(StrEnum):
     PROJECT_CHANGED = "project_changed"
 
 
-class ProjectEvent(BaseModel):
+class ProjectEvent(Schema):
     """Notification for real-time clients. ``change`` is set for ``project_changed``."""
 
     type: EventType
@@ -49,7 +52,7 @@ class ProjectEvent(BaseModel):
     change: Change | None = None
 
 
-class MutationResult(BaseModel):
+class MutationResult(Schema):
     change: Change
     view: ProjectView
 

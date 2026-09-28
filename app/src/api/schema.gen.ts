@@ -33,10 +33,10 @@ export interface paths {
     };
     /**
      * Stream Events
-     * @description Server-Sent Events with every project event (``ProjectEvent``), whoever caused it.
+     * @description Server-Sent Events: one ``ProjectEvent`` per change of the workspace, whoever caused it.
      *
-     *     The first event is ``connected``, carrying the current revision. Clients refetch the
-     *     session when they receive an event.
+     *     The SSE event name is the event ``type``. The first event is ``connected`` with the current
+     *     revision. Clients refetch the session when they receive an event.
      */
     get: operations["stream_events"];
     put?: never;
@@ -541,7 +541,7 @@ export interface components {
       /** Code */
       code: string;
       /** Details */
-      details?: {
+      details: {
         [key: string]: unknown;
       };
       /** Message */
@@ -561,8 +561,8 @@ export interface components {
      * @description What to create: a template (whole phase) or a single stage. Exactly one is set.
      */
     Blueprint: {
-      stage?: components["schemas"]["StageType"] | null;
-      template?: components["schemas"]["TemplateId"] | null;
+      stage: components["schemas"]["StageType"] | null;
+      template: components["schemas"]["TemplateId"] | null;
     };
     /**
      * BranchRequest
@@ -599,7 +599,7 @@ export interface components {
       id: string;
       /** Name */
       name: string;
-      provenance?: components["schemas"]["Provenance"] | null;
+      provenance: components["schemas"]["Provenance"] | null;
       stage: components["schemas"]["StageType"];
       /** @default never_run */
       status: components["schemas"]["CellStatus"];
@@ -623,16 +623,16 @@ export interface components {
     Change: {
       author: components["schemas"]["Author"];
       /** Created Ids */
-      created_ids?: string[];
+      created_ids: string[];
       /** Id */
       id: string;
       /** Justification */
       justification: string;
       operation: components["schemas"]["Operation"];
       /** Outdated Cell Ids */
-      outdated_cell_ids?: string[];
+      outdated_cell_ids: string[];
       /** Reverts */
-      reverts?: string | null;
+      reverts: string | null;
       /** Seq */
       seq: number;
       /** Summary */
@@ -699,6 +699,17 @@ export interface components {
       justification: string;
       position?: components["schemas"]["Position"] | null;
     };
+    /**
+     * EventType
+     * @enum {string}
+     */
+    EventType:
+      | "connected"
+      | "project_created"
+      | "project_opened"
+      | "project_saved"
+      | "project_closed"
+      | "project_changed";
     /**
      * Link
      * @description Feeds the output of ``source_cell_id`` into the ``input`` of ``target_cell_id``.
@@ -813,11 +824,11 @@ export interface components {
     /** Project */
     Project: {
       /** Cells */
-      cells?: components["schemas"]["Cell"][];
+      cells: components["schemas"]["Cell"][];
       /** Id */
       id: string;
       /** Links */
-      links?: components["schemas"]["Link"][];
+      links: components["schemas"]["Link"][];
       /** Name */
       name: string;
       /**
@@ -826,7 +837,26 @@ export interface components {
        */
       schema_version: number;
       /** Systems */
-      systems?: components["schemas"]["System"][];
+      systems: components["schemas"]["System"][];
+    };
+    /**
+     * ProjectEvent
+     * @description Notification for real-time clients. ``change`` is set for ``project_changed``.
+     */
+    ProjectEvent: {
+      change: components["schemas"]["Change"] | null;
+      /** Message */
+      message: string;
+      /** Path */
+      path: string | null;
+      /** Revision */
+      revision: number | null;
+      /**
+       * Timestamp
+       * Format: date-time
+       */
+      timestamp: string;
+      type: components["schemas"]["EventType"];
     };
     /** ProjectView */
     ProjectView: {
@@ -841,7 +871,7 @@ export interface components {
       /** Code Version */
       code_version: string;
       /** Input Cell Ids */
-      input_cell_ids?: string[];
+      input_cell_ids: string[];
       /**
        * Produced At
        * Format: date-time
@@ -924,7 +954,7 @@ export interface components {
      */
     System: {
       /** Cell Ids */
-      cell_ids?: string[];
+      cell_ids: string[];
       /** Id */
       id: string;
       /** Name */

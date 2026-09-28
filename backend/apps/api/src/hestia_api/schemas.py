@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, Field
 
+from hestia_project.base import Schema
 from hestia_project.catalog import StageType
 from hestia_project.document import ProjectView
 from hestia_project.model import Position
@@ -17,7 +18,7 @@ class WriteRequest(BaseModel):
     justification: str = Field(description=JUSTIFICATION_DOC)
 
 
-class Session(BaseModel):
+class Session(Schema):
     """What this API instance has open. ``project`` is null when nothing is open."""
 
     project: ProjectView | None
@@ -85,5 +86,5 @@ class LinkRequest(WriteRequest):
     target_cell_id: str
 
 
-class CellIds(BaseModel):
+class CellIds(Schema):
     cell_ids: list[str]

@@ -15,8 +15,9 @@ Rules enforced here:
 import uuid
 from collections.abc import Iterable
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import Field, model_validator
 
+from hestia_project.base import Schema
 from hestia_project.catalog import STAGES, TEMPLATES, StageType, TemplateId, accepts
 from hestia_project.errors import InvalidOperationError, NotFoundError
 from hestia_project.model import Cell, CellStatus, Link, Position, Project, System
@@ -30,7 +31,7 @@ _HEADER_HEIGHT = 44.0
 _ROW_HEIGHT = 32.0
 
 
-class Blueprint(BaseModel):
+class Blueprint(Schema):
     """What to create: a template (whole phase) or a single stage. Exactly one is set."""
 
     template: TemplateId | None = None
@@ -55,7 +56,7 @@ class Blueprint(BaseModel):
         return STAGES[self.stage].default_name
 
 
-class Outcome(BaseModel):
+class Outcome(Schema):
     """Result of an operation: what it did, what it created and what became outdated."""
 
     summary: str
