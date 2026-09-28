@@ -52,14 +52,20 @@ Las reglas del backend se verifican con import-linter (`backend/pyproject.toml`)
 - Shell Tauri que carga la UI estática (`app/dist`) y lanza la API como sidecar en `127.0.0.1` (puerto aleatorio + token).
 - El MCP se conecta a esa API local; descubre puerto y token por un archivo de instancia.
 
-## Persistencia (prevista, no implementada)
+## Persistencia
 
-El backend es dueño del estado. Cada proyecto es **un archivo SQLite** (`.hestia`) con entradas, artefactos, resultados y log de cambios (autor, justificación, timestamp, diff) que soporta historial y deshacer. Abrir / Guardar / Guardar como, como en Ansys o Pencil. Git sirve para exportar snapshots, no como almacenamiento primario. Ver [ADR 0006](adr/0006-estado-en-backend-sqlite.md) y [ADR 0008](adr/0008-app-escritorio-proyecto-archivo.md).
+El backend es dueño del estado. Cada proyecto es **un archivo SQLite** (`.hestia`) con el esquemático y el log de cambios (autor, justificación, timestamp, instantáneas antes/después) que soporta historial y deshacer. Guardado explícito: Abrir / Guardar / Guardar como, como en Ansys o Pencil, con lock contra doble apertura y proyectos recientes. Implementado en `hestia_project` (`storage`, `lock`, `recents`, `workspace`). Git sirve para exportar snapshots, no como almacenamiento primario. Ver ADR [0006](adr/0006-estado-en-backend-sqlite.md), [0008](adr/0008-app-escritorio-proyecto-archivo.md) y [0010](adr/0010-formato-archivo-hestia-y-guardado.md).
+
+## Contrato, autoría y eventos
+
+- `make contract`: FastAPI → `shared/openapi.json` → tipos TS con openapi-typescript y cliente openapi-fetch ([ADR 0013](adr/0013-cliente-ts-openapi-typescript.md)).
+- Autor por headers `X-Hestia-Actor-Kind` / `X-Hestia-Actor`; justificación obligatoria en operaciones destructivas ([ADR 0011](adr/0011-autoria-de-escrituras.md)).
+- Eventos en tiempo real por SSE en `GET /events` ([ADR 0012](adr/0012-eventos-en-tiempo-real-sse.md)).
+- Paridad API ↔ MCP: `mcp/tests/test_parity.py` compara las tools con `shared/openapi.json`.
 
 ## Pendientes de decisión
 
-- Generador del cliente TS (openapi-typescript, orval o hey-api).
-- Canal de eventos en tiempo real (SSE o WebSocket).
-- Cómo el MCP deriva/valida tipos desde `shared/openapi.json`.
-- Test automático de paridad API ↔ MCP ↔ UI.
-- Empaquetado del sidecar Python + JRE (Orekit) y formato interno del archivo `.hestia`.
+- Cómo el MCP genera sus modelos de request/response desde `shared/openapi.json` (hoy valida rutas y enums contra el contrato).
+- Test automático de paridad con la UI (API ↔ MCP ya existe).
+- Empaquetado del sidecar Python + JRE (Orekit), puerto aleatorio + token y archivo de instancia para el MCP (ADR 0008).
+- Dónde viven los resultados pesados dentro del `.hestia` (ADR 0010).

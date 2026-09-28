@@ -50,6 +50,16 @@ Transferencias entre fases:
 1.1 discretization ─▶ 1.2 couplings ─▶ 1.3 load_cases ─▶ 1.4 solution ─▶ 1.5 margins ─▶ 1.6 sensitivity ─▶ NX
 ```
 
+## Reglas del esquemático (implementadas en `hestia_project.schematic`)
+
+- **Vínculo válido:** el tipo de la celda fuente alimenta una entrada del tipo destino (tabla de arriba), esa entrada no tiene otra fuente y el grafo sigue siendo acíclico. Cada tipo de etapa tiene una sola salida, así que la entrada se identifica por el tipo que la alimenta.
+- **Plantillas:** «Fase 0 · Viabilidad» y «Fase 1 · Modelo nodal» crean el sistema con sus cadenas internas vinculadas; las transferencias entre fases quedan libres.
+- **Agregar celda a un sistema:** se vincula sola con celdas del mismo sistema cuando hay un único candidato y la entrada está libre. No recrea vínculos quitados a propósito entre celdas existentes.
+- **Ramificar** una plantilla o etapa desde una celda crea un **sistema nuevo** y vincula la celda de origen a toda entrada libre del sistema nuevo que acepte su tipo (p. ej. Fase 1 sobre `mission` vincula `discretization` y `margins`). Si ninguna entrada la acepta, no es un destino válido (p. ej. Fase 0 sobre `mission`: sus entradas ya están cubiertas adentro).
+- **Duplicar sistema:** copia celdas (con estado), vínculos internos y vínculos entrantes desde otros sistemas; los salientes no (una fuente por entrada).
+- **Eliminar:** borra la celda o el sistema con sus vínculos. Un sistema que queda sin celdas se elimina.
+- **Desactualización:** vincular, desvincular o perder una fuente marca la celda afectada y todo lo aguas abajo, incluso en otros sistemas. Solo cambian las celdas con resultados (`up_to_date`, `failed` → `outdated`); `never_run` se mantiene.
+
 ## Pendientes
 
 - Iteraciones (0.4 → 0.3, 1.6 → 1.1): no son vínculos; se resuelven editando aguas arriba o ramificando (ADR 0009). El grafo es acíclico.
