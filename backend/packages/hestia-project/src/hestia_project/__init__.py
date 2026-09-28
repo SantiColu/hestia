@@ -1,3 +1,3 @@
-"""Hestia project model: workflow graph, stage states, provenance and history."""
+"""Hestia project model: schematic (systems, cells, links), states, history and `.hestia` files."""
 
 __version__ = "0.1.0"
