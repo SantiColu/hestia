@@ -1,6 +1,8 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field";
 import { cn } from "@/lib/utils";
+import { fieldBoxClass } from "./field-box";
+import { FieldFootnote, FieldLabel } from "./field-label";
 
 type NumberFieldProps = Omit<NumberFieldPrimitive.Root.Props, "className" | "render"> & {
   label: string;
@@ -8,6 +10,11 @@ type NumberFieldProps = Omit<NumberFieldPrimitive.Root.Props, "className" | "ren
   unit?: string;
   /** Validation message; also marks the field as invalid. */
   error?: string;
+  /** The value differs from the applied one (`Field/Number/Modified`). */
+  modified?: boolean;
+  /** Line under the input when there is no error, e.g. "Aplicado: 550 km". */
+  hint?: ReactNode;
+  placeholder?: string;
   className?: string;
 };
 
@@ -19,6 +26,9 @@ export function NumberField({
   label,
   unit,
   error,
+  modified,
+  hint,
+  placeholder,
   className,
   id,
   locale = "en-US",
@@ -35,24 +45,18 @@ export function NumberField({
       className={cn("flex flex-col gap-1.5", className)}
       {...props}
     >
-      <label htmlFor={inputId} className="text-xs text-muted-foreground">
+      <FieldLabel htmlFor={inputId} modified={modified}>
         {label}
-      </label>
-      <NumberFieldPrimitive.Group
-        className={cn(
-          "flex h-8 items-center gap-2 rounded-lg border border-input bg-background px-2.5 transition-colors",
-          "focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30",
-          "data-disabled:opacity-50",
-          error && "border-error focus-within:border-error focus-within:ring-error/20",
-        )}
-      >
+      </FieldLabel>
+      <NumberFieldPrimitive.Group className={fieldBoxClass({ error: !!error, modified })}>
         <NumberFieldPrimitive.Input
           aria-invalid={error ? true : undefined}
-          className="min-w-0 flex-1 bg-transparent font-mono text-[13px] tabular-nums outline-none"
+          placeholder={placeholder}
+          className="min-w-0 flex-1 bg-transparent font-mono text-[13px] tabular-nums outline-none placeholder:font-sans placeholder:text-subtle-foreground"
         />
         {unit && <span className="shrink-0 font-mono text-xs text-subtle-foreground">{unit}</span>}
       </NumberFieldPrimitive.Group>
-      {error && <p className="text-xs text-error">{error}</p>}
+      <FieldFootnote error={error} hint={hint} />
     </NumberFieldPrimitive.Root>
   );
 }

@@ -2,7 +2,13 @@ import { ArrowRight } from "lucide-react";
 import { ActorAvatar } from "@/components/data/actor-avatar";
 import { cn } from "@/lib/utils";
 
-export type FieldChange = { field: string; from: string; to: string };
+export type FieldChange = {
+  field: string;
+  from: string;
+  to: string;
+  /** Pre-formatted change, e.g. "550 → 600 km" (the unit once). Defaults to "from → to". */
+  value?: string;
+};
 
 type HistoryItemProps = {
   /** Human or agent; rendered the same way. */

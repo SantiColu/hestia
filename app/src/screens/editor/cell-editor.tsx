@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Check, CircleDashed, Undo2 } from "lucide-react";
 import {
   api,
@@ -11,13 +11,15 @@ import {
 } from "@/api/client";
 import { EmptyState } from "@/components/data/empty-state";
 import { Notice } from "@/components/feedback/notice";
-import { StageStatusBadge } from "@/components/feedback/stage-status";
+import { StageStatusBadge, type StageStatus } from "@/components/feedback/stage-status";
+import { SectionLabel } from "@/components/navigation/section-label";
 import { Button } from "@/components/ui/button";
 import { deepEqual, setAt, type Json, type JsonObject, type JsonPath } from "@/lib/json";
 import { useDialogs } from "@/project/dialogs";
 import { useEditor } from "@/project/editor";
 import { useProject } from "@/project/store";
-import { changedLeaves, type JsonSchema } from "./schema";
+import { cn } from "@/lib/utils";
+import { changedLeaves, problemsBySection, type JsonSchema } from "./schema";
 import { SchemaForm } from "./schema-form";
 
 const VALIDATE_DEBOUNCE_MS = 300;
@@ -45,12 +47,41 @@ export function CellEditor({ cellId, view }: { cellId: string; view: ProjectView
   const cell = view.project.cells.find((c) => c.id === cellId);
   if (!cell) return null;
   const stage = catalog?.stages.find((s) => s.stage === cell.stage);
-  const system = view.project.systems.find((s) => s.id === cell.system_id);
-  const title = `${cell.name} · ${system?.name ?? ""}`;
+  const system = view.project.systems.find((s) => s.id === cell.system_id)?.name ?? "";
+  const title = { name: cell.name, system };
   if (stage?.kind === "form" && stage.implemented) {
     return <FormEditor cellId={cellId} stage={cell.stage} title={title} view={view} />;
   }
-  return <NotImplemented cellId={cellId} title={title} view={view} />;
+  return <NotImplemented cellId={cellId} title={title} status={cell.status} view={view} />;
+}
+
+type Title = { name: string; system: string };
+
+/** Centered column of the editor (`Form` in the design: 760 px). */
+const column = "mx-auto flex w-full max-w-[760px] flex-col";
+
+function EditorHeader({ title, badge }: { title: Title; badge: ReactNode }) {
+  return (
+    <header className="flex items-center gap-2.5">
+      <h1 className="truncate text-lg font-semibold">{title.name}</h1>
+      <span className="truncate text-[13px] text-subtle-foreground">{title.system}</span>
+      <span className="flex-1" />
+      {badge}
+    </header>
+  );
+}
+
+function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+/** "A, B, C y 6 más" / "A y B". */
+function listNames(names: string[], shown = 3): string {
+  if (names.length > shown) {
+    return `${names.slice(0, shown).join(", ")} y ${names.length - shown} más`;
+  }
+  if (names.length <= 1) return names.join("");
+  return `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`;
 }
 
 function useStageNames() {
@@ -65,10 +96,12 @@ function useStageNames() {
 function NotImplemented({
   cellId,
   title,
+  status,
   view,
 }: {
   cellId: string;
-  title: string;
+  title: Title;
+  status: StageStatus;
   view: ProjectView;
 }) {
   const { fail } = useProject();
@@ -87,29 +120,30 @@ function NotImplemented({
   }, [cellId, revision, fail]);
 
   return (
-    <div className="flex h-full flex-col gap-4 overflow-y-auto p-6">
-      <h1 className="text-base font-semibold">{title}</h1>
-      <EmptyState
-        icon={CircleDashed}
-        title="Sin implementar"
-        description="Esta etapa todavía no tiene editor ni cálculo. Se puede vincular y ramificar en el esquemático."
-        className="max-w-lg"
-      />
-      {context && context.missing.length > 0 && (
-        <Notice tone="warning" title="Falta en su contexto" className="max-w-lg">
-          {context.missing.map(stageName).join(", ")}. Vinculá las celdas que los proveen.
-        </Notice>
-      )}
-      {context && context.entries.length > 0 && (
-        <div className="flex max-w-lg flex-col gap-1">
-          <h2 className="text-xs text-muted-foreground">Contexto</h2>
-          {context.entries.map((entry) => (
-            <p key={`${entry.stage}:${entry.cell_id}`} className="text-[13px]">
-              {stageName(entry.stage)} ← «{entry.cell_name}»
-            </p>
-          ))}
-        </div>
-      )}
+    <div className="h-full overflow-y-auto px-6 py-6">
+      <div className={cn(column, "gap-7")}>
+        <EditorHeader title={title} badge={<StageStatusBadge status={status} />} />
+        <EmptyState
+          icon={CircleDashed}
+          title="Sin implementar"
+          description="Esta etapa todavía no tiene editor ni cálculo. Se puede vincular y ramificar en el esquemático."
+        />
+        {context && context.missing.length > 0 && (
+          <Notice tone="warning" title="Falta en su contexto">
+            {context.missing.map(stageName).join(", ")}. Vinculá las celdas que los proveen.
+          </Notice>
+        )}
+        {context && context.entries.length > 0 && (
+          <section className="flex flex-col gap-3.5">
+            <SectionLabel>Contexto</SectionLabel>
+            {context.entries.map((entry) => (
+              <p key={`${entry.stage}:${entry.cell_id}`} className="text-[13px]">
+                {stageName(entry.stage)} ← «{entry.cell_name}»
+              </p>
+            ))}
+          </section>
+        )}
+      </div>
     </div>
   );
 }
@@ -126,7 +160,7 @@ function FormEditor({
 }: {
   cellId: string;
   stage: string;
-  title: string;
+  title: Title;
   view: ProjectView;
 }) {
   const { fail, notify, setView } = useProject();
@@ -205,6 +239,11 @@ function FormEditor({
     [current, applied, cellId, setDraft],
   );
 
+  const changes = useMemo(
+    () => (schema && applied && draft ? changedLeaves(schema, applied, draft) : []),
+    [schema, applied, draft],
+  );
+
   const sources = useMemo(
     () =>
       Object.fromEntries(
@@ -215,14 +254,10 @@ function FormEditor({
 
   const apply = async () => {
     if (!draft || !applied || !schema) return;
-    const changes = changedLeaves(schema, applied, draft);
     const justification = await dialogs.askJustification({
-      title: `Aplicar cambios en «${title}»`,
-      summary:
-        (problems.length > 0
-          ? `Tiene ${problems.length} problema(s): la celda queda fallida hasta corregirlos. `
-          : "") + "Todo lo que está aguas abajo de esta celda queda desactualizado.",
-      changes: changes.map((c) => ({ field: c.label, from: c.from, to: c.to })),
+      title: `Aplicar cambios · ${title.name}`,
+      summary: [outdatesText(), failedText()].filter(Boolean).join(" "),
+      changes: changes.map((c) => ({ field: c.path, from: c.from, to: c.to, value: c.change })),
       confirmLabel: "Aplicar",
     });
     if (justification === null) return;
@@ -250,26 +285,34 @@ function FormEditor({
     return <p className="p-6 text-xs text-subtle-foreground">Cargando…</p>;
   }
 
+  const errorsText = plural(problems.length, "error", "errores");
+  const badge =
+    draft && problems.length > 0 ? (
+      <StageStatusBadge status="failed" label="Borrador con errores" />
+    ) : (
+      <StageStatusBadge status={cellArtifact.status} />
+    );
+  const showBar = draft !== null || !cellArtifact.applied;
+  const sections = [...new Set(changes.map((c) => c.section))];
+
   return (
     <div className="flex h-full flex-col">
-      <header className="flex shrink-0 items-center gap-3 border-b border-border px-6 py-3">
-        <h1 className="flex-1 truncate text-base font-semibold">{title}</h1>
-        <StageStatusBadge status={cellArtifact.status} />
-      </header>
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
-        <div className="flex max-w-3xl flex-col gap-4">
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+        <div className={cn(column, "gap-7")}>
+          <EditorHeader title={title} badge={badge} />
           {problems.length > 0 && (
             <Notice
-              tone={draft ? "warning" : "error"}
-              title={`${problems.length} problema${problems.length === 1 ? "" : "s"}${draft ? " en el borrador" : ""}`}
+              tone="error"
+              title={`${plural(problems.length, "error", "errores")} de validación`}
             >
-              <ul className="list-disc pl-4">
-                {problems.map((p) => (
-                  <li key={`${p.path}:${p.code}`}>
-                    <span className="font-mono">{p.path}</span>: {p.message}
-                  </li>
-                ))}
-              </ul>
+              {problemsBySection(
+                schema,
+                problems.map((p) => p.path),
+              )}
+              .{" "}
+              {draft
+                ? "Podés aplicar igual: la celda queda Fallida hasta corregirlos."
+                : "La celda queda Fallida hasta corregirlos."}
             </Notice>
           )}
           <SchemaForm
@@ -282,38 +325,60 @@ function FormEditor({
           />
         </div>
       </div>
-      <footer className="flex shrink-0 items-center gap-2 border-t border-border bg-surface px-6 py-2">
-        <span className="flex-1 text-xs text-muted-foreground">
-          {draft
-            ? "Borrador sin aplicar."
-            : cellArtifact.applied
-              ? "Sin cambios."
-              : "Nunca aplicado."}
-        </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={!draft || applying}
-          onClick={() => setDraft(cellId, null)}
-        >
-          <Undo2 data-icon="inline-start" /> Descartar
-        </Button>
-        <Button
-          size="sm"
-          disabled={(!draft && cellArtifact.applied) || applying}
-          onClick={() => void (draft ? apply() : applyUnchanged())}
-        >
-          <Check data-icon="inline-start" /> Aplicar…
-        </Button>
-      </footer>
+      {showBar && (
+        <footer className="h-[52px] shrink-0 border-t border-border bg-surface px-6">
+          <div className={cn(column, "h-full flex-row items-center gap-3")}>
+            <span
+              aria-hidden
+              className={cn(
+                "size-1.5 shrink-0 rounded-full",
+                !draft ? "bg-idle" : problems.length > 0 ? "bg-error" : "bg-primary",
+              )}
+            />
+            <span className="flex-1 truncate text-[13px] text-muted-foreground">
+              {draft
+                ? `${plural(changes.length, "cambio", "cambios")} sin aplicar · ${
+                    problems.length > 0 ? errorsText : sections.join(", ")
+                  }`
+                : "Sin aplicar · valores por defecto"}
+            </span>
+            <Button
+              variant="ghost"
+              disabled={!draft || applying}
+              onClick={() => setDraft(cellId, null)}
+            >
+              <Undo2 data-icon="inline-start" /> Descartar
+            </Button>
+            <Button disabled={applying} onClick={() => void (draft ? apply() : applyUnchanged())}>
+              <Check data-icon="inline-start" /> Aplicar…
+            </Button>
+          </div>
+        </footer>
+      )}
     </div>
   );
+
+  /** Downstream cells the apply outdates (preview from the API). */
+  function outdatesText(): string {
+    const names = (cellArtifact?.outdates ?? []).map(
+      (id) => view.project.cells.find((c) => c.id === id)?.name ?? id,
+    );
+    return names.length > 0
+      ? `Desactualiza las celdas aguas abajo: ${listNames(names)}.`
+      : "No desactualiza ninguna celda aguas abajo.";
+  }
+
+  function failedText(): string {
+    return problems.length > 0
+      ? `Con ${plural(problems.length, "error", "errores")}: la celda queda Fallida hasta corregirlos.`
+      : "";
+  }
 
   /** First apply of an untouched artifact (the defaults): records it and validates it. */
   async function applyUnchanged() {
     if (!applied) return;
     const justification = await dialogs.askJustification({
-      title: `Aplicar «${title}»`,
+      title: `Aplicar · ${title.name}`,
       summary: "Se aplica el contenido actual (valores por defecto) y se valida.",
       changes: [],
       confirmLabel: "Aplicar",

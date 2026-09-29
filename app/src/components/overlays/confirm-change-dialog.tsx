@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -44,26 +44,34 @@ export function ConfirmChangeDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger}
-      <DialogContent className="gap-0 rounded-lg bg-surface p-0 ring-border-strong sm:max-w-[480px]">
-        <DialogHeader className="px-5 pt-4 pb-3">
-          <DialogTitle className="text-[15px] font-semibold">{title}</DialogTitle>
+      <DialogContent
+        showCloseButton={false}
+        className="gap-0 rounded-lg bg-surface p-0 ring-border-strong sm:max-w-[480px]"
+      >
+        <DialogHeader className="flex-row items-center gap-3 px-5 py-4">
+          <DialogTitle className="flex-1 text-[15px] font-semibold">{title}</DialogTitle>
+          <DialogClose render={<Button variant="outline" size="icon-sm" aria-label="Cerrar" />}>
+            <X />
+          </DialogClose>
+        </DialogHeader>
+        <div className="flex flex-col gap-4 px-5 pt-1 pb-5">
           {summary && (
-            <DialogDescription className="text-[13px] text-muted-foreground">
+            <DialogDescription className="text-[13px] leading-[1.45] text-muted-foreground">
               {summary}
             </DialogDescription>
           )}
-        </DialogHeader>
-        <div className="flex flex-col gap-4 px-5 pb-5">
-          <div className="rounded-lg border border-border bg-background px-3 py-1">
-            {changes.map((change) => (
-              <KeyValue
-                key={change.field}
-                className="last:border-b-0"
-                label={<span className="font-mono">{change.field}</span>}
-                value={`${change.from} → ${change.to}`}
-              />
-            ))}
-          </div>
+          {changes.length > 0 && (
+            <div className="rounded-lg border border-border bg-background px-3 py-1">
+              {changes.map((change) => (
+                <KeyValue
+                  key={change.field}
+                  className="last:border-b-0"
+                  label={<span className="font-mono">{change.field}</span>}
+                  value={change.value ?? `${change.from} → ${change.to}`}
+                />
+              ))}
+            </div>
+          )}
           <JustificationField
             value={justification}
             onChange={(event) => setJustification(event.target.value)}

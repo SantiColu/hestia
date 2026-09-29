@@ -24,12 +24,16 @@ const STATUS: Record<StageStatus, { label: string; className: string; dot: strin
 
 export function StageStatusBadge({
   status,
+  label: text,
   className,
 }: {
   status: StageStatus;
+  /** Replaces the status name, e.g. "Borrador con errores". */
+  label?: string;
   className?: string;
 }) {
-  const { label, className: tone, dot } = STATUS[status];
+  const { label: name, className: tone, dot } = STATUS[status];
+  const label = text ?? name;
   return (
     <span
       className={cn(

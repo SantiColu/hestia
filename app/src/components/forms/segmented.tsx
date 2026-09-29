@@ -29,7 +29,7 @@ export function Segmented<T extends string>({
         const [selected] = next as T[];
         if (selected !== undefined) onValueChange?.(selected);
       }}
-      className={cn("gap-0.5 border border-border bg-surface-2 p-0.5", className)}
+      className={cn("gap-0.5 border border-border bg-background p-0.5", className)}
     >
       {options.map((option) => (
         <ToggleGroupItem
