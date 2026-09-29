@@ -75,7 +75,8 @@ function cellIdFromHandle(handle: string | null | undefined): string | null {
 function SchematicCanvas({ project }: { project: Project }) {
   const actions = useSchematicActions();
   const { notify } = useProject();
-  const { selection, select, dragItem, validTargets, startConnect, endDrag } = useWorkspaceUi();
+  const { selection, select, dragItem, validTargets, startConnect, endDrag, pointerRef } =
+    useWorkspaceUi();
   const { screenToFlowPosition } = useReactFlow();
 
   const built = useMemo<SystemNodeType[]>(
@@ -192,7 +193,18 @@ function SchematicCanvas({ project }: { project: Project }) {
   };
 
   return (
-    <div className="relative size-full bg-background" onDragOver={onDragOver} onDrop={onDrop}>
+    <div
+      className="relative size-full bg-background"
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      // Where Ctrl+V pastes (docs/ux-workspace.md).
+      onMouseMove={(event) => {
+        pointerRef.current = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      }}
+      onMouseLeave={() => {
+        pointerRef.current = null;
+      }}
+    >
       <ReactFlow<SystemNodeType>
         nodes={nodes}
         edges={edges}

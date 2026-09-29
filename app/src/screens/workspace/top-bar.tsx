@@ -1,16 +1,23 @@
 import {
   Bot,
+  ClipboardPaste,
   Columns2,
+  Copy,
+  CopyPlus,
   FileOutput,
   FilePlus,
   FileText,
   FolderOpen,
   History,
+  Pencil,
   Redo2,
   RefreshCw,
   Save,
   SaveAll,
+  Scissors,
   Search,
+  SquareDashedMousePointer,
+  Trash2,
   Undo2,
   X,
   type LucideIcon,
@@ -19,9 +26,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuSub,
@@ -30,11 +35,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ProjectView } from "@/api/client";
-import { fileLabel, useEditActions, useFileActions } from "@/project/actions";
+import { fileLabel, useFileActions } from "@/project/actions";
 import { useProject } from "@/project/store";
+import { useSchematicActions } from "./actions";
+import { useWorkspaceUi } from "./context";
+import { useEditCommands } from "./edit";
 
 const menuTrigger =
   "flex h-7 items-center rounded-lg px-2 text-[13px] text-muted-foreground hover:bg-surface-2 hover:text-foreground aria-expanded:bg-surface-2 aria-expanded:text-foreground disabled:pointer-events-none disabled:opacity-40";
+
+/** «Deshacer renombrar sistema»: the verb plus the operation's label from the API. */
+function withLabel(verb: string, label: string | null): string {
+  return label ? `${verb} ${label}` : verb;
+}
 
 const divider = <span className="h-4 w-px shrink-0 bg-border" aria-hidden />;
 
@@ -50,7 +63,8 @@ const TOOLS: [LucideIcon, string][] = [
 export function TopBar({ view }: { view: ProjectView }) {
   const { recents } = useProject();
   const file = useFileActions();
-  const edit = useEditActions();
+  const edit = useEditCommands(useSchematicActions());
+  const { checkClipboard } = useWorkspaceUi();
   const { document, project } = view;
   const outdated = project.cells.filter((cell) => cell.status === "outdated").length;
 
@@ -107,22 +121,52 @@ export function TopBar({ view }: { view: ProjectView }) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={(open) => open && void checkClipboard()}>
           <DropdownMenuTrigger className={menuTrigger}>Editar</DropdownMenuTrigger>
-          <DropdownMenuContent className="w-[260px]" sideOffset={4}>
-            <DropdownMenuItem disabled={!document.can_undo} onClick={edit.undo}>
-              <Undo2 /> Deshacer <DropdownMenuShortcut>Ctrl+Z</DropdownMenuShortcut>
+          <DropdownMenuContent className="w-[280px]" sideOffset={4}>
+            <DropdownMenuItem
+              disabled={!document.can_undo}
+              title={document.undo_summary ?? undefined}
+              onClick={edit.undo}
+            >
+              <Undo2 />
+              <span className="truncate">{withLabel("Deshacer", document.undo_label)}</span>
+              <DropdownMenuShortcut>Ctrl+Z</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem disabled={!document.can_redo} onClick={edit.redo}>
-              <Redo2 /> Rehacer <DropdownMenuShortcut>Ctrl+Shift+Z</DropdownMenuShortcut>
+            <DropdownMenuItem
+              disabled={!document.can_redo}
+              title={document.redo_summary ?? undefined}
+              onClick={edit.redo}
+            >
+              <Redo2 />
+              <span className="truncate">{withLabel("Rehacer", document.redo_label)}</span>
+              <DropdownMenuShortcut>Ctrl+Shift+Z</DropdownMenuShortcut>
             </DropdownMenuItem>
-            {document.undo_summary && (
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="truncate">
-                  Último: {document.undo_summary}
-                </DropdownMenuLabel>
-              </DropdownMenuGroup>
-            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={!edit.target} onClick={edit.cut}>
+              <Scissors /> Cortar <DropdownMenuShortcut>Ctrl+X</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!edit.target} onClick={edit.copy}>
+              <Copy /> Copiar <DropdownMenuShortcut>Ctrl+C</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!edit.canPaste} onClick={() => edit.paste(false)}>
+              <ClipboardPaste /> Pegar <DropdownMenuShortcut>Ctrl+V</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!edit.target} onClick={edit.duplicate}>
+              <CopyPlus /> Duplicar <DropdownMenuShortcut>Ctrl+D</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={!edit.target} onClick={edit.rename}>
+              <Pencil /> Renombrar <DropdownMenuShortcut>F2</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuItem disabled={!edit.target} onClick={edit.clearSelection}>
+              <SquareDashedMousePointer /> Deseleccionar{" "}
+              <DropdownMenuShortcut>Esc</DropdownMenuShortcut>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" disabled={!edit.target} onClick={edit.remove}>
+              <Trash2 /> Eliminar <DropdownMenuShortcut>Supr</DropdownMenuShortcut>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         {["Ver", "Proyecto", "Ayuda"].map((label) => (

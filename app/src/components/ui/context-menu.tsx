@@ -104,12 +104,23 @@ function ContextMenuLabel({ className, ...props }: React.ComponentProps<"div">) 
   );
 }
 
+function ContextMenuShortcut({ className, ...props }: React.ComponentProps<"span">) {
+  return (
+    <span
+      data-slot="context-menu-shortcut"
+      className={cn("ml-auto pl-4 font-mono text-[11px] text-subtle-foreground", className)}
+      {...props}
+    />
+  );
+}
+
 export {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuLabel,
   ContextMenuSeparator,
+  ContextMenuShortcut,
   ContextMenuSub,
   ContextMenuSubContent,
   ContextMenuSubTrigger,

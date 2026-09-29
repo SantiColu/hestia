@@ -7,10 +7,13 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { api, unwrap, type Blueprint } from "@/api/client";
+import { api, unwrap, type Blueprint, type Position } from "@/api/client";
+import { readFragment } from "@/project/fragment";
 import { useProject } from "@/project/store";
 
-export type Selection = { kind: "system" | "cell"; id: string } | null;
+/** A system or a cell of the schematic. */
+export type Target = { kind: "system" | "cell"; id: string };
+export type Selection = Target | null;
 
 type WorkspaceUi = {
   selection: Selection;
@@ -22,6 +25,12 @@ type WorkspaceUi = {
   startDrag: (item: Blueprint) => void;
   startConnect: (sourceCellId: string) => void;
   endDrag: () => void;
+  /** The clipboard holds a Hestia fragment (checked when an Edit menu opens and after copy). */
+  canPaste: boolean;
+  checkClipboard: () => Promise<void>;
+  setCanPaste: (canPaste: boolean) => void;
+  /** Last pointer position over the canvas, in schematic units; null when outside. */
+  pointerRef: { current: Position | null };
 };
 
 const Context = createContext<WorkspaceUi | null>(null);
@@ -31,6 +40,8 @@ export function WorkspaceUiProvider({ children }: { children: ReactNode }) {
   const [selection, select] = useState<Selection>(null);
   const [dragItem, setDragItem] = useState<Blueprint | null>(null);
   const [validTargets, setValidTargets] = useState<ReadonlySet<string> | null>(null);
+  const [canPaste, setCanPaste] = useState(false);
+  const pointerRef = useRef<Position | null>(null);
   // Ignore answers that arrive after the drag ended or another started.
   const token = useRef(0);
 
@@ -78,9 +89,25 @@ export function WorkspaceUiProvider({ children }: { children: ReactNode }) {
     setValidTargets(null);
   }, []);
 
+  const checkClipboard = useCallback(async () => {
+    setCanPaste((await readFragment()) !== null);
+  }, []);
+
   const value = useMemo(
-    () => ({ selection, select, dragItem, validTargets, startDrag, startConnect, endDrag }),
-    [selection, dragItem, validTargets, startDrag, startConnect, endDrag],
+    () => ({
+      selection,
+      select,
+      dragItem,
+      validTargets,
+      startDrag,
+      startConnect,
+      endDrag,
+      canPaste,
+      checkClipboard,
+      setCanPaste,
+      pointerRef,
+    }),
+    [selection, dragItem, validTargets, startDrag, startConnect, endDrag, canPaste, checkClipboard],
   );
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

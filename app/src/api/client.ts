@@ -14,6 +14,7 @@ export type Catalog = Schemas["Catalog"];
 export type Cell = Schemas["Cell"];
 export type CellStatus = Schemas["CellStatus"];
 export type Change = Schemas["Change"];
+export type Fragment = Schemas["Fragment-Output"];
 export type Link = Schemas["Link"];
 export type MutationResult = Schemas["MutationResult"];
 export type Position = Schemas["Position"];

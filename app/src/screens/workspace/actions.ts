@@ -8,14 +8,20 @@ import {
   type StageType,
 } from "@/api/client";
 import { useDialogs } from "@/project/dialogs";
+import { readFragment, writeFragment } from "@/project/fragment";
 import { useProject } from "@/project/store";
+import { useWorkspaceUi, type Target } from "./context";
+
+export type PasteOptions = { position?: Position; targetSystemId?: string };
 
 /**
- * Schematic writes. Small operations (create, branch, move, rename, link, duplicate) send an
- * empty or optional justification; deletions and unlinking always ask for one (ADR 0011).
+ * Schematic writes. Small operations (create, branch, move, rename, link, duplicate, paste)
+ * send an empty or optional justification; deleting, cutting and unlinking always ask for one
+ * (ADR 0011). Copy and paste go through the system clipboard as a fragment (ADR 0014).
  */
 export function useSchematicActions() {
-  const { view, catalog, mutate } = useProject();
+  const { view, catalog, mutate, notify, fail } = useProject();
+  const { select, setCanPaste } = useWorkspaceUi();
   const dialogs = useDialogs();
   const project = view?.project;
 
@@ -147,48 +153,163 @@ export function useSchematicActions() {
     [mutate],
   );
 
-  const deleteSystem = useCallback(
-    async (systemId: string) => {
-      const system = project?.systems.find((s) => s.id === systemId);
-      if (!system) return;
-      const justification = await dialogs.askJustification({
-        title: "Eliminar sistema",
-        summary: "Se eliminan sus celdas y vínculos; lo que dependa de ellas queda desactualizado.",
-        changes: [{ field: "sistema", from: system.name, to: "—" }],
-        confirmLabel: "Eliminar",
-      });
-      if (justification === null) return;
-      await mutate(() =>
-        unwrap(
-          api.DELETE("/project/systems/{system_id}", {
-            params: { path: { system_id: systemId } },
-            body: { justification },
-          }),
-        ),
-      );
-    },
-    [project, dialogs, mutate],
+  const targetName = useCallback(
+    (target: Target) =>
+      target.kind === "system"
+        ? (project?.systems.find((s) => s.id === target.id)?.name ?? target.id)
+        : cellName(target.id),
+    [project, cellName],
   );
 
-  const deleteCell = useCallback(
-    async (cellId: string) => {
-      const justification = await dialogs.askJustification({
-        title: "Eliminar celda",
-        summary: "Se eliminan sus vínculos; lo que dependa de ella queda desactualizado.",
-        changes: [{ field: "celda", from: cellName(cellId), to: "—" }],
-        confirmLabel: "Eliminar",
-      });
+  /** Ask for the mandatory justification to remove `target`. Null when cancelled. */
+  const confirmRemoval = useCallback(
+    (target: Target, verb: "Eliminar" | "Cortar") =>
+      dialogs.askJustification(
+        target.kind === "system"
+          ? {
+              title: `${verb} sistema`,
+              summary:
+                "Se eliminan sus celdas y vínculos; lo que dependa de ellas queda desactualizado.",
+              changes: [{ field: "sistema", from: targetName(target), to: "—" }],
+              confirmLabel: verb,
+            }
+          : {
+              title: `${verb} celda`,
+              summary: "Se eliminan sus vínculos; lo que dependa de ella queda desactualizado.",
+              changes: [{ field: "celda", from: targetName(target), to: "—" }],
+              confirmLabel: verb,
+            },
+      ),
+    [dialogs, targetName],
+  );
+
+  const removeWith = useCallback(
+    (target: Target, justification: string) =>
+      mutate(() =>
+        target.kind === "system"
+          ? unwrap(
+              api.DELETE("/project/systems/{system_id}", {
+                params: { path: { system_id: target.id } },
+                body: { justification },
+              }),
+            )
+          : unwrap(
+              api.DELETE("/project/cells/{cell_id}", {
+                params: { path: { cell_id: target.id } },
+                body: { justification },
+              }),
+            ),
+      ),
+    [mutate],
+  );
+
+  const remove = useCallback(
+    async (target: Target) => {
+      const justification = await confirmRemoval(target, "Eliminar");
       if (justification === null) return;
-      await mutate(() =>
-        unwrap(
-          api.DELETE("/project/cells/{cell_id}", {
-            params: { path: { cell_id: cellId } },
-            body: { justification },
-          }),
-        ),
-      );
+      const result = await removeWith(target, justification);
+      if (result) select(null);
     },
-    [cellName, dialogs, mutate],
+    [confirmRemoval, removeWith, select],
+  );
+
+  const deleteSystem = useCallback(
+    (systemId: string) => remove({ kind: "system", id: systemId }),
+    [remove],
+  );
+  const deleteCell = useCallback(
+    (cellId: string) => remove({ kind: "cell", id: cellId }),
+    [remove],
+  );
+
+  const rename = useCallback(
+    (target: Target) =>
+      target.kind === "system" ? renameSystem(target.id) : renameCell(target.id),
+    [renameSystem, renameCell],
+  );
+
+  const copyFragment = useCallback(
+    (target: Target) =>
+      unwrap(
+        api.POST("/project/clipboard/copy", {
+          body:
+            target.kind === "system"
+              ? { system_ids: [target.id], cell_ids: [] }
+              : { system_ids: [], cell_ids: [target.id] },
+        }),
+      ),
+    [],
+  );
+
+  /** Copy to the system clipboard. Resolves false if it failed (reported in Messages). */
+  const copy = useCallback(
+    async (target: Target): Promise<boolean> => {
+      try {
+        await writeFragment(await copyFragment(target));
+        setCanPaste(true);
+        notify(`Copió «${targetName(target)}».`);
+        return true;
+      } catch (error) {
+        fail(error);
+        return false;
+      }
+    },
+    [copyFragment, setCanPaste, notify, targetName, fail],
+  );
+
+  /** Copy, then delete: the justification is asked first, so cancelling changes nothing. */
+  const cut = useCallback(
+    async (target: Target) => {
+      const justification = await confirmRemoval(target, "Cortar");
+      if (justification === null) return;
+      if (!(await copy(target))) return;
+      const result = await removeWith(target, justification);
+      if (result) select(null);
+    },
+    [confirmRemoval, copy, removeWith, select],
+  );
+
+  const pasteFragment = useCallback(
+    async (run: () => ReturnType<typeof readFragment>, options: PasteOptions) => {
+      const result = await mutate(async () => {
+        const fragment = await run();
+        if (!fragment) throw new Error("El portapapeles no tiene sistemas ni celdas de Hestia.");
+        return unwrap(
+          api.POST("/project/clipboard/paste", {
+            body: {
+              fragment,
+              position: options.position ?? null,
+              target_system_id: options.targetSystemId ?? null,
+              justification: "",
+            },
+          }),
+        );
+      });
+      // Select what was pasted: the first new system, or else the first new cell.
+      const created = result?.change.created_ids ?? [];
+      const systems = new Set(result?.view.project.systems.map((s) => s.id));
+      const first = created.find((id) => systems.has(id)) ?? created[0];
+      if (first) select({ kind: systems.has(first) ? "system" : "cell", id: first });
+    },
+    [mutate, select],
+  );
+
+  const paste = useCallback(
+    (options: PasteOptions = {}) => pasteFragment(readFragment, options),
+    [pasteFragment],
+  );
+
+  /** Systems: the API's duplicate (keeps incoming links). Cells: copy and paste in place. */
+  const duplicate = useCallback(
+    async (target: Target) => {
+      if (target.kind === "system") {
+        await duplicateSystem(target.id);
+        return;
+      }
+      const systemId = project?.cells.find((c) => c.id === target.id)?.system_id;
+      await pasteFragment(() => copyFragment(target), { targetSystemId: systemId });
+    },
+    [duplicateSystem, project, pasteFragment, copyFragment],
   );
 
   const unlink = useCallback(
@@ -234,6 +355,12 @@ export function useSchematicActions() {
       deleteSystem,
       deleteCell,
       unlink,
+      rename,
+      remove,
+      copy,
+      cut,
+      paste,
+      duplicate,
     }),
     [
       stageName,
@@ -250,6 +377,12 @@ export function useSchematicActions() {
       deleteSystem,
       deleteCell,
       unlink,
+      rename,
+      remove,
+      copy,
+      cut,
+      paste,
+      duplicate,
     ],
   );
 }
