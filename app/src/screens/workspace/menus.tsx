@@ -12,6 +12,8 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { useProject } from "@/project/store";
+import { Copy, GitBranchPlus, Pencil, Plus, RefreshCw, Trash2, Unlink } from "lucide-react";
+import { STAGE_ICONS } from "./stage-icons";
 import type { SchematicActions } from "./actions";
 
 type MenuProps<T> = { actions: SchematicActions; children: ReactElement } & T;
@@ -24,28 +26,35 @@ export function SystemMenu({ system, actions, children }: MenuProps<{ system: Sy
       <ContextMenuTrigger render={children} />
       <ContextMenuContent>
         <ContextMenuItem onClick={() => void actions.renameSystem(system.id)}>
-          Renombrar
+          <Pencil /> Renombrar
         </ContextMenuItem>
         <ContextMenuSub>
-          <ContextMenuSubTrigger>Agregar etapa</ContextMenuSubTrigger>
+          <ContextMenuSubTrigger>
+            <Plus /> Agregar etapa
+          </ContextMenuSubTrigger>
           <ContextMenuSubContent>
-            {catalog?.stages.map((stage) => (
-              <ContextMenuItem
-                key={stage.stage}
-                onClick={() => void actions.addCell(system.id, stage.stage)}
-              >
-                {stage.name}
-              </ContextMenuItem>
-            ))}
+            {catalog?.stages.map((stage) => {
+              const Icon = STAGE_ICONS[stage.stage];
+              return (
+                <ContextMenuItem
+                  key={stage.stage}
+                  onClick={() => void actions.addCell(system.id, stage.stage)}
+                >
+                  <Icon /> {stage.name}
+                </ContextMenuItem>
+              );
+            })}
           </ContextMenuSubContent>
         </ContextMenuSub>
-        <ContextMenuItem disabled>Actualizar</ContextMenuItem>
+        <ContextMenuItem disabled>
+          <RefreshCw /> Actualizar
+        </ContextMenuItem>
         <ContextMenuItem onClick={() => void actions.duplicateSystem(system.id)}>
-          Duplicar
+          <Copy /> Duplicar
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem variant="destructive" onClick={() => void actions.deleteSystem(system.id)}>
-          Eliminar
+          <Trash2 /> Eliminar
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
@@ -87,11 +96,15 @@ export function CellMenu({
       <ContextMenuTrigger render={children} />
       <ContextMenuContent>
         <ContextMenuItem onClick={() => void actions.renameCell(cell.id)}>
-          Renombrar
+          <Pencil /> Renombrar
         </ContextMenuItem>
-        <ContextMenuItem disabled>Actualizar</ContextMenuItem>
+        <ContextMenuItem disabled>
+          <RefreshCw /> Actualizar
+        </ContextMenuItem>
         <ContextMenuSub>
-          <ContextMenuSubTrigger>Ramificar</ContextMenuSubTrigger>
+          <ContextMenuSubTrigger>
+            <GitBranchPlus /> Ramificar
+          </ContextMenuSubTrigger>
           <ContextMenuSubContent>
             {options === null && <ContextMenuLabel>Cargando…</ContextMenuLabel>}
             {options?.length === 0 && <ContextMenuLabel>Nada para ramificar</ContextMenuLabel>}
@@ -107,7 +120,7 @@ export function CellMenu({
         </ContextMenuSub>
         <ContextMenuSub>
           <ContextMenuSubTrigger disabled={touching.length === 0}>
-            Desvincular
+            <Unlink /> Desvincular
           </ContextMenuSubTrigger>
           <ContextMenuSubContent>
             {touching.map((link) => (
@@ -119,7 +132,7 @@ export function CellMenu({
         </ContextMenuSub>
         <ContextMenuSeparator />
         <ContextMenuItem variant="destructive" onClick={() => void actions.deleteCell(cell.id)}>
-          Eliminar
+          <Trash2 /> Eliminar
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>

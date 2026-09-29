@@ -18,6 +18,8 @@ Interfaz de Hestia: React + Vite + TanStack Router, TypeScript estricto, Tailwin
 - `src/api/`: cliente de la API (`client.ts`) y tipos generados (`schema.gen.ts`, no editar).
 - `src/project/`: estado del proyecto abierto (`store.tsx`, con la suscripción SSE), diálogos por promesa (`dialogs.tsx`), acciones de Archivo/Editar (`actions.ts`) y atajos (`shortcuts.ts`).
 - `src/screens/`: pantallas. `home.tsx` (inicio) y `workspace/` (barra superior, Toolbox, esquemático con React Flow, dock y panel inferior).
+- `public/brand/`: marca y logotipo (copias de `design/brand/`; si cambia la marca, volver a copiarlos).
+- `src/screens/workspace/stage-icons.ts`: ícono de cada tipo de etapa (Toolbox y menús), según `workspace.pen`.
 - `src/lib/native.ts`: diálogos nativos de Tauri (con `window.prompt` como respaldo en el navegador).
 - `src/routes/`: rutas por archivo (TanStack Router); `src/routeTree.gen.ts` es generado, no editar. Archivos con prefijo `-` no son rutas.
 - `src/components/ui/`: primitivas shadcn/ui sobre Base UI (ADR 0007). Agregar con `pnpm dlx shadcn@latest add <nombre>`; hay ajustes locales en button, switch, dialog, select y dropdown-menu. `context-menu.tsx` se escribió a mano siguiendo el de shadcn (el registro no estaba accesible).

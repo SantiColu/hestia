@@ -1,18 +1,19 @@
-import { useCallback, useMemo, useState, type DragEvent } from "react";
+import { useCallback, useMemo, useState, type CSSProperties, type DragEvent } from "react";
 import {
-  Background,
-  Controls,
   MarkerType,
+  Panel,
   ReactFlow,
   ReactFlowProvider,
   applyNodeChanges,
   useReactFlow,
+  useViewport,
   type Connection,
   type Edge,
   type NodeChange,
   type OnConnectStart,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { Maximize, Minus, Plus } from "lucide-react";
 import { EmptyState } from "@/components/data/empty-state";
 import type { Project } from "@/api/client";
 import { useProject } from "@/project/store";
@@ -21,6 +22,50 @@ import { useWorkspaceUi } from "./context";
 import { SystemNode, type SystemNodeType } from "./system-node";
 
 const nodeTypes = { system: SystemNode };
+
+const zoomButton =
+  "flex h-6 items-center justify-center rounded-lg px-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground";
+
+/** Zoom out / percentage / zoom in / fit, bottom left of the canvas. */
+function ZoomControl() {
+  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const { zoom } = useViewport();
+  return (
+    <Panel
+      position="bottom-left"
+      className="m-4! flex h-7 items-center gap-0.5 rounded-lg border border-border bg-surface px-1"
+    >
+      <button
+        type="button"
+        className={zoomButton}
+        aria-label="Alejar"
+        onClick={() => void zoomOut()}
+      >
+        <Minus className="size-3.5" />
+      </button>
+      <span className="px-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
+        {Math.round(zoom * 100)} %
+      </span>
+      <button
+        type="button"
+        className={zoomButton}
+        aria-label="Acercar"
+        onClick={() => void zoomIn()}
+      >
+        <Plus className="size-3.5" />
+      </button>
+      <button
+        type="button"
+        className={zoomButton}
+        aria-label="Ajustar vista"
+        title="Ajustar vista"
+        onClick={() => void fitView({ maxZoom: 1 })}
+      >
+        <Maximize className="size-3.5" />
+      </button>
+    </Panel>
+  );
+}
 
 function cellIdFromHandle(handle: string | null | undefined): string | null {
   return handle ? handle.replace(/^(in|out)-/, "") : null;
@@ -65,26 +110,32 @@ function SchematicCanvas({ project }: { project: Project }) {
 
   const edges = useMemo<Edge[]>(
     () =>
-      project.links.map((link) => {
-        const highlighted =
-          selection?.kind === "cell"
-            ? selection.id === link.source_cell_id || selection.id === link.target_cell_id
-            : selection?.kind === "system" &&
-              (systemOf.get(link.source_cell_id) === selection.id ||
-                systemOf.get(link.target_cell_id) === selection.id);
-        const color = highlighted ? "var(--primary)" : "var(--subtle-foreground)";
-        return {
-          id: link.id,
-          source: systemOf.get(link.source_cell_id) ?? "",
-          sourceHandle: `out-${link.source_cell_id}`,
-          target: systemOf.get(link.target_cell_id) ?? "",
-          targetHandle: `in-${link.target_cell_id}`,
-          type: "smoothstep",
-          selectable: false,
-          style: { stroke: color, strokeWidth: highlighted ? 1.5 : 1 },
-          markerEnd: { type: MarkerType.ArrowClosed, color, width: 14, height: 14 },
-        };
-      }),
+      // Links inside a system are implied by the block (as in the design and in Workbench):
+      // only links between systems are drawn.
+      project.links
+        .filter((link) => systemOf.get(link.source_cell_id) !== systemOf.get(link.target_cell_id))
+        .map((link) => {
+          const highlighted =
+            selection?.kind === "cell"
+              ? selection.id === link.source_cell_id || selection.id === link.target_cell_id
+              : selection?.kind === "system" &&
+                (systemOf.get(link.source_cell_id) === selection.id ||
+                  systemOf.get(link.target_cell_id) === selection.id);
+          const color = highlighted ? "var(--primary)" : "var(--subtle-foreground)";
+          return {
+            id: link.id,
+            source: systemOf.get(link.source_cell_id) ?? "",
+            sourceHandle: `out-${link.source_cell_id}`,
+            target: systemOf.get(link.target_cell_id) ?? "",
+            targetHandle: `in-${link.target_cell_id}`,
+            // Orthogonal connector with a 7 × 8 px arrow (Link/Straight, Link/Elbow in the design).
+            type: "smoothstep",
+            pathOptions: { borderRadius: 0 },
+            selectable: false,
+            style: { stroke: color, strokeWidth: 1 },
+            markerEnd: { type: MarkerType.ArrowClosed, color, width: 28, height: 20 },
+          };
+        }),
     [project.links, selection, systemOf],
   );
 
@@ -141,12 +192,13 @@ function SchematicCanvas({ project }: { project: Project }) {
   };
 
   return (
-    <div className="relative size-full" onDragOver={onDragOver} onDrop={onDrop}>
+    <div className="relative size-full bg-background" onDragOver={onDragOver} onDrop={onDrop}>
       <ReactFlow<SystemNodeType>
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         colorMode="dark"
+        style={{ "--xy-background-color": "var(--bg)" } as CSSProperties}
         minZoom={0.3}
         fitView
         fitViewOptions={{ maxZoom: 1 }}
@@ -160,8 +212,7 @@ function SchematicCanvas({ project }: { project: Project }) {
         onPaneClick={() => select(null)}
         deleteKeyCode={null}
       >
-        <Background gap={24} color="var(--border)" />
-        <Controls showInteractive={false} />
+        <ZoomControl />
       </ReactFlow>
       {project.systems.length === 0 && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">

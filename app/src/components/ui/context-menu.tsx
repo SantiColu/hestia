@@ -7,10 +7,10 @@ import { ChevronRightIcon } from "lucide-react";
 // item classes match dropdown-menu.tsx.
 
 const ITEM =
-  "group/context-menu-item relative flex cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:data-highlighted:bg-destructive/10 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
+  "group/context-menu-item relative flex cursor-pointer items-center h-[30px] gap-2 rounded-lg px-2 text-[13px] outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:*:[svg]:text-destructive! data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:data-highlighted:bg-destructive/10 data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 [&_svg:not([class*='text-'])]:text-muted-foreground";
 
 const POPUP =
-  "z-50 max-h-(--available-height) min-w-40 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-none";
+  "z-50 max-h-(--available-height) min-w-40 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground flex flex-col gap-0.5 border border-border-strong outline-none";
 
 function ContextMenu({ ...props }: ContextMenuPrimitive.Root.Props) {
   return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />;
@@ -88,7 +88,7 @@ function ContextMenuSeparator({ className, ...props }: ContextMenuPrimitive.Sepa
   return (
     <ContextMenuPrimitive.Separator
       data-slot="context-menu-separator"
-      className={cn("-mx-1 my-1 h-px bg-border", className)}
+      className={cn("my-1 h-px shrink-0 bg-border-strong", className)}
       {...props}
     />
   );
@@ -98,7 +98,7 @@ function ContextMenuLabel({ className, ...props }: React.ComponentProps<"div">) 
   return (
     <div
       data-slot="context-menu-label"
-      className={cn("px-1.5 py-1 text-xs font-medium text-muted-foreground", className)}
+      className={cn("px-2 py-1 text-xs text-subtle-foreground", className)}
       {...props}
     />
   );

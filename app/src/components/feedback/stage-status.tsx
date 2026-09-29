@@ -1,4 +1,11 @@
-import { LoaderCircle } from "lucide-react";
+import {
+  CircleCheck,
+  CircleDashed,
+  CircleX,
+  LoaderCircle,
+  RefreshCw,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,5 +45,30 @@ export function StageStatusBadge({
       )}
       {label}
     </span>
+  );
+}
+
+const ICON: Record<StageStatus, { icon: LucideIcon; className: string }> = {
+  up_to_date: { icon: CircleCheck, className: "text-ok" },
+  outdated: { icon: RefreshCw, className: "text-warn" },
+  failed: { icon: CircleX, className: "text-error" },
+  never_run: { icon: CircleDashed, className: "text-idle" },
+  running: { icon: LoaderCircle, className: "animate-spin text-primary" },
+};
+
+/** Compact state of a schematic cell: a colored icon, labelled for tooltips and screen readers. */
+export function StageStatusIcon({
+  status,
+  className,
+}: {
+  status: StageStatus;
+  className?: string;
+}) {
+  const { icon: Icon, className: tone } = ICON[status];
+  const { label } = STATUS[status];
+  return (
+    <Icon role="img" aria-label={label} className={cn("size-3.5 shrink-0", tone, className)}>
+      <title>{label}</title>
+    </Icon>
   );
 }

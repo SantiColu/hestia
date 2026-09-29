@@ -10,7 +10,10 @@ export function PanelTabsList({ className, ...props }: ComponentProps<typeof Tab
   return (
     <TabsList
       variant="line"
-      className={cn("h-auto! w-full justify-start gap-0 border-b border-border p-0", className)}
+      className={cn(
+        "h-9! w-full shrink-0 items-end! justify-start gap-1 border-b border-border px-2 py-0",
+        className,
+      )}
       {...props}
     />
   );
@@ -20,7 +23,7 @@ export function PanelTabsTrigger({ className, ...props }: ComponentProps<typeof 
   return (
     <TabsTrigger
       className={cn(
-        "h-8 flex-none rounded-none px-3 text-[13px] font-normal data-active:font-medium",
+        "h-8 flex-none rounded-none px-3 text-[13px] font-normal text-muted-foreground data-active:font-medium data-active:text-foreground",
         "after:bottom-[-1px]! after:bg-primary",
         className,
       )}

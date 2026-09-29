@@ -1,8 +1,8 @@
-import { memo } from "react";
+import { memo, type MouseEvent } from "react";
 import { Handle, Position as HandlePosition, type Node, type NodeProps } from "@xyflow/react";
-import { Pencil } from "lucide-react";
+import { Ellipsis, GitBranchPlus, Pencil } from "lucide-react";
 import type { Cell, Link, System } from "@/api/client";
-import { StageStatusBadge } from "@/components/feedback/stage-status";
+import { StageStatusIcon } from "@/components/feedback/stage-status";
 import { cn } from "@/lib/utils";
 import { CellMenu, SystemMenu } from "./menus";
 import { useWorkspaceUi } from "./context";
@@ -17,9 +17,29 @@ export type SystemNodeData = {
 
 export type SystemNodeType = Node<SystemNodeData, "system">;
 
-export const SYSTEM_WIDTH = 240;
+export const SYSTEM_WIDTH = 224;
 
-/** A system block: header (drag handle, name, menu) and one row per cell. */
+const headerButton =
+  "nodrag flex size-6 items-center justify-center rounded-lg text-subtle-foreground hover:bg-border hover:text-foreground";
+
+const handleClass =
+  "size-2! border-border-strong! bg-surface-2! opacity-0 transition-opacity group-hover/cell:opacity-100";
+
+/** Open the system's context menu from the header's ellipsis button, below the button. */
+function openMenuFrom(event: MouseEvent<HTMLButtonElement>) {
+  event.stopPropagation();
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.dispatchEvent(
+    new globalThis.MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+      clientX: rect.left,
+      clientY: rect.bottom + 4,
+    }),
+  );
+}
+
+/** A system block: header (drag handle, name, rename, menu) and one row per cell. */
 export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNodeType>) {
   const { system, cells, links, actions } = data;
   const { selection, select, validTargets } = useWorkspaceUi();
@@ -29,27 +49,37 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
     <div
       style={{ width: SYSTEM_WIDTH }}
       className={cn(
-        "rounded-lg border border-border-strong bg-surface text-[13px]",
-        systemSelected && "border-primary ring-1 ring-primary",
+        "overflow-hidden rounded-lg border border-border-strong bg-surface",
+        systemSelected && "border-primary",
       )}
     >
       <SystemMenu system={system} actions={actions}>
         <div
-          className="system-drag flex h-9 cursor-grab items-center gap-2 border-b border-border px-3"
+          className="system-drag flex h-8 cursor-grab items-center gap-1 border-b border-border-strong bg-surface-2 pr-1 pl-2.5"
           onClick={() => select({ kind: "system", id: system.id })}
           onDoubleClick={() => void actions.renameSystem(system.id)}
         >
-          <span className="flex-1 truncate font-medium">{system.name}</span>
+          <span className="flex-1 truncate text-[13px] font-semibold">{system.name}</span>
           <button
             type="button"
-            className="nodrag text-subtle-foreground hover:text-foreground"
+            className={headerButton}
             aria-label="Renombrar sistema"
+            title="Renombrar"
             onClick={(event) => {
               event.stopPropagation();
               void actions.renameSystem(system.id);
             }}
           >
             <Pencil className="size-3.5" />
+          </button>
+          <button
+            type="button"
+            className={headerButton}
+            aria-label="Menú del sistema"
+            title="Más acciones"
+            onClick={openMenuFrom}
+          >
+            <Ellipsis className="size-3.5" />
           </button>
         </div>
       </SystemMenu>
@@ -61,8 +91,8 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
             <div
               data-cell-id={cell.id}
               className={cn(
-                "relative flex h-8 items-center gap-2 border-b border-border px-3 last:border-b-0",
-                selected && "bg-primary-soft",
+                "group/cell relative flex h-[30px] items-center gap-2 border-b border-border px-2.5 last:border-b-0",
+                selected && "bg-primary-soft outline-1 -outline-offset-1 outline-primary",
                 validTargets && !target && "opacity-40",
                 target && "outline-1 -outline-offset-1 outline-primary",
               )}
@@ -72,15 +102,22 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
                 type="target"
                 id={`in-${cell.id}`}
                 position={HandlePosition.Left}
-                className="size-2! border-border-strong! bg-surface-2!"
+                className={handleClass}
               />
-              <span className="flex-1 truncate">{cell.name}</span>
-              <StageStatusBadge status={cell.status} className="h-4 px-1.5 text-[10px]" />
+              <span className="flex-1 truncate text-[13px] font-medium">{cell.name}</span>
+              {target ? (
+                <GitBranchPlus
+                  className="size-3.5 shrink-0 text-primary"
+                  aria-label="Destino válido"
+                />
+              ) : (
+                <StageStatusIcon status={cell.status} />
+              )}
               <Handle
                 type="source"
                 id={`out-${cell.id}`}
                 position={HandlePosition.Right}
-                className="size-2! border-border-strong! bg-surface-2!"
+                className={handleClass}
               />
             </div>
           </CellMenu>
