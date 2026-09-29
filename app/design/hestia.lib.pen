@@ -719,6 +719,94 @@
                   "fontWeight": "normal"
                 }
               ]
+            },
+            {
+              "type": "frame",
+              "id": "ELUEc",
+              "name": "Field/Number/Modified",
+              "reusable": true,
+              "width": 220,
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "DQwAH",
+                  "name": "LabelRow",
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "D3nEK",
+                      "name": "Label",
+                      "fill": "$text-muted",
+                      "content": "Altitud del perigeo",
+                      "fontFamily": "$font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "SVfo4",
+                      "name": "Modified",
+                      "fill": "$accent",
+                      "width": 6,
+                      "height": 6
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "LKdAf",
+                  "name": "Input",
+                  "width": "fill_container",
+                  "height": 32,
+                  "fill": "$bg",
+                  "cornerRadius": "$radius",
+                  "stroke": "$accent",
+                  "strokeWidth": 1,
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "JWJgG",
+                      "name": "Value",
+                      "fill": "$text",
+                      "content": "600",
+                      "fontFamily": "$font-mono",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "iJY5O",
+                      "name": "Unit",
+                      "fill": "$text-subtle",
+                      "content": "km",
+                      "fontFamily": "$font-mono",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "XMO8Z",
+                  "name": "Previous",
+                  "fill": "$text-subtle",
+                  "content": "Aplicado: 550 km",
+                  "fontFamily": "$font-mono",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
             }
           ]
         },
@@ -1046,7 +1134,7 @@
     {
       "type": "frame",
       "id": "i0HVyv",
-      "x": 1112,
+      "x": 1324,
       "y": 1141,
       "name": "Feedback",
       "fill": "$bg",
@@ -1742,6 +1830,184 @@
         },
         {
           "type": "frame",
+          "id": "X16L4V",
+          "name": "DocTabs",
+          "stroke": "$border",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "alignItems": "end",
+          "children": [
+            {
+              "type": "frame",
+              "id": "M4VCf",
+              "name": "DocTab",
+              "reusable": true,
+              "height": 36,
+              "stroke": "$border",
+              "strokeWidth": {
+                "right": 1
+              },
+              "gap": 8,
+              "padding": [
+                0,
+                10,
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "VTX4a",
+                  "name": "State",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "circle-check",
+                  "library": "lucide",
+                  "fill": "$ok"
+                },
+                {
+                  "type": "text",
+                  "id": "sain2",
+                  "name": "Label",
+                  "fill": "$text-muted",
+                  "content": "Entorno",
+                  "fontFamily": "$font-sans",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "eQOlx",
+                  "name": "Context",
+                  "fill": "$text-subtle",
+                  "content": "SSO 800",
+                  "fontFamily": "$font-sans",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "ellipse",
+                  "id": "AmCU3",
+                  "x": 0,
+                  "y": 0,
+                  "name": "Draft",
+                  "enabled": false,
+                  "fill": "$accent",
+                  "width": 6,
+                  "height": 6
+                },
+                {
+                  "type": "frame",
+                  "id": "xoXt0",
+                  "name": "Close",
+                  "width": 18,
+                  "height": 18,
+                  "cornerRadius": "$radius",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "wWt1m",
+                      "name": "Icon",
+                      "width": 12,
+                      "height": 12,
+                      "icon": "x",
+                      "library": "lucide",
+                      "fill": "$text-subtle"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ucL6q",
+              "name": "DocTab/Active",
+              "reusable": true,
+              "height": 36,
+              "fill": "$bg",
+              "stroke": "$accent",
+              "strokeWidth": {
+                "bottom": 2
+              },
+              "gap": 8,
+              "padding": [
+                0,
+                10,
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "c9sPe",
+                  "name": "State",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "circle-check",
+                  "library": "lucide",
+                  "fill": "$ok"
+                },
+                {
+                  "type": "text",
+                  "id": "l2Ovd6",
+                  "name": "Label",
+                  "fill": "$text",
+                  "content": "Misión",
+                  "fontFamily": "$font-sans",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "XEqxC",
+                  "name": "Context",
+                  "fill": "$text-subtle",
+                  "content": "Fase 0 · base",
+                  "fontFamily": "$font-sans",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "ellipse",
+                  "id": "dECWv",
+                  "name": "Draft",
+                  "fill": "$accent",
+                  "width": 6,
+                  "height": 6
+                },
+                {
+                  "type": "frame",
+                  "id": "AGPQO",
+                  "name": "Close",
+                  "width": 18,
+                  "height": 18,
+                  "cornerRadius": "$radius",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "wju0W",
+                      "name": "Icon",
+                      "width": 12,
+                      "height": 12,
+                      "icon": "x",
+                      "library": "lucide",
+                      "fill": "$text-muted"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
           "id": "XWqXG",
           "name": "Labels",
           "gap": 16,
@@ -1956,7 +2222,7 @@
     {
       "type": "frame",
       "id": "O6FiBL",
-      "x": 414,
+      "x": 512,
       "y": 1783,
       "name": "Data",
       "fill": "$bg",

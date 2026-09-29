@@ -40,9 +40,9 @@ Oscuro, minimalista, de ingeniería. Sin gradientes, glow ni decoración. El col
 | Grupo      | Componentes                                                                                                                                                                           |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Buttons    | `Button/{Primary,Secondary,Ghost,Danger,Icon}` y variantes `/sm`                                                                                                                      |
-| Forms      | `Field/{Number,Number/Error,Select,Text,Justification}`, `Checkbox/{On,Off}`, `Toggle/{On,Off}`, `Segment/{Active,Default}`                                                           |
+| Forms      | `Field/{Number,Number/Error,Number/Modified,Select,Text,Justification}`, `Checkbox/{On,Off}`, `Toggle/{On,Off}`, `Segment/{Active,Default}`                                           |
 | Feedback   | `Status/{UpToDate,Outdated,Failed,NeverRun,Running}`, `Tag/{Hot,Cold,Neutral}`, `Alert/{Info,Warning,Error,Success}`, `Tooltip`                                                       |
-| Navigation | `Tab/{Active,Default}`, `SectionLabel`, `NavItem`, `NavItem/Active`, `Breadcrumb`                                                                                                     |
+| Navigation | `Tab/{Active,Default}`, `SectionLabel`, `NavItem`, `NavItem/Active`, `Breadcrumb`, `DocTab`, `DocTab/Active` (pestaña de documento: estado, celda, sistema, borrador, cerrar)         |
 | Data       | `Table/{HeaderCell,Cell}`, `Metric`, `KeyValue`, `Avatar`, `EmptyState`                                                                                                               |
 | Workflow   | `SystemBlock`, `SystemCell`, `SystemCell/{Selected,Outdated,DropTarget}`, `Link/{Straight,Elbow}`, `ToolboxGroup`, `ToolboxItem`, `ToolboxItem/Hover`, `HistoryItem`, `ProvenanceRow` |
 | Overlays   | `Menu`, `MenuItem`, `MenuItem/Danger`, `MenuDivider`, `Dialog` (confirmación con justificación)                                                                                       |
