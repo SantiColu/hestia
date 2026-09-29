@@ -29,6 +29,7 @@ from hestia_project.catalog import (
     before,
 )
 from hestia_project.errors import InvalidOperationError, NotFoundError
+from hestia_project.forms import new_form_state
 from hestia_project.model import Cell, CellStatus, Link, Position, Project, System
 
 MAX_NAME_LENGTH = 80
@@ -413,6 +414,7 @@ def _new_cell(project: Project, system: System, stage: StageType, name: str | No
         system_id=system.id,
         stage=stage,
         name=clean_name(name) if name else STAGES[stage].default_name,
+        form=new_form_state(stage),
     )
     project.cells.append(cell)
     system.cell_ids.append(cell.id)

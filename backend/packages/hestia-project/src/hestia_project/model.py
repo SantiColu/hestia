@@ -2,17 +2,20 @@
 
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 from pydantic import Field
 
+from hestia_core.forms import Problem
 from hestia_project.base import Schema
 from hestia_project.catalog import StageType
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 """Version of the project schema. Bump on any incompatible change to these models.
 
 - 1: links name the input they feed (one source per input, ADR 0009).
 - 2: links carry the whole context of their source (ADR 0016); ``Link.input`` is gone.
+- 3: cells of form stages keep their artifact, problems and field provenance (ADR 0017).
 """
 
 
@@ -38,6 +41,36 @@ class Provenance(Schema):
     input_cell_ids: list[str] = Field(default_factory=list[str])
 
 
+class FieldSource(StrEnum):
+    """Where the value of a form field comes from (ADR 0017)."""
+
+    ENTERED = "entered"
+    """Entered by hand, by a human or an agent."""
+    IMPORTED = "imported"
+    """Imported from a spreadsheet."""
+    DEFAULT = "default"
+    """Library default."""
+
+
+class FieldProvenance(Schema):
+    source: FieldSource
+    change_id: str | None
+    """Change of the history that set the value (author, date and justification). Null for
+    values that predate the history (e.g. defaults of cells from older files)."""
+
+
+class FormState(Schema):
+    """Artifact of a form stage as applied, with its problems and per-field provenance."""
+
+    artifact: dict[str, Any]
+    """The stage's artifact model (e.g. ``MissionArtifact``) as JSON."""
+    problems: list[Problem] = Field(default_factory=list[Problem])
+    """Validation of the artifact when it was applied."""
+    provenance: dict[str, FieldProvenance] = Field(default_factory=dict[str, FieldProvenance])
+    """By leaf field path (``orbit.altitude``, ``attitude_modes[0].name``). Empty fields have
+    no provenance."""
+
+
 class Cell(Schema):
     """An instance of a stage type inside a system."""
 
@@ -47,6 +80,8 @@ class Cell(Schema):
     name: str
     status: CellStatus = CellStatus.NEVER_RUN
     provenance: Provenance | None = None
+    form: FormState | None = None
+    """Only for implemented form stages (``mission``)."""
 
 
 class System(Schema):

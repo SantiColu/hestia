@@ -12,6 +12,7 @@ from hestia_project.errors import (
     NothingToRedoError,
     NothingToUndoError,
 )
+from hestia_project.forms import PENDING_CHANGE
 from hestia_project.history import (
     JUSTIFICATION_REQUIRED,
     OPERATION_LABELS,
@@ -117,13 +118,20 @@ class ProjectDocument:
         justification: str,
         fn: Callable[[Project], Outcome],
     ) -> Change:
-        """Run ``fn`` on a copy of the project and commit it only if it succeeds."""
+        """Run ``fn`` on a copy of the project and commit it only if it succeeds.
+
+        Exceptions of ``fn`` (including ``artifacts.NoChange``) leave the project untouched.
+        """
         justification = justification.strip()
         if operation in JUSTIFICATION_REQUIRED and not justification:
             raise JustificationRequiredError("Esta operación exige una justificación.")
         working = self.project.model_copy(deep=True)
         outcome = fn(working)
-        record = self._record(operation, author, justification, outcome, self.project, working)
+        change_id = uuid.uuid4().hex
+        _stamp(working, change_id)
+        record = self._record(
+            operation, author, justification, outcome, self.project, working, change_id=change_id
+        )
         self.project = working
         self._undo.append(record)
         self._redo.clear()
@@ -174,10 +182,11 @@ class ProjectDocument:
         before: Project,
         after: Project,
         reverts: str | None = None,
+        change_id: str | None = None,
     ) -> ChangeRecord:
         seq = (self.history[-1].change.seq + 1) if self.history else 1
         change = Change(
-            id=uuid.uuid4().hex,
+            id=change_id or uuid.uuid4().hex,
             seq=seq,
             timestamp=datetime.now(UTC),
             author=author,
@@ -196,3 +205,13 @@ class ProjectDocument:
         self.history.append(record)
         self.revision += 1
         return record
+
+
+def _stamp(project: Project, change_id: str) -> None:
+    """Point the field provenance set by an operation to the change that records it."""
+    for cell in project.cells:
+        if cell.form is None:
+            continue
+        for provenance in cell.form.provenance.values():
+            if provenance.change_id == PENDING_CHANGE:
+                provenance.change_id = change_id

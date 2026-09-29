@@ -17,6 +17,7 @@ from pydantic import ValidationError
 
 from hestia_project import __version__
 from hestia_project.errors import ProjectFileError
+from hestia_project.forms import new_form_state
 from hestia_project.history import Change, ChangeRecord
 from hestia_project.migration import relink
 from hestia_project.model import SCHEMA_VERSION, Cell, Link, Position, Project, System
@@ -43,7 +44,8 @@ CREATE TABLE cells (
     stage      TEXT NOT NULL,
     name       TEXT NOT NULL,
     status     TEXT NOT NULL,
-    provenance TEXT
+    provenance TEXT,
+    form       TEXT
 );
 CREATE TABLE links (
     id             TEXT PRIMARY KEY,
@@ -82,7 +84,7 @@ def _build(conn: sqlite3.Connection, project: Project, history: list[ChangeRecor
     )
     # Cells keep project order; within each system it matches ``System.cell_ids``.
     conn.executemany(
-        "INSERT INTO cells VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO cells VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         [
             (
                 c.id,
@@ -92,6 +94,7 @@ def _build(conn: sqlite3.Connection, project: Project, history: list[ChangeRecor
                 c.name,
                 c.status.value,
                 c.provenance.model_dump_json() if c.provenance else None,
+                c.form.model_dump_json() if c.form else None,
             )
             for i, c in enumerate(project.cells)
         ],
@@ -201,21 +204,26 @@ def _read(conn: sqlite3.Connection, path: Path) -> ProjectFile:
         systems.append(system)
         by_id[sid] = system
     cells: list[Cell] = []
-    for cid, system_id, stage, name, status, provenance in conn.execute(
-        "SELECT id, system_id, stage, name, status, provenance FROM cells ORDER BY ord"
+    # Version < 3 has no ``form``: form cells get the library defaults, as new cells do.
+    form_column = "form" if version >= 3 else "NULL"
+    for cid, system_id, stage, name, status, provenance, form in conn.execute(
+        f"SELECT id, system_id, stage, name, status, provenance, {form_column} FROM cells "
+        "ORDER BY ord"
     ):
-        cells.append(
-            Cell.model_validate(
-                {
-                    "id": cid,
-                    "system_id": system_id,
-                    "stage": stage,
-                    "name": name,
-                    "status": status,
-                    "provenance": json.loads(provenance) if provenance else None,
-                }
-            )
+        cell = Cell.model_validate(
+            {
+                "id": cid,
+                "system_id": system_id,
+                "stage": stage,
+                "name": name,
+                "status": status,
+                "provenance": json.loads(provenance) if provenance else None,
+                "form": json.loads(form) if form else None,
+            }
         )
+        if cell.form is None:
+            cell.form = new_form_state(cell.stage, change_id=None)
+        cells.append(cell)
         by_id[system_id].cell_ids.append(cid)
     # Version 1 has no ``ord``: rows were inserted in creation order.
     order = "rowid" if version < 2 else "ord"

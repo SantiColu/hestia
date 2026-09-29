@@ -30,6 +30,12 @@ class InvalidFragmentError(ProjectError):
     code = "invalid_fragment"
 
 
+class StageNotImplementedError(ProjectError):
+    """The stage has no editor or computation yet, or is not a form stage."""
+
+    code = "stage_not_implemented"
+
+
 class JustificationRequiredError(ProjectError):
     code = "justification_required"
 

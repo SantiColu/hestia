@@ -53,7 +53,7 @@ def test_copy_system_snapshots_cells_and_internal_links(phase0: Project) -> None
     fragment = copy(phase0, [phase0.systems[0].id], [])
     assert phase0 == before
     assert fragment.kind == FRAGMENT_KIND
-    assert fragment.schema_version == 1
+    assert fragment.schema_version == 2
     assert fragment.source_project_id == phase0.id
     [system] = fragment.systems
     assert system.whole and system.name == "F0"
@@ -114,7 +114,7 @@ def test_pasted_cells_are_never_run(phase0: Project) -> None:
     assert all(
         c.status is CellStatus.NEVER_RUN and c.provenance is None
         for c in phase0.cells
-        if c.id in pasted.cell_ids
+        if c.id in pasted.cell_ids and c.form is None
     )
 
 

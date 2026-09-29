@@ -14,6 +14,7 @@ from typing import TypeVar
 
 from pydantic import Field
 
+from hestia_project.artifacts import NoChange
 from hestia_project.base import Schema
 from hestia_project.document import ProjectDocument, ProjectView
 from hestia_project.errors import (
@@ -230,6 +231,22 @@ class Workspace:
         with self._mutex:
             doc = self._require()
             return self._changed(doc, doc.apply(operation, author, justification, fn))
+
+    def apply_if_changed(
+        self,
+        operation: Operation,
+        author: Author,
+        justification: str,
+        fn: Callable[[Project], Outcome],
+    ) -> tuple[Change | None, ProjectView]:
+        """Like ``apply``, but an operation that raises ``NoChange`` records nothing."""
+        with self._mutex:
+            doc = self._require()
+            try:
+                change = doc.apply(operation, author, justification, fn)
+            except NoChange:
+                return None, doc.view()
+            return change, self._changed(doc, change).view
 
     def undo(self, author: Author, justification: str = "") -> MutationResult:
         with self._mutex:

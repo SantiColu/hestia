@@ -3,17 +3,20 @@
 A fragment is a self-contained, versioned snapshot of systems and cells with the links between
 them. Copying never changes the project. Pasting creates everything with new ids, keeps the
 internal links (validated like any other link) and drops links to cells outside the fragment.
-Pasted cells are ``never_run``: results and provenance are not copied.
+Pasted cells are ``never_run``: results and provenance are not copied. Form cells are the
+exception (fragment v2): their artifact is input data, so it travels with the fragment and the
+pasted cell keeps whether it was applied (revalidated) and where each value came from.
 """
 
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from hestia_project.base import Schema
 from hestia_project.catalog import StageType
 from hestia_project.errors import InvalidFragmentError, InvalidOperationError
-from hestia_project.model import Cell, Position, Project, System
+from hestia_project.forms import form_from_artifact, new_form_state, status_for
+from hestia_project.model import Cell, CellStatus, FieldSource, Position, Project, System
 from hestia_project.schematic import (
     SYSTEM_GAP,
     Outcome,
@@ -29,11 +32,26 @@ from hestia_project.schematic import (
 FRAGMENT_KIND = "hestia.fragment"
 """Marker that identifies a fragment, e.g. in the system clipboard."""
 
-FRAGMENT_SCHEMA_VERSION = 1
-"""Version of the fragment schema. Bump on any incompatible change to these models."""
+FRAGMENT_SCHEMA_VERSION = 2
+"""Version of the fragment schema. Bump on any incompatible change to these models.
+
+- 1: systems, cells and internal links.
+- 2: form cells carry their artifact (``FragmentCell.form``). Version 1 is still accepted.
+"""
+SUPPORTED_FRAGMENT_VERSIONS = frozenset({1, FRAGMENT_SCHEMA_VERSION})
 
 PASTE_OFFSET = SYSTEM_GAP / 2
 """Shift of pasted systems relative to the originals when no position is given."""
+
+
+class FragmentForm(Schema):
+    """Artifact of a form cell (ADR 0017)."""
+
+    artifact: dict[str, Any]
+    applied: bool
+    """Whether the artifact was applied in the source (the pasted cell is then validated)."""
+    sources: dict[str, FieldSource] = Field(default_factory=dict[str, FieldSource])
+    """Where each field value came from, by leaf path. Change ids are not copied."""
 
 
 class FragmentCell(Schema):
@@ -41,6 +59,7 @@ class FragmentCell(Schema):
     """Id in the source project; only used to resolve links inside the fragment."""
     stage: StageType
     name: str
+    form: FragmentForm | None = None
 
 
 class FragmentLink(Schema):
@@ -113,7 +132,19 @@ def _fragment_system(
         name=system.name,
         position=system.position.model_copy(),
         whole=whole,
-        cells=[FragmentCell(id=c.id, stage=c.stage, name=c.name) for c in cells],
+        cells=[
+            FragmentCell(id=c.id, stage=c.stage, name=c.name, form=_fragment_form(c)) for c in cells
+        ],
+    )
+
+
+def _fragment_form(cell: Cell) -> FragmentForm | None:
+    if cell.form is None:
+        return None
+    return FragmentForm(
+        artifact=cell.form.artifact,
+        applied=cell.status is not CellStatus.NEVER_RUN,
+        sources={path: p.source for path, p in cell.form.provenance.items()},
     )
 
 
@@ -122,10 +153,10 @@ def _fragment_system(
 
 def check_fragment(fragment: Fragment) -> None:
     """Raise ``InvalidFragmentError`` if the fragment is not usable (version, structure)."""
-    if fragment.schema_version != FRAGMENT_SCHEMA_VERSION:
+    if fragment.schema_version not in SUPPORTED_FRAGMENT_VERSIONS:
         raise InvalidFragmentError(
             f"El contenido copiado usa la versión {fragment.schema_version} del formato "
-            f"y esta versión de Hestia solo entiende la {FRAGMENT_SCHEMA_VERSION}.",
+            f"y esta versión de Hestia entiende hasta la {FRAGMENT_SCHEMA_VERSION}.",
             schema_version=fragment.schema_version,
         )
     if not any(system.cells for system in fragment.systems):
@@ -190,6 +221,7 @@ def paste(
                 stage=cell.stage,
                 name=_unique_cell_name(project, system, clean_name(cell.name)),
             )
+            _paste_form(clone, cell.form)
             project.cells.append(clone)
             system.cell_ids.append(clone.id)
             mapping[cell.id] = clone.id
@@ -208,6 +240,25 @@ def paste(
         summary=_summary(new_systems, len(mapping) - into_target, target, into_target),
         created_ids=created,
     )
+
+
+def _paste_form(cell: Cell, form: FragmentForm | None) -> None:
+    """Default artifact for form cells; the copied one (revalidated) if the fragment has it."""
+    cell.form = new_form_state(cell.stage)
+    if cell.form is None or form is None:
+        return
+    try:
+        cell.form = form_from_artifact(cell.stage, form.artifact, form.sources)
+    except InvalidOperationError as exc:
+        raise InvalidFragmentError(
+            f"El contenido copiado tiene un artefacto inválido en «{cell.name}»."
+        ) from exc
+    except ValidationError as exc:
+        raise InvalidFragmentError(
+            f"El contenido copiado tiene un artefacto inválido en «{cell.name}»."
+        ) from exc
+    if form.applied:
+        cell.status = status_for(cell.form.problems)
 
 
 def _paste_position(

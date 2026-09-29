@@ -26,7 +26,7 @@ def test_copy_returns_a_fragment_and_changes_nothing(opened: TestClient) -> None
     view = _phase0(opened)
     fragment = _copy(opened, system_ids=[view["project"]["systems"][0]["id"]])
     assert fragment["kind"] == "hestia.fragment"
-    assert fragment["schema_version"] == 1
+    assert fragment["schema_version"] == 2
     assert len(fragment["systems"][0]["cells"]) == 5 and len(fragment["links"]) == 4
     session = opened.get("/session").json()["project"]
     assert session["document"]["revision"] == view["document"]["revision"]
@@ -89,7 +89,7 @@ def test_paste_in_another_project_and_reopen(opened: TestClient, tmp_path: Path)
 def test_unknown_fragment_version_is_rejected(opened: TestClient) -> None:
     view = _phase0(opened)
     fragment = _copy(opened, system_ids=[view["project"]["systems"][0]["id"]])
-    fragment["schema_version"] = 2
+    fragment["schema_version"] = 3
     response = opened.post(
         "/project/clipboard/paste", json={"fragment": fragment, "justification": ""}
     )
