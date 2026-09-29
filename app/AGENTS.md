@@ -16,7 +16,7 @@ Interfaz de Hestia: React + Vite + TanStack Router, TypeScript estricto, Tailwin
 
 ## Estructura
 
-- `src-tauri/`: shell de escritorio (Tauri 2, Rust). Solo ventana, diálogos nativos (`tauri-plugin-dialog`), portapapeles (`tauri-plugin-clipboard-manager`, leer y escribir texto) y ciclo de vida del sidecar; nada de lógica de dominio. `dragDropEnabled: false` para que funcione el drag & drop HTML5 del Toolbox.
+- `src-tauri/`: shell de escritorio (Tauri 2, Rust). Solo ventana, diálogos nativos (`tauri-plugin-dialog`), portapapeles (`tauri-plugin-clipboard-manager`, leer y escribir texto) y ciclo de vida del sidecar; nada de lógica de dominio. `dragDropEnabled: false` para que funcione el drag & drop HTML5 del Toolbox. En Linux, `main.rs` define `WEBKIT_DISABLE_COMPOSITING_MODE=1` (si no está definida): con la composición acelerada WebKitGTK dibuja borroso el esquemático.
 - `src/api/`: cliente de la API (`client.ts`) y tipos generados (`schema.gen.ts`, no editar).
 - `src/project/`: estado del proyecto abierto (`store.tsx`, con la suscripción SSE), diálogos por promesa (`dialogs.tsx`), acciones de Archivo y deshacer/rehacer (`actions.ts`), pestañas y borradores sin aplicar (`editor.tsx`), atajos (`shortcuts.ts`) y fragmentos del portapapeles (`fragment.ts`: solo reconoce el marcador; valida la API, ADR 0014).
 - `src/screens/`: pantallas. `home.tsx` (inicio) y `workspace/` (barra superior, Toolbox, esquemático con React Flow, dock y panel inferior). En `workspace/`, `actions.ts` son las escrituras del esquemático (incluidos cortar, copiar, pegar y duplicar) y `edit.ts` el menú Editar y sus atajos sobre la selección.
