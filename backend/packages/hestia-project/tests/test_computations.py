@@ -142,9 +142,8 @@ def set_factor(doc: ProjectDocument, factor: float) -> str:
 
 def result_value(doc: ProjectDocument) -> float:
     env = cell_of(doc.project, S.ENVIRONMENT)
-    _, stored = read_result(doc.project, doc.results, env.id)
-    assert stored is not None
-    return FakeResult.model_validate(stored.data).value
+    assert env.result_id is not None
+    return FakeResult.model_validate(doc.results[env.result_id].data).value
 
 
 # ---------------------------------------------------------------- update
@@ -294,8 +293,9 @@ def test_rejected_inputs_fail_and_keep_the_previous_result() -> None:
     env = cell_of(doc.project, S.ENVIRONMENT)
     assert env.status is CellStatus.FAILED and env.result_id == first
     assert [p.code for p in env.problems] == [ProblemCode.ECCENTRICITY_OUT_OF_RANGE]
-    cell_result, stored = read_result(doc.project, doc.results, env.id)
-    assert cell_result.problems == env.problems and stored is not None
+    cell_result = read_result(doc.project, doc.results, env.id)
+    assert cell_result.problems == env.problems and cell_result.result_id == first
+    assert cell_result.environment is None  # a fake result, not an environment
 
 
 def test_undo_returns_to_the_previous_result() -> None:

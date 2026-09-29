@@ -25,11 +25,21 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from hestia_core import __version__ as core_version
+from hestia_core.environment.analytic import AnalyticEnvironmentProvider
+from hestia_core.environment.parameters import EnvironmentParameters
+from hestia_core.environment.result import (
+    EnvironmentResult,
+    EnvironmentSummary,
+    OrbitProfile,
+    summarize,
+)
 from hestia_core.forms import InputRejectedError, Problem, ProblemCode
+from hestia_core.mission import MissionArtifact
 from hestia_project.artifacts import NoChange, artifact_problems
 from hestia_project.base import Schema
 from hestia_project.catalog import ORDER, STAGES, StageType
-from hestia_project.errors import StageNotImplementedError
+from hestia_project.errors import NotFoundError, StageNotImplementedError
 from hestia_project.forms import FORMS, PENDING_CHANGE, is_form_stage, new_form_state
 from hestia_project.model import (
     Cell,
@@ -67,8 +77,25 @@ class ComputationSpec:
     code_version: str
 
 
-COMPUTATIONS: dict[StageType, ComputationSpec] = {}
-"""Implemented computation stages (registered by ``hestia_project.stages``)."""
+_ENVIRONMENT_PROVIDER = AnalyticEnvironmentProvider()
+
+
+def _run_environment(parameters: BaseModel, context: ComputationContext) -> BaseModel:
+    mission = context[StageType.MISSION]
+    assert isinstance(parameters, EnvironmentParameters) and isinstance(mission, MissionArtifact)
+    return _ENVIRONMENT_PROVIDER.compute(mission, parameters)
+
+
+COMPUTATIONS: dict[StageType, ComputationSpec] = {
+    StageType.ENVIRONMENT: ComputationSpec(
+        result_model=EnvironmentResult,
+        run=_run_environment,
+        provider=_ENVIRONMENT_PROVIDER.name,
+        provider_version=_ENVIRONMENT_PROVIDER.version,
+        code_version=core_version,
+    ),
+}
+"""Implemented computation stages. Their parameters are in ``forms.FORMS``."""
 
 
 def computation_spec(stage: StageType) -> ComputationSpec:
@@ -209,7 +236,8 @@ def update_cell(project: Project, results: Mapping[str, StageResult], cell_id: s
 
 
 class CellResult(Schema):
-    """State of a computation cell and its last result (possibly outdated)."""
+    """State of a computation cell and its last result (possibly outdated), without the bulk
+    (orbit profiles are read one at a time)."""
 
     cell_id: str
     stage: StageType
@@ -219,28 +247,62 @@ class CellResult(Schema):
     provenance: Provenance | None
     """What produced the result: context cells and their changes, parameters, provider."""
     result_id: str | None
+    """Null until the first successful update."""
     parameters: dict[str, Any] | None
     """Parameters the result was computed with (SI)."""
+    environment: EnvironmentSummary | None
+    """Result of an environment cell."""
 
 
-def read_result(
+def _stored(
     project: Project, results: Mapping[str, StageResult], cell_id: str
-) -> tuple[CellResult, StageResult | None]:
-    """The cell's state and its stored result (None if it never produced one)."""
+) -> tuple[Cell, StageResult | None]:
     cell = get_cell(project, cell_id)
     computation_spec(cell.stage)
-    stored = results.get(cell.result_id) if cell.result_id else None
-    return (
-        CellResult(
-            cell_id=cell.id,
-            stage=cell.stage,
-            status=cell.status,
-            problems=cell.problems,
-            provenance=cell.provenance,
-            result_id=cell.result_id,
-            parameters=stored.parameters if stored else None,
-        ),
-        stored,
+    return cell, results.get(cell.result_id) if cell.result_id else None
+
+
+def read_result(project: Project, results: Mapping[str, StageResult], cell_id: str) -> CellResult:
+    """The cell's state and its result summary (None if it never produced one)."""
+    cell, stored = _stored(project, results, cell_id)
+    environment = None
+    if stored is not None and COMPUTATIONS[cell.stage].result_model is EnvironmentResult:
+        environment = summarize(EnvironmentResult.model_validate(stored.data))
+    return CellResult(
+        cell_id=cell.id,
+        stage=cell.stage,
+        status=cell.status,
+        problems=cell.problems,
+        provenance=cell.provenance,
+        result_id=cell.result_id,
+        parameters=stored.parameters if stored else None,
+        environment=environment,
+    )
+
+
+def read_orbit_profile(
+    project: Project,
+    results: Mapping[str, StageResult],
+    cell_id: str,
+    condition_id: str,
+    mode_id: str,
+) -> OrbitProfile:
+    """One orbit profile (condition x attitude mode) of an environment cell's result."""
+    cell, stored = _stored(project, results, cell_id)
+    if cell.stage is not StageType.ENVIRONMENT:
+        raise StageNotImplementedError(
+            f"«{cell.name}» no tiene perfiles orbitales.", stage=cell.stage
+        )
+    if stored is None:
+        raise NotFoundError(f"«{cell.name}» todavía no tiene resultado: actualizala.")
+    for data in stored.data.get("orbit_profiles", []):
+        if data.get("condition_id") == condition_id and data.get("mode_id") == mode_id:
+            return OrbitProfile.model_validate(data)
+    raise NotFoundError(
+        f"El resultado de «{cell.name}» no tiene la condición {condition_id!r} con el modo "
+        f"{mode_id!r}.",
+        condition_id=condition_id,
+        mode_id=mode_id,
     )
 
 

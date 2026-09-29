@@ -24,7 +24,7 @@ import re
 from datetime import date
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
 from hestia_core.forms import Problem, ProblemCode
@@ -247,6 +247,9 @@ class Criteria(BaseModel):
 
 class MissionArtifact(BaseModel):
     """Artifact of the mission stage: orbit, attitude, envelope and criteria."""
+
+    model_config = ConfigDict(extra="forbid")
+    """Unknown sections are an error, so a request body can tell it from other artifacts."""
 
     schema_version: int = MISSION_SCHEMA_VERSION
     general: General = Field(default_factory=General, title="General")

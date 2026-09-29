@@ -90,7 +90,7 @@ STAGES: dict[StageType, StageSpec] = {
             K.COMPUTATION,
             False,
             (S.MISSION,),
-            False,
+            True,
         ),
         StageSpec(S.EQUIPMENT, Phase.PHASE_0, "0.3", "Equipos", K.FORM, True, (), False),
         StageSpec(

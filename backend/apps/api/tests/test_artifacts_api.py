@@ -88,7 +88,7 @@ def test_apply_undo_redo(opened: TestClient) -> None:
 
 def test_not_implemented_stages(opened: TestClient) -> None:
     cells = _phase0(opened)
-    for stage in ("equipment", "environment"):
+    for stage in ("equipment", "global_balance"):
         response = opened.get(f"/project/cells/{cells[stage]}/artifact")
         assert response.status_code == 422
         assert response.json()["code"] == "stage_not_implemented"

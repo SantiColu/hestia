@@ -53,6 +53,10 @@ OPERATIONS: dict[str, tuple[str, str]] = {
 
 NOT_TOOLS: dict[str, str] = {
     "stream_events": "Server-Sent Events for live UIs; agents read state and history instead.",
+    # Temporary: the tools come with the next commit (MCP step of the environment stage).
+    "update_cell": "Tool added in the next commit.",
+    "get_cell_result": "Tool added in the next commit.",
+    "get_orbit_profile": "Tool added in the next commit.",
 }
 """API operations deliberately without a tool, with the reason."""
 

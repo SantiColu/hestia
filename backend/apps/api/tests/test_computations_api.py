@@ -1,0 +1,123 @@
+"""Computation stages over HTTP (ADR 0021): parameters, update, result and orbit profiles."""
+
+from typing import Any
+
+from fastapi.testclient import TestClient
+
+AGENT = {"X-Hestia-Actor": "stefan", "X-Hestia-Actor-Kind": "agent"}
+
+MISSION: dict[str, Any] = {
+    "general": {"launch_date": "2028-03-01", "design_life": 31_557_600.0},
+    "orbit": {"type": "sso", "altitude": 600000.0, "ltan": "10:30"},
+    "envelope": {"size_x": 1.0, "size_y": 1.2, "size_z": 1.5, "mass": 450.0},
+    "attitude_modes": [
+        {
+            "name": "Apuntado nadir",
+            "primary_axis": "+Z",
+            "primary_target": "nadir",
+            "secondary_axis": "+X",
+            "secondary_target": "velocity",
+        }
+    ],
+}
+
+
+def _phase0(client: TestClient, mission: dict[str, Any] | None = MISSION) -> dict[str, str]:
+    body = client.post("/project/systems", json={"template": "phase_0", "justification": ""}).json()
+    cells = {c["stage"]: c["id"] for c in body["view"]["project"]["cells"]}
+    if mission is not None:
+        response = client.put(
+            f"/project/cells/{cells['mission']}/artifact",
+            json={"artifact": mission, "justification": "datos"},
+        )
+        assert response.status_code == 200
+    return cells
+
+
+def test_parameters_use_the_generic_artifact_endpoints(opened: TestClient) -> None:
+    cells = _phase0(opened)
+    env = cells["environment"]
+    body = opened.get(f"/project/cells/{env}/artifact").json()
+    assert body["stage"] == "environment" and body["applied"] is False
+    assert body["artifact"]["design_values"]["solar_constant"] == 1361.0
+    draft = {**body["artifact"], "dispersion": {"geo_max_inclination": 0.1}}
+    problems = opened.post(
+        f"/project/cells/{env}/artifact/validate", json={"artifact": draft}
+    ).json()["problems"]
+    assert [p["code"] for p in problems] == ["not_allowed"]
+    applied = opened.put(
+        f"/project/cells/{env}/artifact",
+        json={
+            "artifact": {**body["artifact"], "sampling": {"orbit_samples": 72}},
+            "justification": "x",
+        },
+    ).json()
+    assert applied["change"]["operation"] == "apply_artifact"
+    assert applied["cell"]["applied"] is True
+    schema = opened.get("/catalog/stages/environment/artifact-schema").json()
+    assert schema["$defs"]["Sampling"]["properties"]["mission_step"]["x-display-unit"] == "días"
+
+
+def test_a_mission_draft_is_rejected_for_the_environment(opened: TestClient) -> None:
+    cells = _phase0(opened)
+    response = opened.post(
+        f"/project/cells/{cells['environment']}/artifact/validate", json={"artifact": MISSION}
+    )
+    assert response.status_code == 422
+    assert response.json()["code"] == "invalid_operation"
+
+
+def test_update_and_read_the_result(opened: TestClient) -> None:
+    cells = _phase0(opened)
+    env = cells["environment"]
+    before = opened.get(f"/project/cells/{env}/result").json()
+    assert before["status"] == "never_run" and before["environment"] is None
+
+    body = opened.post(f"/project/cells/{env}/update", json={}, headers=AGENT).json()
+    change = body["change"]
+    assert change["operation"] == "update_cell" and change["justification"] == ""
+    assert change["author"] == {"kind": "agent", "name": "stefan"}
+    result = body["result"]
+    assert result["status"] == "up_to_date" and result["problems"] == []
+    assert result["provenance"]["provider"] == "analytic"
+    assert result["provenance"]["context"][0]["cell_id"] == cells["mission"]
+    environment = result["environment"]
+    assert [c["id"] for c in environment["conditions"]] == ["max_eclipse", "min_eclipse"]
+    ref = environment["orbit_profiles"][0]
+    assert set(ref) == {"condition_id", "mode_id"}
+
+    again = opened.post(f"/project/cells/{env}/update", json={"justification": "otra vez"})
+    assert again.json()["change"] is None
+
+    profile = opened.get(
+        f"/project/cells/{env}/result/orbit-profile",
+        params={"condition_id": ref["condition_id"], "mode_id": ref["mode_id"]},
+    ).json()
+    assert len(profile["time"]) == 120 and len(profile["quaternion"][0]) == 4
+    assert [f["face"] for f in profile["faces"]] == ["+X", "-X", "+Y", "-Y", "+Z", "-Z"]
+    missing = opened.get(
+        f"/project/cells/{env}/result/orbit-profile",
+        params={"condition_id": "nope", "mode_id": ref["mode_id"]},
+    )
+    assert missing.status_code == 404
+
+    history = opened.get("/project/history").json()
+    assert history[-1]["operation"] == "update_cell"
+    undone = opened.post("/project/undo", json={"justification": ""})
+    assert undone.status_code == 200
+    assert opened.get(f"/project/cells/{env}/result").json()["status"] == "never_run"
+
+
+def test_update_without_an_applied_mission_fails(opened: TestClient) -> None:
+    cells = _phase0(opened, mission=None)
+    body = opened.post(f"/project/cells/{cells['environment']}/update", json={}).json()
+    assert body["result"]["status"] == "failed"
+    assert [p["code"] for p in body["result"]["problems"]] == ["context_invalid"]
+
+
+def test_form_stages_cannot_be_updated(opened: TestClient) -> None:
+    cells = _phase0(opened)
+    response = opened.post(f"/project/cells/{cells['mission']}/update", json={})
+    assert response.status_code == 422
+    assert response.json()["code"] == "stage_not_implemented"
+    assert opened.get(f"/project/cells/{cells['mission']}/result").status_code == 422

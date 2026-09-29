@@ -1,5 +1,5 @@
-"""Artifacts of form stages (ADR 0017). Each endpoint only delegates to
-``hestia_project.artifacts``."""
+"""Artifacts of form stages (ADR 0017) and parameters of computation stages (ADR 0021). Each
+endpoint only delegates to ``hestia_project.artifacts``."""
 
 from fastapi import APIRouter
 
@@ -15,8 +15,9 @@ router = APIRouter(prefix="/project/cells", tags=["artifacts"], responses=ERROR_
 
 @router.get("/{cell_id}/artifact", operation_id="get_cell_artifact")
 def get_cell_artifact(cell_id: str, workspace: WorkspaceDep) -> CellArtifact:
-    """The applied artifact of a form cell (mission) with its problems, per-field provenance,
-    status and context. 422 `stage_not_implemented` for other stages."""
+    """The applied artifact of a form cell (mission), or the applied parameters of a
+    computation cell (environment), with its problems, per-field provenance, status and
+    context. 422 `stage_not_implemented` for other stages."""
     return workspace.query(lambda p: artifacts.read_artifact(p, cell_id))
 
 
@@ -36,9 +37,10 @@ def apply_cell_artifact(
 ) -> ApplyArtifactResult:
     """Replace the cell's artifact with the draft in one change of the history (one undo).
 
-    Requires a justification. Problems are allowed: the cell is then failed. Only the fields
-    that changed get new provenance; everything downstream becomes outdated if the content
-    changed. `change` is null if the content is the same as the applied one.
+    Requires a justification. Problems are allowed: a form cell is then failed (a computation
+    cell fails when updated). Only the fields that changed get new provenance; everything
+    downstream (and a computation cell itself) becomes outdated if the content changed.
+    `change` is null if the content is the same as the applied one.
     """
     change, view = workspace.apply_if_changed(
         Operation.APPLY_ARTIFACT,

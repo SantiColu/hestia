@@ -12,7 +12,7 @@ Frames and signs: vectors are geocentric equatorial inertial, mean equator of da
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from hestia_core.environment.parameters import DesignValueSource, EclipseModel
 from hestia_core.mission import Face, OrbitType
@@ -199,14 +199,13 @@ class OrbitProfile(BaseModel):
 
 
 class OrbitProfileRef(BaseModel):
+    """An orbit profile of the result, read on its own (profiles are the bulk of the result)."""
+
     condition_id: str
     mode_id: str
 
 
-class EnvironmentResult(BaseModel):
-    """Result of the environment stage. Conditions, not cases: which combination is hot or cold
-    is decided downstream (``global_balance``, ``load_cases``)."""
-
+class _EnvironmentBase(BaseModel):
     schema_version: int = ENVIRONMENT_RESULT_SCHEMA_VERSION
     provider: ProviderInfo
     design_values: DesignValuesUsed
@@ -215,8 +214,31 @@ class EnvironmentResult(BaseModel):
     ranges: list[RangeEntry]
     conditions: list[Condition]
     attitude_modes: list[AttitudeModeRef]
-    faces: list[Face] = Field(default_factory=lambda: list(Face))
+    faces: list[Face]
+    """Faces of the envelope, in order."""
     fluxes: list[FaceFluxes]
     """By condition x attitude mode x face."""
+
+
+class EnvironmentResult(_EnvironmentBase):
+    """Result of the environment stage. Conditions, not cases: which combination is hot or cold
+    is decided downstream (``global_balance``, ``load_cases``)."""
+
     orbit_profiles: list[OrbitProfile]
     """By condition x attitude mode."""
+
+
+class EnvironmentSummary(_EnvironmentBase):
+    """The result without the orbit profiles, which are read one at a time."""
+
+    orbit_profiles: list[OrbitProfileRef]
+    """Profiles available, by condition x attitude mode."""
+
+
+def summarize(result: EnvironmentResult) -> EnvironmentSummary:
+    data = result.model_dump(exclude={"orbit_profiles"})
+    refs = [
+        OrbitProfileRef(condition_id=p.condition_id, mode_id=p.mode_id)
+        for p in result.orbit_profiles
+    ]
+    return EnvironmentSummary.model_validate({**data, "orbit_profiles": refs})

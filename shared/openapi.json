@@ -67,7 +67,15 @@
         "description": "Replace the cell's artifact with the draft. The justification is required.",
         "properties": {
           "artifact": {
-            "$ref": "#/components/schemas/MissionArtifact"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MissionArtifact"
+              },
+              {
+                "$ref": "#/components/schemas/EnvironmentParameters"
+              }
+            ],
+            "title": "Artifact"
           },
           "justification": {
             "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
@@ -110,10 +118,18 @@
         "type": "object"
       },
       "ArtifactDraft": {
-        "description": "A draft of a form artifact, possibly incomplete. Its stage must match the cell's.",
+        "description": "A draft of a form artifact (or of a computation's parameters), possibly incomplete. Its\nstage must match the cell's.",
         "properties": {
           "artifact": {
-            "$ref": "#/components/schemas/MissionArtifact"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MissionArtifact"
+              },
+              {
+                "$ref": "#/components/schemas/EnvironmentParameters"
+              }
+            ],
+            "title": "Artifact"
           }
         },
         "required": [
@@ -214,6 +230,24 @@
           }
         },
         "title": "AttitudeMode",
+        "type": "object"
+      },
+      "AttitudeModeRef": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "AttitudeModeRef",
         "type": "object"
       },
       "Author": {
@@ -387,6 +421,13 @@
             "title": "Name",
             "type": "string"
           },
+          "problems": {
+            "items": {
+              "$ref": "#/components/schemas/Problem"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
           "provenance": {
             "anyOf": [
               {
@@ -396,6 +437,17 @@
                 "type": "null"
               }
             ]
+          },
+          "result_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Id"
           },
           "stage": {
             "$ref": "#/components/schemas/StageType"
@@ -416,20 +468,30 @@
           "name",
           "status",
           "provenance",
-          "form"
+          "form",
+          "result_id",
+          "problems"
         ],
         "title": "Cell",
         "type": "object"
       },
       "CellArtifact": {
-        "description": "The artifact of a form cell as applied, with everything needed to edit it.",
+        "description": "The artifact of a form cell (or the parameters of a computation cell) as applied, with\neverything needed to edit it.",
         "properties": {
           "applied": {
             "title": "Applied",
             "type": "boolean"
           },
           "artifact": {
-            "$ref": "#/components/schemas/MissionArtifact"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MissionArtifact"
+              },
+              {
+                "$ref": "#/components/schemas/EnvironmentParameters"
+              }
+            ],
+            "title": "Artifact"
           },
           "cell_id": {
             "title": "Cell Id",
@@ -530,6 +592,83 @@
         "title": "CellIds",
         "type": "object"
       },
+      "CellResult": {
+        "description": "State of a computation cell and its last result (possibly outdated), without the bulk\n(orbit profiles are read one at a time).",
+        "properties": {
+          "cell_id": {
+            "title": "Cell Id",
+            "type": "string"
+          },
+          "environment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EnvironmentSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parameters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters"
+          },
+          "problems": {
+            "items": {
+              "$ref": "#/components/schemas/Problem"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "provenance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Provenance"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Id"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/StageType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CellStatus"
+          }
+        },
+        "required": [
+          "cell_id",
+          "stage",
+          "status",
+          "problems",
+          "provenance",
+          "result_id",
+          "parameters",
+          "environment"
+        ],
+        "title": "CellResult",
+        "type": "object"
+      },
       "CellStatus": {
         "enum": [
           "up_to_date",
@@ -622,6 +761,68 @@
         "title": "CloseProjectRequest",
         "type": "object"
       },
+      "Condition": {
+        "description": "A geometry of the environment: β and altitude, with its orbit and eclipse.",
+        "properties": {
+          "altitude": {
+            "title": "Altitude",
+            "type": "number"
+          },
+          "beta": {
+            "title": "Beta",
+            "type": "number"
+          },
+          "date": {
+            "format": "date-time",
+            "title": "Date",
+            "type": "string"
+          },
+          "eclipse_duration": {
+            "title": "Eclipse Duration",
+            "type": "number"
+          },
+          "eclipse_fraction": {
+            "title": "Eclipse Fraction",
+            "type": "number"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/ConditionOrigin"
+          },
+          "period": {
+            "title": "Period",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "origin",
+          "beta",
+          "altitude",
+          "date",
+          "period",
+          "eclipse_fraction",
+          "eclipse_duration"
+        ],
+        "title": "Condition",
+        "type": "object"
+      },
+      "ConditionOrigin": {
+        "enum": [
+          "extreme",
+          "custom"
+        ],
+        "title": "ConditionOrigin",
+        "type": "string"
+      },
       "ContextEntry": {
         "description": "A stage type in the context of a cell and the cell that provides it.",
         "properties": {
@@ -648,6 +849,36 @@
           "system_id"
         ],
         "title": "ContextEntry",
+        "type": "object"
+      },
+      "ContextSource": {
+        "description": "A stage type of the context used by an update and the state its provider was in.",
+        "properties": {
+          "cell_id": {
+            "title": "Cell Id",
+            "type": "string"
+          },
+          "change_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Id"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/StageType"
+          }
+        },
+        "required": [
+          "stage",
+          "cell_id",
+          "change_id"
+        ],
+        "title": "ContextSource",
         "type": "object"
       },
       "CopyRequest": {
@@ -820,6 +1051,265 @@
         "title": "Criteria",
         "type": "object"
       },
+      "CustomCondition": {
+        "description": "A geometry the user adds to the extreme conditions (e.g. an intermediate β).",
+        "properties": {
+          "altitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío: la nominal de Misión.",
+            "title": "Altitud",
+            "x-display-unit": "km",
+            "x-placeholder": "nominal",
+            "x-unit": "m"
+          },
+          "beta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ángulo β",
+            "x-display-unit": "°",
+            "x-unit": "rad"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Generated by the backend when applied. Immutable.",
+            "title": "Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre",
+            "x-placeholder": "β = 30°"
+          }
+        },
+        "title": "CustomCondition",
+        "type": "object"
+      },
+      "DesignValue": {
+        "description": "A design value as used, with where it comes from.",
+        "properties": {
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          },
+          "source": {
+            "$ref": "#/components/schemas/DesignValueSource"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "value",
+          "source"
+        ],
+        "title": "DesignValue",
+        "type": "object"
+      },
+      "DesignValueSource": {
+        "enum": [
+          "entered",
+          "library"
+        ],
+        "title": "DesignValueSource",
+        "type": "string"
+      },
+      "DesignValues": {
+        "properties": {
+          "albedo_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Albedo de diseño máximo. Vacío: tabla por inclinación.",
+            "title": "Albedo máximo",
+            "x-default-source": "Provisorio, a verificar contra NASA TM-2001-211221",
+            "x-placeholder": "tabla por inclinación"
+          },
+          "albedo_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Albedo de diseño mínimo. Vacío: tabla por inclinación.",
+            "title": "Albedo mínimo",
+            "x-default-source": "Provisorio, a verificar contra NASA TM-2001-211221",
+            "x-placeholder": "tabla por inclinación"
+          },
+          "olr_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Radiación de onda larga saliente máxima. Vacío: tabla por inclinación.",
+            "title": "IR terrestre máxima",
+            "x-default-source": "Provisorio, a verificar contra NASA TM-2001-211221",
+            "x-display-unit": "W/m²",
+            "x-placeholder": "tabla por inclinación",
+            "x-unit": "W/m²"
+          },
+          "olr_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Radiación de onda larga saliente mínima. Vacío: tabla por inclinación.",
+            "title": "IR terrestre mínima",
+            "x-default-source": "Provisorio, a verificar contra NASA TM-2001-211221",
+            "x-display-unit": "W/m²",
+            "x-placeholder": "tabla por inclinación",
+            "x-unit": "W/m²"
+          },
+          "solar_constant": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1361.0,
+            "description": "Irradiancia solar a 1 UA. La de cada fecha sale de la distancia Tierra-Sol.",
+            "title": "Constante solar",
+            "x-default": 1361.0,
+            "x-default-source": "ECSS-E-ST-10-04C (a verificar)",
+            "x-display-unit": "W/m²",
+            "x-unit": "W/m²"
+          }
+        },
+        "title": "DesignValues",
+        "type": "object"
+      },
+      "DesignValuesUsed": {
+        "properties": {
+          "albedo_max": {
+            "$ref": "#/components/schemas/DesignValue"
+          },
+          "albedo_min": {
+            "$ref": "#/components/schemas/DesignValue"
+          },
+          "olr_max": {
+            "$ref": "#/components/schemas/DesignValue"
+          },
+          "olr_min": {
+            "$ref": "#/components/schemas/DesignValue"
+          },
+          "solar_constant": {
+            "$ref": "#/components/schemas/DesignValue"
+          }
+        },
+        "required": [
+          "solar_constant",
+          "albedo_min",
+          "albedo_max",
+          "olr_min",
+          "olr_max"
+        ],
+        "title": "DesignValuesUsed",
+        "type": "object"
+      },
+      "Dispersion": {
+        "description": "Long-term perturbations that are not propagated: their extremes are evaluated around\nthe nominal orbit of the mission (ADR 0020).",
+        "properties": {
+          "eol_altitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "SSO y LEO/MEO. Altitud por decaimiento al fin de vida. Vacío: sin decaimiento.",
+            "title": "Altitud al fin de vida",
+            "x-display-unit": "km",
+            "x-placeholder": "sin decaimiento",
+            "x-unit": "m"
+          },
+          "geo_max_inclination": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo GEO. Inclinación máxima que alcanza la órbita. Vacío: 0.",
+            "title": "Inclinación máxima en GEO",
+            "x-display-unit": "°",
+            "x-placeholder": "0",
+            "x-unit": "rad"
+          },
+          "ltan_dispersion": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo SSO. Deriva máxima (±) de la hora local del nodo a lo largo de la vida. Vacío: 0.",
+            "title": "Deriva de la hora del nodo",
+            "x-display-unit": "min",
+            "x-placeholder": "0",
+            "x-unit": "s"
+          }
+        },
+        "title": "Dispersion",
+        "type": "object"
+      },
       "DocumentState": {
         "description": "File-level state of the open project.",
         "properties": {
@@ -945,6 +1435,14 @@
         "title": "DuplicateSystemRequest",
         "type": "object"
       },
+      "EclipseModel": {
+        "enum": [
+          "cylindrical",
+          "conical"
+        ],
+        "title": "EclipseModel",
+        "type": "string"
+      },
       "Envelope": {
         "properties": {
           "mass": {
@@ -1004,6 +1502,117 @@
         "title": "Envelope",
         "type": "object"
       },
+      "EnvironmentParameters": {
+        "additionalProperties": false,
+        "description": "Parameters of the environment stage: design values, dispersions, sampling and custom\nconditions.",
+        "properties": {
+          "custom_conditions": {
+            "items": {
+              "$ref": "#/components/schemas/CustomCondition"
+            },
+            "title": "Condiciones propias",
+            "type": "array",
+            "x-add-label": "Agregar condición"
+          },
+          "design_values": {
+            "$ref": "#/components/schemas/DesignValues",
+            "title": "Valores de diseño"
+          },
+          "dispersion": {
+            "$ref": "#/components/schemas/Dispersion",
+            "title": "Dispersión de la órbita"
+          },
+          "sampling": {
+            "$ref": "#/components/schemas/Sampling",
+            "title": "Muestreo"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "title": "EnvironmentParameters",
+        "type": "object"
+      },
+      "EnvironmentSummary": {
+        "description": "The result without the orbit profiles, which are read one at a time.",
+        "properties": {
+          "attitude_modes": {
+            "items": {
+              "$ref": "#/components/schemas/AttitudeModeRef"
+            },
+            "title": "Attitude Modes",
+            "type": "array"
+          },
+          "conditions": {
+            "items": {
+              "$ref": "#/components/schemas/Condition"
+            },
+            "title": "Conditions",
+            "type": "array"
+          },
+          "design_values": {
+            "$ref": "#/components/schemas/DesignValuesUsed"
+          },
+          "faces": {
+            "items": {
+              "$ref": "#/components/schemas/Face"
+            },
+            "title": "Faces",
+            "type": "array"
+          },
+          "fluxes": {
+            "items": {
+              "$ref": "#/components/schemas/FaceFluxes"
+            },
+            "title": "Fluxes",
+            "type": "array"
+          },
+          "mission_series": {
+            "$ref": "#/components/schemas/MissionSeries"
+          },
+          "orbit": {
+            "$ref": "#/components/schemas/OrbitSummary"
+          },
+          "orbit_profiles": {
+            "items": {
+              "$ref": "#/components/schemas/OrbitProfileRef"
+            },
+            "title": "Orbit Profiles",
+            "type": "array"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/ProviderInfo"
+          },
+          "ranges": {
+            "items": {
+              "$ref": "#/components/schemas/RangeEntry"
+            },
+            "title": "Ranges",
+            "type": "array"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "provider",
+          "design_values",
+          "orbit",
+          "mission_series",
+          "ranges",
+          "conditions",
+          "attitude_modes",
+          "faces",
+          "fluxes",
+          "orbit_profiles"
+        ],
+        "title": "EnvironmentSummary",
+        "type": "object"
+      },
       "EventType": {
         "enum": [
           "connected",
@@ -1027,6 +1636,106 @@
         ],
         "title": "Face",
         "type": "string"
+      },
+      "FaceFluxes": {
+        "description": "Incident fluxes on one face, in one condition and attitude mode (W/m²).",
+        "properties": {
+          "albedo": {
+            "$ref": "#/components/schemas/FluxStats"
+          },
+          "condition_id": {
+            "title": "Condition Id",
+            "type": "string"
+          },
+          "face": {
+            "$ref": "#/components/schemas/Face"
+          },
+          "ir": {
+            "$ref": "#/components/schemas/FluxStats"
+          },
+          "mode_id": {
+            "title": "Mode Id",
+            "type": "string"
+          },
+          "solar": {
+            "$ref": "#/components/schemas/FluxStats"
+          },
+          "total": {
+            "$ref": "#/components/schemas/FluxStats"
+          }
+        },
+        "required": [
+          "condition_id",
+          "mode_id",
+          "face",
+          "solar",
+          "albedo",
+          "ir",
+          "total"
+        ],
+        "title": "FaceFluxes",
+        "type": "object"
+      },
+      "FaceProfile": {
+        "description": "Incident fluxes on one face along the orbit (W/m²).",
+        "properties": {
+          "albedo_max": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Albedo Max",
+            "type": "array"
+          },
+          "albedo_min": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Albedo Min",
+            "type": "array"
+          },
+          "face": {
+            "$ref": "#/components/schemas/Face"
+          },
+          "ir_max": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ir Max",
+            "type": "array"
+          },
+          "ir_min": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Ir Min",
+            "type": "array"
+          },
+          "solar_max": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Solar Max",
+            "type": "array"
+          },
+          "solar_min": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Solar Min",
+            "type": "array"
+          }
+        },
+        "required": [
+          "face",
+          "solar_min",
+          "solar_max",
+          "albedo_min",
+          "albedo_max",
+          "ir_min",
+          "ir_max"
+        ],
+        "title": "FaceProfile",
+        "type": "object"
       },
       "FieldProvenance": {
         "properties": {
@@ -1062,9 +1771,49 @@
         "title": "FieldSource",
         "type": "string"
       },
+      "FluxStats": {
+        "description": "Orbit average and peak of a flux, each with the minimum and maximum design values\n(W/m²).",
+        "properties": {
+          "average_max": {
+            "title": "Average Max",
+            "type": "number"
+          },
+          "average_min": {
+            "title": "Average Min",
+            "type": "number"
+          },
+          "peak_max": {
+            "title": "Peak Max",
+            "type": "number"
+          },
+          "peak_min": {
+            "title": "Peak Min",
+            "type": "number"
+          }
+        },
+        "required": [
+          "average_min",
+          "average_max",
+          "peak_min",
+          "peak_max"
+        ],
+        "title": "FluxStats",
+        "type": "object"
+      },
       "FormState": {
         "description": "Artifact of a form stage as applied, with its problems and per-field provenance.",
         "properties": {
+          "applied_change_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied Change Id"
+          },
           "artifact": {
             "additionalProperties": true,
             "title": "Artifact",
@@ -1088,7 +1837,8 @@
         "required": [
           "artifact",
           "problems",
-          "provenance"
+          "provenance",
+          "applied_change_id"
         ],
         "title": "FormState",
         "type": "object"
@@ -1467,6 +2217,7 @@
         "type": "object"
       },
       "MissionArtifact": {
+        "additionalProperties": false,
         "description": "Artifact of the mission stage: orbit, attitude, envelope and criteria.",
         "properties": {
           "attitude_modes": {
@@ -1499,6 +2250,95 @@
           }
         },
         "title": "MissionArtifact",
+        "type": "object"
+      },
+      "MissionSeries": {
+        "description": "Along the mission, one value per date (every ``mission_step``).",
+        "properties": {
+          "beta_max": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Beta Max",
+            "type": "array"
+          },
+          "beta_min": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Beta Min",
+            "type": "array"
+          },
+          "beta_nominal": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Beta Nominal",
+            "type": "array"
+          },
+          "dates": {
+            "items": {
+              "format": "date-time",
+              "type": "string"
+            },
+            "title": "Dates",
+            "type": "array"
+          },
+          "eclipse_duration_max": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Eclipse Duration Max",
+            "type": "array"
+          },
+          "eclipse_duration_min": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Eclipse Duration Min",
+            "type": "array"
+          },
+          "eclipse_fraction_max": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Eclipse Fraction Max",
+            "type": "array"
+          },
+          "eclipse_fraction_min": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Eclipse Fraction Min",
+            "type": "array"
+          },
+          "irradiance": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Irradiance",
+            "type": "array"
+          }
+        },
+        "required": [
+          "dates",
+          "beta_nominal",
+          "beta_min",
+          "beta_max",
+          "eclipse_fraction_min",
+          "eclipse_fraction_max",
+          "eclipse_duration_min",
+          "eclipse_duration_max",
+          "irradiance"
+        ],
+        "title": "MissionSeries",
         "type": "object"
       },
       "MoveSystemRequest": {
@@ -1598,6 +2438,7 @@
           "delete_cell",
           "paste",
           "apply_artifact",
+          "update_cell",
           "undo",
           "redo"
         ],
@@ -1723,6 +2564,180 @@
           }
         },
         "title": "Orbit",
+        "type": "object"
+      },
+      "OrbitProfile": {
+        "description": "One orbit of a condition in an attitude mode, ``orbit_samples`` points from the\nascending node. For charts, the 3D view and later the transients of ``load_cases``.",
+        "properties": {
+          "condition_id": {
+            "title": "Condition Id",
+            "type": "string"
+          },
+          "earth_rotation_angle": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Earth Rotation Angle",
+            "type": "array"
+          },
+          "epoch": {
+            "format": "date-time",
+            "title": "Epoch",
+            "type": "string"
+          },
+          "faces": {
+            "items": {
+              "$ref": "#/components/schemas/FaceProfile"
+            },
+            "title": "Faces",
+            "type": "array"
+          },
+          "mode_id": {
+            "title": "Mode Id",
+            "type": "string"
+          },
+          "position": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Position",
+            "type": "array"
+          },
+          "quaternion": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Quaternion",
+            "type": "array"
+          },
+          "sun": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Sun",
+            "type": "array"
+          },
+          "sunlit": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Sunlit",
+            "type": "array"
+          },
+          "time": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Time",
+            "type": "array"
+          },
+          "velocity": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Velocity",
+            "type": "array"
+          }
+        },
+        "required": [
+          "condition_id",
+          "mode_id",
+          "epoch",
+          "time",
+          "position",
+          "velocity",
+          "sun",
+          "sunlit",
+          "quaternion",
+          "earth_rotation_angle",
+          "faces"
+        ],
+        "title": "OrbitProfile",
+        "type": "object"
+      },
+      "OrbitProfileRef": {
+        "description": "An orbit profile of the result, read on its own (profiles are the bulk of the result).",
+        "properties": {
+          "condition_id": {
+            "title": "Condition Id",
+            "type": "string"
+          },
+          "mode_id": {
+            "title": "Mode Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "condition_id",
+          "mode_id"
+        ],
+        "title": "OrbitProfileRef",
+        "type": "object"
+      },
+      "OrbitSummary": {
+        "description": "The orbit as the provider models it: circular at ``altitude`` (ADR 0020).",
+        "properties": {
+          "altitude": {
+            "title": "Altitude",
+            "type": "number"
+          },
+          "eccentricity": {
+            "title": "Eccentricity",
+            "type": "number"
+          },
+          "eclipse_model": {
+            "$ref": "#/components/schemas/EclipseModel"
+          },
+          "eol_altitude": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eol Altitude"
+          },
+          "inclination": {
+            "title": "Inclination",
+            "type": "number"
+          },
+          "period": {
+            "title": "Period",
+            "type": "number"
+          },
+          "raan_swept": {
+            "title": "Raan Swept",
+            "type": "boolean"
+          },
+          "type": {
+            "$ref": "#/components/schemas/OrbitType"
+          }
+        },
+        "required": [
+          "type",
+          "inclination",
+          "altitude",
+          "eol_altitude",
+          "eccentricity",
+          "period",
+          "raan_swept",
+          "eclipse_model"
+        ],
+        "title": "OrbitSummary",
         "type": "object"
       },
       "OrbitType": {
@@ -1859,7 +2874,10 @@
           "sso_altitude",
           "parallel",
           "duplicate_name",
-          "duplicate"
+          "duplicate",
+          "missing",
+          "context_invalid",
+          "eccentricity_out_of_range"
         ],
         "title": "ProblemCode",
         "type": "string"
@@ -1889,7 +2907,7 @@
             "type": "string"
           },
           "schema_version": {
-            "default": 3,
+            "default": 4,
             "title": "Schema Version",
             "type": "integer"
           },
@@ -2007,32 +3025,157 @@
         "type": "object"
       },
       "Provenance": {
-        "description": "What produced a cell's current outputs. Empty until stages can run.",
+        "description": "What produced the result of a computation cell (ADR 0021). Same inputs, same result.",
         "properties": {
+          "change_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Id"
+          },
           "code_version": {
             "title": "Code Version",
             "type": "string"
           },
-          "input_cell_ids": {
+          "context": {
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/ContextSource"
             },
-            "title": "Input Cell Ids",
+            "title": "Context",
             "type": "array"
+          },
+          "parameters_change_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parameters Change Id"
           },
           "produced_at": {
             "format": "date-time",
             "title": "Produced At",
             "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "provider_version": {
+            "title": "Provider Version",
+            "type": "string"
           }
         },
         "required": [
           "produced_at",
+          "change_id",
+          "provider",
+          "provider_version",
           "code_version",
-          "input_cell_ids"
+          "context",
+          "parameters_change_id"
         ],
         "title": "Provenance",
         "type": "object"
+      },
+      "ProviderInfo": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ],
+        "title": "ProviderInfo",
+        "type": "object"
+      },
+      "RangeEntry": {
+        "description": "Minimum and maximum of a quantity, with the date or the reason of each extreme.",
+        "properties": {
+          "max": {
+            "title": "Max",
+            "type": "number"
+          },
+          "max_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max At"
+          },
+          "max_note": {
+            "title": "Max Note",
+            "type": "string"
+          },
+          "min": {
+            "title": "Min",
+            "type": "number"
+          },
+          "min_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min At"
+          },
+          "min_note": {
+            "title": "Min Note",
+            "type": "string"
+          },
+          "quantity": {
+            "$ref": "#/components/schemas/RangeQuantity"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "quantity",
+          "unit",
+          "min",
+          "max",
+          "min_note",
+          "max_note"
+        ],
+        "title": "RangeEntry",
+        "type": "object"
+      },
+      "RangeQuantity": {
+        "enum": [
+          "irradiance",
+          "beta",
+          "altitude",
+          "albedo",
+          "olr"
+        ],
+        "title": "RangeQuantity",
+        "type": "string"
       },
       "RecentProject": {
         "properties": {
@@ -2093,6 +3236,63 @@
           "name"
         ],
         "title": "RenameRequest",
+        "type": "object"
+      },
+      "Sampling": {
+        "properties": {
+          "eclipse_model": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EclipseModel"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": "cylindrical",
+            "title": "Modelo de sombra",
+            "x-default": "cylindrical",
+            "x-enum-labels": {
+              "conical": "Cónico",
+              "cylindrical": "Cilíndrico"
+            },
+            "x-notes": {
+              "conical": "Umbra y penumbra: el eclipse cuenta la penumbra.",
+              "cylindrical": "Sombra cilíndrica sin penumbra."
+            }
+          },
+          "mission_step": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 86400.0,
+            "description": "Paso de las series de β, eclipse e irradiancia.",
+            "title": "Paso a lo largo de la misión",
+            "x-default": 86400.0,
+            "x-display-unit": "días",
+            "x-unit": "s"
+          },
+          "orbit_samples": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 120,
+            "description": "Muestras de los perfiles orbitales.",
+            "title": "Puntos por órbita",
+            "x-default": 120
+          }
+        },
+        "title": "Sampling",
         "type": "object"
       },
       "SaveAsRequest": {
@@ -2320,6 +3520,45 @@
         "title": "TemplateLink",
         "type": "object"
       },
+      "UpdateCellRequest": {
+        "properties": {
+          "justification": {
+            "default": "",
+            "description": "Why the cell is updated. Optional; stored with the author.",
+            "title": "Justification",
+            "type": "string"
+          }
+        },
+        "title": "UpdateCellRequest",
+        "type": "object"
+      },
+      "UpdateCellResult": {
+        "properties": {
+          "change": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Change"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result": {
+            "$ref": "#/components/schemas/CellResult"
+          },
+          "view": {
+            "$ref": "#/components/schemas/ProjectView"
+          }
+        },
+        "required": [
+          "change",
+          "view",
+          "result"
+        ],
+        "title": "UpdateCellResult",
+        "type": "object"
+      },
       "ValidationResult": {
         "properties": {
           "problems": {
@@ -2382,7 +3621,7 @@
     },
     "/catalog/stages/{stage}/artifact-schema": {
       "get": {
-        "description": "JSON Schema of the artifact of a form stage (e.g. mission), with the SI unit and display\nunit of each physical field (`x-unit`, `x-display-unit`) and the other `x-` hints used to\nbuild the form. 422 `stage_not_implemented` for stages without a form.",
+        "description": "JSON Schema of the artifact of a form stage (e.g. mission) or of the parameters of a\ncomputation stage (environment), with the SI unit and display unit of each physical field\n(`x-unit`, `x-display-unit`) and the other `x-` hints used to build the form. 422\n`stage_not_implemented` for stages without a form.",
         "operationId": "get_artifact_schema",
         "parameters": [
           {
@@ -2843,7 +4082,7 @@
     },
     "/project/cells/{cell_id}/artifact": {
       "get": {
-        "description": "The applied artifact of a form cell (mission) with its problems, per-field provenance,\nstatus and context. 422 `stage_not_implemented` for other stages.",
+        "description": "The applied artifact of a form cell (mission), or the applied parameters of a\ncomputation cell (environment), with its problems, per-field provenance, status and\ncontext. 422 `stage_not_implemented` for other stages.",
         "operationId": "get_cell_artifact",
         "parameters": [
           {
@@ -2914,7 +4153,7 @@
         ]
       },
       "put": {
-        "description": "Replace the cell's artifact with the draft in one change of the history (one undo).\n\nRequires a justification. Problems are allowed: the cell is then failed. Only the fields\nthat changed get new provenance; everything downstream becomes outdated if the content\nchanged. `change` is null if the content is the same as the applied one.",
+        "description": "Replace the cell's artifact with the draft in one change of the history (one undo).\n\nRequires a justification. Problems are allowed: a form cell is then failed (a computation\ncell fails when updated). Only the fields that changed get new provenance; everything\ndownstream (and a computation cell itself) becomes outdated if the content changed.\n`change` is null if the content is the same as the applied one.",
         "operationId": "apply_cell_artifact",
         "parameters": [
           {
@@ -3439,6 +4678,282 @@
         "summary": "List Link Targets",
         "tags": [
           "schematic"
+        ]
+      }
+    },
+    "/project/cells/{cell_id}/result": {
+      "get": {
+        "description": "Status, problems, provenance and last result of a computation cell (possibly outdated:\ncheck `status`). SI units, angles in rad. The orbit profiles are listed by condition and\nattitude mode; read each one with `get_orbit_profile`.",
+        "operationId": "get_cell_result",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cell_id",
+            "required": true,
+            "schema": {
+              "title": "Cell Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CellResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Get Cell Result",
+        "tags": [
+          "computations"
+        ]
+      }
+    },
+    "/project/cells/{cell_id}/result/orbit-profile": {
+      "get": {
+        "description": "One orbit of a condition in an attitude mode from an environment result: time, inertial\nposition and velocity, Sun vector, sunlit fraction, body quaternion (body → inertial,\n`[w, x, y, z]`), Earth rotation angle and incident fluxes per face. 404 if the result has no\nsuch profile.",
+        "operationId": "get_orbit_profile",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cell_id",
+            "required": true,
+            "schema": {
+              "title": "Cell Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "condition_id",
+            "required": true,
+            "schema": {
+              "title": "Condition Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mode_id",
+            "required": true,
+            "schema": {
+              "title": "Mode Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrbitProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Get Orbit Profile",
+        "tags": [
+          "computations"
+        ]
+      }
+    },
+    "/project/cells/{cell_id}/update": {
+      "post": {
+        "description": "Update (run) a computation cell (environment) with its applied parameters and its\ncontext, in one change of the history (one undo). The justification may be empty.\n\nSuccess: `up_to_date` with a new result and everything downstream outdated. Otherwise\n`failed` with the problems (`missing`, `context_invalid`, invalid parameters,\n`eccentricity_out_of_range`…) and the previous result kept. `change` is null when the cell\nwas already up to date or fails again the same way. 422 `stage_not_implemented` for stages\nwithout a computation.",
+        "operationId": "update_cell",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cell_id",
+            "required": true,
+            "schema": {
+              "title": "Cell Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCellRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateCellResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Update Cell",
+        "tags": [
+          "computations"
         ]
       }
     },

@@ -8,7 +8,13 @@ import pytest
 
 from hestia_core.forms import ProblemCode
 from hestia_core.mission import MissionArtifact
-from hestia_project.artifacts import NoChange, apply_artifact, read_artifact, validate_draft
+from hestia_project.artifacts import (
+    CellArtifact,
+    NoChange,
+    apply_artifact,
+    read_artifact,
+    validate_draft,
+)
 from hestia_project.catalog import StageType, TemplateId
 from hestia_project.clipboard import copy, paste
 from hestia_project.document import ProjectDocument
@@ -36,6 +42,11 @@ VALID: dict[str, Any] = {
         }
     ],
 }
+
+
+def mission_of(view: CellArtifact) -> MissionArtifact:
+    assert isinstance(view.artifact, MissionArtifact)
+    return view.artifact
 
 
 def draft(**sections: Any) -> MissionArtifact:
@@ -73,8 +84,8 @@ def test_new_mission_cell_has_library_defaults() -> None:
     mission = cell_of(doc.project, S.MISSION)
     view = read_artifact(doc.project, mission.id)
     assert mission.status is CellStatus.NEVER_RUN and not view.applied
-    assert view.artifact.orbit.type == "sso"
-    assert view.artifact.criteria.uncertainty_margin == 10.0
+    assert mission_of(view).orbit.type == "sso"
+    assert mission_of(view).criteria.uncertainty_margin == 10.0
     assert set(view.provenance) == {
         "orbit.type",
         "criteria.uncertainty_margin",
@@ -89,7 +100,7 @@ def test_new_mission_cell_has_library_defaults() -> None:
 
 def test_other_stages_have_no_artifact() -> None:
     doc = doc_with_phase0()
-    for stage in (S.EQUIPMENT, S.ENVIRONMENT):
+    for stage in (S.EQUIPMENT, S.GLOBAL_BALANCE):
         cell = cell_of(doc.project, stage)
         assert cell.form is None
         with pytest.raises(StageNotImplementedError):
@@ -159,7 +170,7 @@ def test_provenance_only_changes_for_changed_fields() -> None:
     assert view.provenance["criteria.uncertainty_margin"].change_id == created
     assert "general.description" not in view.provenance  # empty fields have none
 
-    second_draft = view.artifact.model_copy(deep=True)
+    second_draft = mission_of(view).model_copy(deep=True)
     second_draft.orbit.altitude = 700e3
     second_draft.criteria.uncertainty_margin = 12.0
     second = apply(doc, second_draft)
@@ -175,17 +186,17 @@ def test_list_items_get_backend_ids_that_stay() -> None:
     apply(doc, draft())
     mission = cell_of(doc.project, S.MISSION)
     view = read_artifact(doc.project, mission.id)
-    mode_id = view.artifact.attitude_modes[0].id
+    mode_id = mission_of(view).attitude_modes[0].id
     assert mode_id is not None and mode_id.startswith("mode_")
 
     # Insert a mode before it (no id, and a forged id): the first keeps its id and provenance.
-    edited = view.artifact.model_copy(deep=True)
+    edited = mission_of(view).model_copy(deep=True)
     new_mode = edited.attitude_modes[0].model_copy(update={"id": None, "name": "Sol"})
     forged = new_mode.model_copy(update={"id": "mine", "name": "Otro"})
     edited.attitude_modes = [new_mode, forged, *edited.attitude_modes]
     apply(doc, edited)
     after = read_artifact(doc.project, mission.id)
-    ids = [m.id for m in after.artifact.attitude_modes]
+    ids = [m.id for m in mission_of(after).attitude_modes]
     assert ids[2] == mode_id
     assert len(set(ids)) == 3 and "mine" not in ids
     assert after.provenance["attitude_modes[2].name"] == view.provenance["attitude_modes[0].name"]
@@ -196,7 +207,7 @@ def test_same_content_is_not_a_change() -> None:
     apply(doc, draft())
     revision = doc.revision
     with pytest.raises(NoChange):
-        apply(doc, read_artifact(doc.project, cell_of(doc.project, S.MISSION).id).artifact)
+        apply(doc, mission_of(read_artifact(doc.project, cell_of(doc.project, S.MISSION).id)))
     assert doc.revision == revision
 
 
@@ -236,7 +247,7 @@ def test_undo_and_redo() -> None:
     applied = doc.project.model_copy(deep=True)
     doc.undo(HUMAN)
     assert cell_of(doc.project, S.MISSION).status is CellStatus.NEVER_RUN
-    assert read_artifact(doc.project, mission_id).artifact.orbit.altitude is None
+    assert mission_of(read_artifact(doc.project, mission_id)).orbit.altitude is None
     doc.redo(HUMAN)
     assert doc.project == applied
 
@@ -321,4 +332,7 @@ def test_version_2_files_get_default_artifacts(tmp_path: Path) -> None:
     assert mission.status is CellStatus.NEVER_RUN
     assert mission.form is not None
     assert all(p.change_id is None for p in mission.form.provenance.values())
-    assert cell_of(loaded.project, S.ENVIRONMENT).form is None
+    assert cell_of(loaded.project, S.EQUIPMENT).form is None
+    # Environment parameters (ADR 0021) get their defaults too.
+    environment = cell_of(loaded.project, S.ENVIRONMENT)
+    assert environment.form is not None and environment.status is CellStatus.NEVER_RUN

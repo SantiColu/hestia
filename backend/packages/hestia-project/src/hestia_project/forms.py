@@ -11,6 +11,11 @@ from typing import Any, cast
 
 from pydantic import BaseModel
 
+from hestia_core.environment.parameters import (
+    EnvironmentParameters,
+    environment_defaults,
+    validate_environment_parameters,
+)
 from hestia_core.forms import Problem
 from hestia_core.mission import MissionArtifact, mission_defaults, validate_mission
 from hestia_project.catalog import STAGES, StageKind, StageType
@@ -36,12 +41,25 @@ class FormSpec:
     """Lists whose items get a backend id (list path → id prefix)."""
 
 
+def _validate_environment(parameters: EnvironmentParameters, context: FormContext) -> list[Problem]:
+    mission = context.get(StageType.MISSION)
+    return validate_environment_parameters(
+        parameters, mission if isinstance(mission, MissionArtifact) else None
+    )
+
+
 FORMS: dict[StageType, FormSpec] = {
     StageType.MISSION: FormSpec(
         model=MissionArtifact,
         defaults=mission_defaults,
         validate=lambda artifact, _context: validate_mission(artifact),
         id_prefixes={"attitude_modes": "mode"},
+    ),
+    StageType.ENVIRONMENT: FormSpec(
+        model=EnvironmentParameters,
+        defaults=environment_defaults,
+        validate=_validate_environment,
+        id_prefixes={"custom_conditions": "cond"},
     ),
 }
 """Implemented forms: form stages (``mission``; ``equipment`` has no editor yet) and the

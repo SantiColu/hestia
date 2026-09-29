@@ -30,7 +30,8 @@ def get_catalog() -> Catalog:
     responses=ERROR_RESPONSES,
 )
 def get_artifact_schema(stage: StageType) -> dict[str, Any]:
-    """JSON Schema of the artifact of a form stage (e.g. mission), with the SI unit and display
-    unit of each physical field (`x-unit`, `x-display-unit`) and the other `x-` hints used to
-    build the form. 422 `stage_not_implemented` for stages without a form."""
+    """JSON Schema of the artifact of a form stage (e.g. mission) or of the parameters of a
+    computation stage (environment), with the SI unit and display unit of each physical field
+    (`x-unit`, `x-display-unit`) and the other `x-` hints used to build the form. 422
+    `stage_not_implemented` for stages without a form."""
     return artifact_schema(stage)

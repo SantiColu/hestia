@@ -12,6 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
+from hestia_core.environment.parameters import EnvironmentParameters
 from hestia_core.forms import Problem
 from hestia_core.mission import MissionArtifact
 from hestia_project.base import Schema
@@ -40,6 +41,11 @@ from hestia_project.schematic import (
     would_invalidate,
 )
 
+Artifact = MissionArtifact | EnvironmentParameters
+"""Artifact of a form stage or parameters of a computation stage. Both models forbid unknown
+fields, so a JSON body resolves to the right one; the backend then validates it against the
+model of the cell's stage."""
+
 
 class NoChange(Exception):  # noqa: N818 - a signal, not an error
     """The operation would not change the project: nothing is recorded."""
@@ -54,7 +60,7 @@ class CellArtifact(Schema):
     status: CellStatus
     applied: bool
     """False until the first apply: the artifact holds the defaults."""
-    artifact: MissionArtifact
+    artifact: Artifact
     problems: list[Problem]
     """Validation of the applied artifact. The parameters of a computation stage are validated
     against the current context (e.g. the orbit type of the mission)."""
@@ -121,12 +127,14 @@ def artifact_problems(project: Project, cell: Cell) -> list[Problem]:
 
 def read_artifact(project: Project, cell_id: str) -> CellArtifact:
     cell, spec, state = _form_cell(project, cell_id)
+    artifact = spec.model.model_validate(state.artifact)
+    assert isinstance(artifact, MissionArtifact | EnvironmentParameters)
     return CellArtifact(
         cell_id=cell.id,
         stage=cell.stage,
         status=cell.status,
         applied=is_applied(cell, state),
-        artifact=spec.model.model_validate(state.artifact),  # pyright: ignore[reportArgumentType]
+        artifact=artifact,
         problems=artifact_problems(project, cell),
         provenance=state.provenance,
         context=cell_context(project, cell.id),

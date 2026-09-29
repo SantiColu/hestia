@@ -34,9 +34,10 @@ export interface paths {
     };
     /**
      * Get Artifact Schema
-     * @description JSON Schema of the artifact of a form stage (e.g. mission), with the SI unit and display
-     *     unit of each physical field (`x-unit`, `x-display-unit`) and the other `x-` hints used to
-     *     build the form. 422 `stage_not_implemented` for stages without a form.
+     * @description JSON Schema of the artifact of a form stage (e.g. mission) or of the parameters of a
+     *     computation stage (environment), with the SI unit and display unit of each physical field
+     *     (`x-unit`, `x-display-unit`) and the other `x-` hints used to build the form. 422
+     *     `stage_not_implemented` for stages without a form.
      */
     get: operations["get_artifact_schema"];
     put?: never;
@@ -140,17 +141,19 @@ export interface paths {
     };
     /**
      * Get Cell Artifact
-     * @description The applied artifact of a form cell (mission) with its problems, per-field provenance,
-     *     status and context. 422 `stage_not_implemented` for other stages.
+     * @description The applied artifact of a form cell (mission), or the applied parameters of a
+     *     computation cell (environment), with its problems, per-field provenance, status and
+     *     context. 422 `stage_not_implemented` for other stages.
      */
     get: operations["get_cell_artifact"];
     /**
      * Apply Cell Artifact
      * @description Replace the cell's artifact with the draft in one change of the history (one undo).
      *
-     *     Requires a justification. Problems are allowed: the cell is then failed. Only the fields
-     *     that changed get new provenance; everything downstream becomes outdated if the content
-     *     changed. `change` is null if the content is the same as the applied one.
+     *     Requires a justification. Problems are allowed: a form cell is then failed (a computation
+     *     cell fails when updated). Only the fields that changed get new provenance; everything
+     *     downstream (and a computation cell itself) becomes outdated if the content changed.
+     *     `change` is null if the content is the same as the applied one.
      */
     put: operations["apply_cell_artifact"];
     post?: never;
@@ -256,6 +259,78 @@ export interface paths {
     get: operations["list_link_targets"];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/project/cells/{cell_id}/result": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Cell Result
+     * @description Status, problems, provenance and last result of a computation cell (possibly outdated:
+     *     check `status`). SI units, angles in rad. The orbit profiles are listed by condition and
+     *     attitude mode; read each one with `get_orbit_profile`.
+     */
+    get: operations["get_cell_result"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/project/cells/{cell_id}/result/orbit-profile": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Orbit Profile
+     * @description One orbit of a condition in an attitude mode from an environment result: time, inertial
+     *     position and velocity, Sun vector, sunlit fraction, body quaternion (body → inertial,
+     *     `[w, x, y, z]`), Earth rotation angle and incident fluxes per face. 404 if the result has no
+     *     such profile.
+     */
+    get: operations["get_orbit_profile"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/project/cells/{cell_id}/update": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Update Cell
+     * @description Update (run) a computation cell (environment) with its applied parameters and its
+     *     context, in one change of the history (one undo). The justification may be empty.
+     *
+     *     Success: `up_to_date` with a new result and everything downstream outdated. Otherwise
+     *     `failed` with the problems (`missing`, `context_invalid`, invalid parameters,
+     *     `eccentricity_out_of_range`…) and the previous result kept. `change` is null when the cell
+     *     was already up to date or fails again the same way. 422 `stage_not_implemented` for stages
+     *     without a computation.
+     */
+    post: operations["update_cell"];
     delete?: never;
     options?: never;
     head?: never;
@@ -691,7 +766,9 @@ export interface components {
      * @description Replace the cell's artifact with the draft. The justification is required.
      */
     ApplyArtifactRequest: {
-      artifact: components["schemas"]["MissionArtifact"];
+      /** Artifact */
+      artifact:
+        components["schemas"]["MissionArtifact"] | components["schemas"]["EnvironmentParameters"];
       /**
        * Justification
        * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
@@ -706,10 +783,13 @@ export interface components {
     };
     /**
      * ArtifactDraft
-     * @description A draft of a form artifact, possibly incomplete. Its stage must match the cell's.
+     * @description A draft of a form artifact (or of a computation's parameters), possibly incomplete. Its
+     *     stage must match the cell's.
      */
     ArtifactDraft: {
-      artifact: components["schemas"]["MissionArtifact"];
+      /** Artifact */
+      artifact:
+        components["schemas"]["MissionArtifact"] | components["schemas"]["EnvironmentParameters"];
     };
     /**
      * AttitudeMode
@@ -732,6 +812,13 @@ export interface components {
       secondary_axis?: components["schemas"]["Axis"] | null;
       /** Dirección secundaria */
       secondary_target?: components["schemas"]["Target"] | null;
+    };
+    /** AttitudeModeRef */
+    AttitudeModeRef: {
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
     };
     /**
      * Author
@@ -791,7 +878,11 @@ export interface components {
       id: string;
       /** Name */
       name: string;
+      /** Problems */
+      problems: components["schemas"]["Problem"][];
       provenance: components["schemas"]["Provenance"] | null;
+      /** Result Id */
+      result_id: string | null;
       stage: components["schemas"]["StageType"];
       /** @default never_run */
       status: components["schemas"]["CellStatus"];
@@ -800,12 +891,15 @@ export interface components {
     };
     /**
      * CellArtifact
-     * @description The artifact of a form cell as applied, with everything needed to edit it.
+     * @description The artifact of a form cell (or the parameters of a computation cell) as applied, with
+     *     everything needed to edit it.
      */
     CellArtifact: {
       /** Applied */
       applied: boolean;
-      artifact: components["schemas"]["MissionArtifact"];
+      /** Artifact */
+      artifact:
+        components["schemas"]["MissionArtifact"] | components["schemas"]["EnvironmentParameters"];
       /** Cell Id */
       cell_id: string;
       context: components["schemas"]["CellContext"];
@@ -837,6 +931,27 @@ export interface components {
     CellIds: {
       /** Cell Ids */
       cell_ids: string[];
+    };
+    /**
+     * CellResult
+     * @description State of a computation cell and its last result (possibly outdated), without the bulk
+     *     (orbit profiles are read one at a time).
+     */
+    CellResult: {
+      /** Cell Id */
+      cell_id: string;
+      environment: components["schemas"]["EnvironmentSummary"] | null;
+      /** Parameters */
+      parameters: {
+        [key: string]: unknown;
+      } | null;
+      /** Problems */
+      problems: components["schemas"]["Problem"][];
+      provenance: components["schemas"]["Provenance"] | null;
+      /** Result Id */
+      result_id: string | null;
+      stage: components["schemas"]["StageType"];
+      status: components["schemas"]["CellStatus"];
     };
     /**
      * CellStatus
@@ -879,6 +994,37 @@ export interface components {
       discard_unsaved: boolean;
     };
     /**
+     * Condition
+     * @description A geometry of the environment: β and altitude, with its orbit and eclipse.
+     */
+    Condition: {
+      /** Altitude */
+      altitude: number;
+      /** Beta */
+      beta: number;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Eclipse Duration */
+      eclipse_duration: number;
+      /** Eclipse Fraction */
+      eclipse_fraction: number;
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      origin: components["schemas"]["ConditionOrigin"];
+      /** Period */
+      period: number;
+    };
+    /**
+     * ConditionOrigin
+     * @enum {string}
+     */
+    ConditionOrigin: "extreme" | "custom";
+    /**
      * ContextEntry
      * @description A stage type in the context of a cell and the cell that provides it.
      */
@@ -890,6 +1036,17 @@ export interface components {
       stage: components["schemas"]["StageType"];
       /** System Id */
       system_id: string;
+    };
+    /**
+     * ContextSource
+     * @description A stage type of the context used by an update and the state its provider was in.
+     */
+    ContextSource: {
+      /** Cell Id */
+      cell_id: string;
+      /** Change Id */
+      change_id: string | null;
+      stage: components["schemas"]["StageType"];
     };
     /**
      * CopyRequest
@@ -952,6 +1109,101 @@ export interface components {
       uncertainty_margin: number | null;
     };
     /**
+     * CustomCondition
+     * @description A geometry the user adds to the extreme conditions (e.g. an intermediate β).
+     */
+    CustomCondition: {
+      /**
+       * Altitud
+       * @description Vacío: la nominal de Misión.
+       */
+      altitude?: number | null;
+      /** Ángulo β */
+      beta?: number | null;
+      /**
+       * Id
+       * @description Generated by the backend when applied. Immutable.
+       */
+      id?: string | null;
+      /** Nombre */
+      name?: string | null;
+    };
+    /**
+     * DesignValue
+     * @description A design value as used, with where it comes from.
+     */
+    DesignValue: {
+      /** Reference */
+      reference?: string | null;
+      source: components["schemas"]["DesignValueSource"];
+      /** Value */
+      value: number;
+    };
+    /**
+     * DesignValueSource
+     * @enum {string}
+     */
+    DesignValueSource: "entered" | "library";
+    /** DesignValues */
+    DesignValues: {
+      /**
+       * Albedo máximo
+       * @description Albedo de diseño máximo. Vacío: tabla por inclinación.
+       */
+      albedo_max?: number | null;
+      /**
+       * Albedo mínimo
+       * @description Albedo de diseño mínimo. Vacío: tabla por inclinación.
+       */
+      albedo_min?: number | null;
+      /**
+       * IR terrestre máxima
+       * @description Radiación de onda larga saliente máxima. Vacío: tabla por inclinación.
+       */
+      olr_max?: number | null;
+      /**
+       * IR terrestre mínima
+       * @description Radiación de onda larga saliente mínima. Vacío: tabla por inclinación.
+       */
+      olr_min?: number | null;
+      /**
+       * Constante solar
+       * @description Irradiancia solar a 1 UA. La de cada fecha sale de la distancia Tierra-Sol.
+       * @default 1361
+       */
+      solar_constant: number | null;
+    };
+    /** DesignValuesUsed */
+    DesignValuesUsed: {
+      albedo_max: components["schemas"]["DesignValue"];
+      albedo_min: components["schemas"]["DesignValue"];
+      olr_max: components["schemas"]["DesignValue"];
+      olr_min: components["schemas"]["DesignValue"];
+      solar_constant: components["schemas"]["DesignValue"];
+    };
+    /**
+     * Dispersion
+     * @description Long-term perturbations that are not propagated: their extremes are evaluated around
+     *     the nominal orbit of the mission (ADR 0020).
+     */
+    Dispersion: {
+      /**
+       * Altitud al fin de vida
+       * @description SSO y LEO/MEO. Altitud por decaimiento al fin de vida. Vacío: sin decaimiento.
+       */
+      eol_altitude?: number | null;
+      /**
+       * Inclinación máxima en GEO
+       * @description Solo GEO. Inclinación máxima que alcanza la órbita. Vacío: 0.
+       */
+      geo_max_inclination?: number | null;
+      /**
+       * Deriva de la hora del nodo
+       * @description Solo SSO. Deriva máxima (±) de la hora local del nodo a lo largo de la vida. Vacío: 0.
+       */
+      ltan_dispersion?: number | null;
+    };
+    /**
      * DocumentState
      * @description File-level state of the open project.
      */
@@ -986,6 +1238,11 @@ export interface components {
       justification: string;
       position?: components["schemas"]["Position"] | null;
     };
+    /**
+     * EclipseModel
+     * @enum {string}
+     */
+    EclipseModel: "cylindrical" | "conical";
     /** Envelope */
     Envelope: {
       /**
@@ -999,6 +1256,53 @@ export interface components {
       size_y?: number | null;
       /** Dimensión Z */
       size_z?: number | null;
+    };
+    /**
+     * EnvironmentParameters
+     * @description Parameters of the environment stage: design values, dispersions, sampling and custom
+     *     conditions.
+     */
+    EnvironmentParameters: {
+      /** Condiciones propias */
+      custom_conditions?: components["schemas"]["CustomCondition"][];
+      /** Valores de diseño */
+      design_values?: components["schemas"]["DesignValues"];
+      /** Dispersión de la órbita */
+      dispersion?: components["schemas"]["Dispersion"];
+      /** Muestreo */
+      sampling?: components["schemas"]["Sampling"];
+      /**
+       * Schema Version
+       * @default 1
+       */
+      schema_version: number;
+    };
+    /**
+     * EnvironmentSummary
+     * @description The result without the orbit profiles, which are read one at a time.
+     */
+    EnvironmentSummary: {
+      /** Attitude Modes */
+      attitude_modes: components["schemas"]["AttitudeModeRef"][];
+      /** Conditions */
+      conditions: components["schemas"]["Condition"][];
+      design_values: components["schemas"]["DesignValuesUsed"];
+      /** Faces */
+      faces: components["schemas"]["Face"][];
+      /** Fluxes */
+      fluxes: components["schemas"]["FaceFluxes"][];
+      mission_series: components["schemas"]["MissionSeries"];
+      orbit: components["schemas"]["OrbitSummary"];
+      /** Orbit Profiles */
+      orbit_profiles: components["schemas"]["OrbitProfileRef"][];
+      provider: components["schemas"]["ProviderInfo"];
+      /** Ranges */
+      ranges: components["schemas"]["RangeEntry"][];
+      /**
+       * Schema Version
+       * @default 1
+       */
+      schema_version: number;
     };
     /**
      * EventType
@@ -1016,6 +1320,40 @@ export interface components {
      * @enum {string}
      */
     Face: "+X" | "-X" | "+Y" | "-Y" | "+Z" | "-Z";
+    /**
+     * FaceFluxes
+     * @description Incident fluxes on one face, in one condition and attitude mode (W/m²).
+     */
+    FaceFluxes: {
+      albedo: components["schemas"]["FluxStats"];
+      /** Condition Id */
+      condition_id: string;
+      face: components["schemas"]["Face"];
+      ir: components["schemas"]["FluxStats"];
+      /** Mode Id */
+      mode_id: string;
+      solar: components["schemas"]["FluxStats"];
+      total: components["schemas"]["FluxStats"];
+    };
+    /**
+     * FaceProfile
+     * @description Incident fluxes on one face along the orbit (W/m²).
+     */
+    FaceProfile: {
+      /** Albedo Max */
+      albedo_max: number[];
+      /** Albedo Min */
+      albedo_min: number[];
+      face: components["schemas"]["Face"];
+      /** Ir Max */
+      ir_max: number[];
+      /** Ir Min */
+      ir_min: number[];
+      /** Solar Max */
+      solar_max: number[];
+      /** Solar Min */
+      solar_min: number[];
+    };
     /** FieldProvenance */
     FieldProvenance: {
       /** Change Id */
@@ -1029,10 +1367,27 @@ export interface components {
      */
     FieldSource: "entered" | "imported" | "default";
     /**
+     * FluxStats
+     * @description Orbit average and peak of a flux, each with the minimum and maximum design values
+     *     (W/m²).
+     */
+    FluxStats: {
+      /** Average Max */
+      average_max: number;
+      /** Average Min */
+      average_min: number;
+      /** Peak Max */
+      peak_max: number;
+      /** Peak Min */
+      peak_min: number;
+    };
+    /**
      * FormState
      * @description Artifact of a form stage as applied, with its problems and per-field provenance.
      */
     FormState: {
+      /** Applied Change Id */
+      applied_change_id: string | null;
       /** Artifact */
       artifact: {
         [key: string]: unknown;
@@ -1236,6 +1591,30 @@ export interface components {
        */
       schema_version: number;
     };
+    /**
+     * MissionSeries
+     * @description Along the mission, one value per date (every ``mission_step``).
+     */
+    MissionSeries: {
+      /** Beta Max */
+      beta_max: number[];
+      /** Beta Min */
+      beta_min: number[];
+      /** Beta Nominal */
+      beta_nominal: (number | null)[];
+      /** Dates */
+      dates: string[];
+      /** Eclipse Duration Max */
+      eclipse_duration_max: number[];
+      /** Eclipse Duration Min */
+      eclipse_duration_min: number[];
+      /** Eclipse Fraction Max */
+      eclipse_fraction_max: number[];
+      /** Eclipse Fraction Min */
+      eclipse_fraction_min: number[];
+      /** Irradiance */
+      irradiance: number[];
+    };
     /** MoveSystemRequest */
     MoveSystemRequest: {
       /**
@@ -1298,6 +1677,7 @@ export interface components {
       | "delete_cell"
       | "paste"
       | "apply_artifact"
+      | "update_cell"
       | "undo"
       | "redo";
     /** Orbit */
@@ -1326,6 +1706,68 @@ export interface components {
        * @default sso
        */
       type: components["schemas"]["OrbitType"] | null;
+    };
+    /**
+     * OrbitProfile
+     * @description One orbit of a condition in an attitude mode, ``orbit_samples`` points from the
+     *     ascending node. For charts, the 3D view and later the transients of ``load_cases``.
+     */
+    OrbitProfile: {
+      /** Condition Id */
+      condition_id: string;
+      /** Earth Rotation Angle */
+      earth_rotation_angle: number[];
+      /**
+       * Epoch
+       * Format: date-time
+       */
+      epoch: string;
+      /** Faces */
+      faces: components["schemas"]["FaceProfile"][];
+      /** Mode Id */
+      mode_id: string;
+      /** Position */
+      position: number[][];
+      /** Quaternion */
+      quaternion: number[][];
+      /** Sun */
+      sun: number[][];
+      /** Sunlit */
+      sunlit: number[];
+      /** Time */
+      time: number[];
+      /** Velocity */
+      velocity: number[][];
+    };
+    /**
+     * OrbitProfileRef
+     * @description An orbit profile of the result, read on its own (profiles are the bulk of the result).
+     */
+    OrbitProfileRef: {
+      /** Condition Id */
+      condition_id: string;
+      /** Mode Id */
+      mode_id: string;
+    };
+    /**
+     * OrbitSummary
+     * @description The orbit as the provider models it: circular at ``altitude`` (ADR 0020).
+     */
+    OrbitSummary: {
+      /** Altitude */
+      altitude: number;
+      /** Eccentricity */
+      eccentricity: number;
+      eclipse_model: components["schemas"]["EclipseModel"];
+      /** Eol Altitude */
+      eol_altitude: number | null;
+      /** Inclination */
+      inclination: number;
+      /** Period */
+      period: number;
+      /** Raan Swept */
+      raan_swept: boolean;
+      type: components["schemas"]["OrbitType"];
     };
     /**
      * OrbitType
@@ -1397,7 +1839,10 @@ export interface components {
       | "sso_altitude"
       | "parallel"
       | "duplicate_name"
-      | "duplicate";
+      | "duplicate"
+      | "missing"
+      | "context_invalid"
+      | "eccentricity_out_of_range";
     /** Project */
     Project: {
       /** Cells */
@@ -1410,7 +1855,7 @@ export interface components {
       name: string;
       /**
        * Schema Version
-       * @default 3
+       * @default 4
        */
       schema_version: number;
       /** Systems */
@@ -1448,19 +1893,60 @@ export interface components {
     };
     /**
      * Provenance
-     * @description What produced a cell's current outputs. Empty until stages can run.
+     * @description What produced the result of a computation cell (ADR 0021). Same inputs, same result.
      */
     Provenance: {
+      /** Change Id */
+      change_id: string | null;
       /** Code Version */
       code_version: string;
-      /** Input Cell Ids */
-      input_cell_ids: string[];
+      /** Context */
+      context: components["schemas"]["ContextSource"][];
+      /** Parameters Change Id */
+      parameters_change_id: string | null;
       /**
        * Produced At
        * Format: date-time
        */
       produced_at: string;
+      /** Provider */
+      provider: string;
+      /** Provider Version */
+      provider_version: string;
     };
+    /** ProviderInfo */
+    ProviderInfo: {
+      /** Name */
+      name: string;
+      /** Version */
+      version: string;
+    };
+    /**
+     * RangeEntry
+     * @description Minimum and maximum of a quantity, with the date or the reason of each extreme.
+     */
+    RangeEntry: {
+      /** Max */
+      max: number;
+      /** Max At */
+      max_at?: string | null;
+      /** Max Note */
+      max_note: string;
+      /** Min */
+      min: number;
+      /** Min At */
+      min_at?: string | null;
+      /** Min Note */
+      min_note: string;
+      quantity: components["schemas"]["RangeQuantity"];
+      /** Unit */
+      unit: string;
+    };
+    /**
+     * RangeQuantity
+     * @enum {string}
+     */
+    RangeQuantity: "irradiance" | "beta" | "altitude" | "albedo" | "olr";
     /** RecentProject */
     RecentProject: {
       /** Exists */
@@ -1489,6 +1975,26 @@ export interface components {
       justification: string;
       /** Name */
       name: string;
+    };
+    /** Sampling */
+    Sampling: {
+      /**
+       * Modelo de sombra
+       * @default cylindrical
+       */
+      eclipse_model: components["schemas"]["EclipseModel"] | null;
+      /**
+       * Paso a lo largo de la misión
+       * @description Paso de las series de β, eclipse e irradiancia.
+       * @default 86400
+       */
+      mission_step: number | null;
+      /**
+       * Puntos por órbita
+       * @description Muestras de los perfiles orbitales.
+       * @default 120
+       */
+      orbit_samples: number | null;
     };
     /** SaveAsRequest */
     SaveAsRequest: {
@@ -1593,6 +2099,21 @@ export interface components {
     TemplateLink: {
       source: components["schemas"]["StageType"];
       target: components["schemas"]["StageType"];
+    };
+    /** UpdateCellRequest */
+    UpdateCellRequest: {
+      /**
+       * Justification
+       * @description Why the cell is updated. Optional; stored with the author.
+       * @default
+       */
+      justification: string;
+    };
+    /** UpdateCellResult */
+    UpdateCellResult: {
+      change: components["schemas"]["Change"] | null;
+      result: components["schemas"]["CellResult"];
+      view: components["schemas"]["ProjectView"];
     };
     /** ValidationResult */
     ValidationResult: {
@@ -2319,6 +2840,192 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["CellIds"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Locked */
+      423: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  get_cell_result: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cell_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CellResult"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Locked */
+      423: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  get_orbit_profile: {
+    parameters: {
+      query: {
+        condition_id: string;
+        mode_id: string;
+      };
+      header?: never;
+      path: {
+        cell_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrbitProfile"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Locked */
+      423: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  update_cell: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Author name. Defaults to the OS user running the API. */
+        "x-hestia-actor"?: string | null;
+        /** @description `human` (UI) or `agent` (MCP and other agents). */
+        "x-hestia-actor-kind"?: components["schemas"]["ActorKind"];
+      };
+      path: {
+        cell_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdateCellRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["UpdateCellResult"];
         };
       };
       /** @description Not Found */

@@ -2,11 +2,11 @@
 
 from pydantic import BaseModel, Field
 
-from hestia_core.mission import MissionArtifact
-from hestia_project.artifacts import CellArtifact
+from hestia_project.artifacts import Artifact, CellArtifact
 from hestia_project.base import Schema
 from hestia_project.catalog import StageType
 from hestia_project.clipboard import Fragment
+from hestia_project.computations import CellResult
 from hestia_project.document import ProjectView
 from hestia_project.history import Change
 from hestia_project.model import Position
@@ -115,15 +115,16 @@ class PasteRequest(WriteRequest):
 
 
 class ArtifactDraft(BaseModel):
-    """A draft of a form artifact, possibly incomplete. Its stage must match the cell's."""
+    """A draft of a form artifact (or of a computation's parameters), possibly incomplete. Its
+    stage must match the cell's."""
 
-    artifact: MissionArtifact
+    artifact: Artifact
 
 
 class ApplyArtifactRequest(WriteRequest):
     """Replace the cell's artifact with the draft. The justification is required."""
 
-    artifact: MissionArtifact
+    artifact: Artifact
 
 
 class ApplyArtifactResult(Schema):
@@ -131,3 +132,16 @@ class ApplyArtifactResult(Schema):
     """Null when the content did not change (nothing is recorded)."""
     view: ProjectView
     cell: CellArtifact
+
+
+class UpdateCellRequest(BaseModel):
+    justification: str = Field(
+        default="", description="Why the cell is updated. Optional; stored with the author."
+    )
+
+
+class UpdateCellResult(Schema):
+    change: Change | None
+    """Null when nothing changed (already up to date, or the same failure)."""
+    view: ProjectView
+    result: CellResult

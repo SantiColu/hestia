@@ -36,8 +36,9 @@ def test_classes() -> None:
     forms = {s for s, spec in STAGES.items() if spec.kind is StageKind.FORM}
     assert roots == forms == {S.MISSION, S.EQUIPMENT}
     assert all(STAGES[s].requires == () for s in roots)
-    # Mission is the only implemented stage; equipment is registered without a form.
-    assert {s for s, spec in STAGES.items() if spec.implemented} == {S.MISSION}
+    # Mission (form) and environment (computation) are implemented; equipment is registered
+    # without a form.
+    assert {s for s, spec in STAGES.items() if spec.implemented} == {S.MISSION, S.ENVIRONMENT}
 
 
 def test_requirements_follow_the_doc_table() -> None:

@@ -327,6 +327,7 @@ class AnalyticEnvironmentProvider:
             ranges=ranges,
             conditions=conditions,
             attitude_modes=[AttitudeModeRef(id=mode_id, name=name) for _, mode_id, name in modes],
+            faces=list(Face),
             fluxes=fluxes,
             orbit_profiles=profiles,
         )
