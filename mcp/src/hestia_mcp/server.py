@@ -81,6 +81,14 @@ async def get_catalog() -> Json:
     return await call("get_catalog")
 
 
+@_tool("get_artifact_schema")
+async def get_artifact_schema(stage: StageType) -> Json:
+    """JSON Schema of the artifact of a form stage (today only `mission`): fields, enums, SI
+    unit (`x-unit`) of each physical field and which fields apply to each orbit type
+    (`x-show-if`). Values are always in SI units and kelvin."""
+    return await call("get_artifact_schema", path={"stage": stage})
+
+
 # ---------------------------------------------------------------- files
 
 
@@ -316,6 +324,39 @@ async def unlink_cells(link_id: str, justification: str) -> Json:
     """Remove a link. Its target and everything downstream become outdated."""
     return await call(
         "unlink_cells", path={"link_id": link_id}, json={"justification": justification}
+    )
+
+
+# ---------------------------------------------------------------- form artifacts
+
+
+@_tool("get_cell_artifact")
+async def get_cell_artifact(cell_id: str) -> Json:
+    """The applied artifact of a form cell (mission): values in SI units, validation problems
+    ({path, code, message}), per-field provenance ({source, change_id}), status and context.
+    Start from this artifact to build a draft."""
+    return await call("get_cell_artifact", path={"cell_id": cell_id})
+
+
+@_tool("validate_cell_artifact")
+async def validate_cell_artifact(cell_id: str, artifact: Json) -> Json:
+    """Dry run: the problems a draft artifact would have. Changes nothing. The draft is the
+    whole artifact (possibly incomplete), as returned by get_cell_artifact."""
+    return await call(
+        "validate_cell_artifact", path={"cell_id": cell_id}, json={"artifact": artifact}
+    )
+
+
+@_tool("apply_cell_artifact")
+async def apply_cell_artifact(cell_id: str, artifact: Json, justification: str) -> Json:
+    """Replace a form cell's artifact with the draft, in one undoable change. The
+    justification is required. Problems are allowed (the cell is then failed); everything
+    downstream becomes outdated if the content changed; `change` is null if nothing changed.
+    Keep the ids of existing list items (attitude_modes[].id); new items get ids."""
+    return await call(
+        "apply_cell_artifact",
+        path={"cell_id": cell_id},
+        json={"artifact": artifact, "justification": justification},
     )
 
 

@@ -27,6 +27,7 @@ PROJECT_CHANGES = {
     "link_cells",
     "unlink_cells",
     "paste_from_clipboard",
+    "apply_cell_artifact",
 }
 
 

@@ -45,9 +45,18 @@ FRAGMENT: dict[str, Any] = {
     "links": [],
 }
 
+ARTIFACT: dict[str, Any] = {"orbit": {"type": "sso", "altitude": 600000.0}}
+
 CASES: list[tuple[str, dict[str, Any], str, str, dict[str, Any] | None]] = [
     ("ping", {}, "GET", "/health", None),
     ("get_catalog", {}, "GET", "/catalog", None),
+    (
+        "get_artifact_schema",
+        {"stage": "mission"},
+        "GET",
+        "/catalog/stages/mission/artifact-schema",
+        None,
+    ),
     ("get_session", {}, "GET", "/session", None),
     ("list_recent_projects", {}, "GET", "/recents", None),
     ("remove_recent_project", {"path": "/a.hestia"}, "DELETE", "/recents", {"path": "/a.hestia"}),
@@ -128,6 +137,21 @@ CASES: list[tuple[str, dict[str, Any], str, str, dict[str, Any] | None]] = [
         {"source_cell_id": "a", "target_cell_id": "b", **J},
     ),
     ("unlink_cells", {"link_id": "l1", **J}, "DELETE", "/project/links/l1", J),
+    ("get_cell_artifact", {"cell_id": "c1"}, "GET", "/project/cells/c1/artifact", None),
+    (
+        "validate_cell_artifact",
+        {"cell_id": "c1", "artifact": ARTIFACT},
+        "POST",
+        "/project/cells/c1/artifact/validate",
+        {"artifact": ARTIFACT},
+    ),
+    (
+        "apply_cell_artifact",
+        {"cell_id": "c1", "artifact": ARTIFACT, **J},
+        "PUT",
+        "/project/cells/c1/artifact",
+        {"artifact": ARTIFACT, **J},
+    ),
     (
         "copy_to_clipboard",
         {"system_ids": ["s1"]},

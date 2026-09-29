@@ -17,6 +17,7 @@ AGENT_NAME = os.environ.get("HESTIA_AGENT_NAME", "agente MCP")
 OPERATIONS: dict[str, tuple[str, str]] = {
     "health": ("GET", "/health"),
     "get_catalog": ("GET", "/catalog"),
+    "get_artifact_schema": ("GET", "/catalog/stages/{stage}/artifact-schema"),
     "get_session": ("GET", "/session"),
     "list_recent_projects": ("GET", "/recents"),
     "remove_recent_project": ("DELETE", "/recents"),
@@ -41,6 +42,9 @@ OPERATIONS: dict[str, tuple[str, str]] = {
     "list_branch_options": ("GET", "/project/cells/{cell_id}/branch-options"),
     "list_branch_targets": ("GET", "/project/branch-targets"),
     "get_cell_context": ("GET", "/project/cells/{cell_id}/context"),
+    "get_cell_artifact": ("GET", "/project/cells/{cell_id}/artifact"),
+    "validate_cell_artifact": ("POST", "/project/cells/{cell_id}/artifact/validate"),
+    "apply_cell_artifact": ("PUT", "/project/cells/{cell_id}/artifact"),
     "link_cells": ("POST", "/project/links"),
     "unlink_cells": ("DELETE", "/project/links/{link_id}"),
     "copy_to_clipboard": ("POST", "/project/clipboard/copy"),
