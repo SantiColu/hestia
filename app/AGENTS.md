@@ -9,18 +9,19 @@ Interfaz de Hestia: React + Vite + TanStack Router, TypeScript estricto, Tailwin
 - Temperaturas: la API entrega Kelvin; la UI muestra °C. Convertir solo en presentación.
 - Eventos en tiempo real por SSE (`GET /events`, ADR 0012): ante cada evento la UI vuelve a pedir `GET /session`; así refleja cambios de otros actores (humanos o agentes) sin recargar.
 - Las reglas de negocio las decide la API: destinos válidos al arrastrar o vincular (`branch-targets`, `link-targets`), opciones de ramificar (`branch-options`), cambios sin guardar (`unsaved_changes`) y lock (`project_locked`). La UI pregunta al usuario y reintenta; no deduce reglas del workflow.
+- Atajos de edición (`shortcuts.ts`): nunca interceptar en campos de texto, diálogos ni menús abiertos.
 - Nunca mostrar números de etapa (0.1, 1.3…): etapas y celdas van por nombre.
 - Humano y agente se muestran igual en historial y autoría. Toda escritura pide justificación.
 
 ## Estructura
 
-- `src-tauri/`: shell de escritorio (Tauri 2, Rust). Solo ventana, diálogos nativos (`tauri-plugin-dialog`) y ciclo de vida del sidecar; nada de lógica de dominio. `dragDropEnabled: false` para que funcione el drag & drop HTML5 del Toolbox.
+- `src-tauri/`: shell de escritorio (Tauri 2, Rust). Solo ventana, diálogos nativos (`tauri-plugin-dialog`), portapapeles (`tauri-plugin-clipboard-manager`, leer y escribir texto) y ciclo de vida del sidecar; nada de lógica de dominio. `dragDropEnabled: false` para que funcione el drag & drop HTML5 del Toolbox.
 - `src/api/`: cliente de la API (`client.ts`) y tipos generados (`schema.gen.ts`, no editar).
-- `src/project/`: estado del proyecto abierto (`store.tsx`, con la suscripción SSE), diálogos por promesa (`dialogs.tsx`), acciones de Archivo/Editar (`actions.ts`) y atajos (`shortcuts.ts`).
-- `src/screens/`: pantallas. `home.tsx` (inicio) y `workspace/` (barra superior, Toolbox, esquemático con React Flow, dock y panel inferior).
+- `src/project/`: estado del proyecto abierto (`store.tsx`, con la suscripción SSE), diálogos por promesa (`dialogs.tsx`), acciones de Archivo y deshacer/rehacer (`actions.ts`), atajos (`shortcuts.ts`) y fragmentos del portapapeles (`fragment.ts`: solo reconoce el marcador; valida la API, ADR 0014).
+- `src/screens/`: pantallas. `home.tsx` (inicio) y `workspace/` (barra superior, Toolbox, esquemático con React Flow, dock y panel inferior). En `workspace/`, `actions.ts` son las escrituras del esquemático (incluidos cortar, copiar, pegar y duplicar) y `edit.ts` el menú Editar y sus atajos sobre la selección.
 - `public/brand/`: marca y logotipo (copias de `design/brand/`; si cambia la marca, volver a copiarlos).
 - `src/screens/workspace/stage-icons.ts`: ícono de cada tipo de etapa (Toolbox y menús), según `workspace.pen`.
-- `src/lib/native.ts`: diálogos nativos de Tauri (con `window.prompt` como respaldo en el navegador).
+- `src/lib/native.ts`: diálogos nativos de Tauri (con `window.prompt` como respaldo en el navegador). `src/lib/clipboard.ts`: portapapeles de texto (plugin de Tauri o `navigator.clipboard`, con copia en memoria).
 - `src/routes/`: rutas por archivo (TanStack Router); `src/routeTree.gen.ts` es generado, no editar. Archivos con prefijo `-` no son rutas.
 - `src/components/ui/`: primitivas shadcn/ui sobre Base UI (ADR 0007). Agregar con `pnpm dlx shadcn@latest add <nombre>`; hay ajustes locales en button, switch, dialog, select y dropdown-menu. `context-menu.tsx` se escribió a mano siguiendo el de shadcn (el registro no estaba accesible).
 - `src/components/{forms,feedback,navigation,data,workflow,overlays}/`: componentes de Hestia. Usarlos antes que las primitivas.
@@ -48,6 +49,6 @@ pnpm build        # dist/
 
 ## Librerías
 
-Instaladas: React Flow (`@xyflow/react`, esquemático), openapi-fetch + openapi-typescript (cliente), `@tauri-apps/api` y `@tauri-apps/plugin-dialog`.
+Instaladas: React Flow (`@xyflow/react`, esquemático), openapi-fetch + openapi-typescript (cliente), `@tauri-apps/api`, `@tauri-apps/plugin-dialog` y `@tauri-apps/plugin-clipboard-manager`.
 
 Previstas (no instaladas): Plotly (gráficos), TanStack Table.
