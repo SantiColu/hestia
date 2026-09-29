@@ -116,22 +116,33 @@ def downstream(project: Project, cell_ids: Iterable[str]) -> set[str]:
     return seen - start
 
 
-def invalidate(project: Project, cell_ids: Iterable[str]) -> list[str]:
-    """Mark ``cell_ids`` and everything downstream as outdated.
+def would_invalidate(project: Project, cell_ids: Iterable[str]) -> list[str]:
+    """Cells that ``invalidate`` would mark as outdated, in project order. Changes nothing.
 
-    Only cells with results to invalidate change: ``never_run`` and ``outdated`` stay as they
+    Only cells with results to invalidate count: ``never_run`` and ``outdated`` stay as they
     are, and form stages keep their status (their artifact is entered, not computed from the
-    context). Returns the ids that changed, in project order.
+    context).
     """
     targets = set(cell_ids)
     affected = targets | downstream(project, targets)
-    changed: list[str] = []
-    for cell in project.cells:
-        if cell.id not in affected or STAGES[cell.stage].kind is StageKind.FORM:
-            continue
-        if cell.status in (CellStatus.UP_TO_DATE, CellStatus.FAILED):
-            cell.status = CellStatus.OUTDATED
-            changed.append(cell.id)
+    return [
+        cell.id
+        for cell in project.cells
+        if cell.id in affected
+        and STAGES[cell.stage].kind is not StageKind.FORM
+        and cell.status in (CellStatus.UP_TO_DATE, CellStatus.FAILED)
+    ]
+
+
+def invalidate(project: Project, cell_ids: Iterable[str]) -> list[str]:
+    """Mark ``cell_ids`` and everything downstream as outdated (see ``would_invalidate``).
+
+    Returns the ids that changed, in project order.
+    """
+    changed = would_invalidate(project, cell_ids)
+    by_id = {cell.id: cell for cell in project.cells}
+    for cell_id in changed:
+        by_id[cell_id].status = CellStatus.OUTDATED
     return changed
 
 

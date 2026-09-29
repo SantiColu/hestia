@@ -216,9 +216,13 @@ def test_apply_outdates_downstream_only_when_content_changes() -> None:
     for cell in doc.project.cells:
         if cell.stage is not S.MISSION:
             cell.status = CellStatus.UP_TO_DATE
+    mission_id = cell_of(doc.project, S.MISSION).id
+    preview = read_artifact(doc.project, mission_id).outdates
     apply(doc, draft())
     outdated = {c.stage for c in doc.project.cells if c.status is CellStatus.OUTDATED}
     assert outdated == {S.ENVIRONMENT, S.GLOBAL_BALANCE, S.TCS_CONCEPT}
+    assert preview == doc.changes()[-1].outdated_cell_ids
+    assert read_artifact(doc.project, mission_id).outdates == []  # already outdated
     assert cell_of(doc.project, S.EQUIPMENT).status is CellStatus.UP_TO_DATE  # another root
     assert set(doc.changes()[-1].outdated_cell_ids) == {
         cell_of(doc.project, s).id for s in outdated

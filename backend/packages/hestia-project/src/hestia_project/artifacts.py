@@ -30,6 +30,7 @@ from hestia_project.schematic import (
     get_cell,
     invalidate,
     new_id,
+    would_invalidate,
 )
 
 
@@ -50,6 +51,10 @@ class CellArtifact(Schema):
     provenance: dict[str, FieldProvenance]
     """By leaf field path. Author, date and justification come from the change in the history."""
     context: CellContext
+    outdates: list[str]
+    """Cells that applying a changed artifact would mark as outdated (downstream cells with
+    results), in project order. Preview for the confirmation; applying the same content or the
+    first apply of the defaults outdates nothing."""
 
 
 class ValidationResult(Schema):
@@ -88,6 +93,7 @@ def read_artifact(project: Project, cell_id: str) -> CellArtifact:
         problems=state.problems,
         provenance=state.provenance,
         context=cell_context(project, cell.id),
+        outdates=would_invalidate(project, [cell.id]),
     )
 
 
