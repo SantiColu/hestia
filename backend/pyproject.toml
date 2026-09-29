@@ -32,7 +32,7 @@ hestia-api = { workspace = true }
 
 # ---------------------------------------------------------------- pytest
 [tool.pytest.ini_options]
-testpaths = ["packages", "apps"]
+testpaths = ["packages", "apps", "tests"]
 addopts = ["--import-mode=importlib", "-ra"]
 
 # ---------------------------------------------------------------- ruff
@@ -50,13 +50,15 @@ known-first-party = ["hestia_core", "hestia_project", "hestia_adapters", "hestia
 [tool.pyright]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
-include = ["packages", "apps"]
+include = ["packages", "apps", "tests"]
 venvPath = "."
 venv = ".venv"
 
 # ---------------------------------------------------------------- import-linter
 [tool.importlinter]
 root_packages = ["hestia_core", "hestia_project", "hestia_adapters", "hestia_api"]
+# External packages are needed for the "no AI" contract below (ADR 0015).
+include_external_packages = true
 
 [[tool.importlinter.contracts]]
 name = "hestia_core is independent of every other Hestia package"
@@ -75,6 +77,27 @@ name = "hestia_project never depends on hestia_api or hestia_adapters"
 type = "forbidden"
 source_modules = ["hestia_project"]
 forbidden_modules = ["hestia_api", "hestia_adapters"]
+
+[[tool.importlinter.contracts]]
+# Hestia is deterministic and works without AI (ADR 0015). Keep in sync with
+# tests/test_no_ai_dependencies.py.
+name = "Hestia never imports AI SDKs or frameworks"
+type = "forbidden"
+source_modules = ["hestia_core", "hestia_project", "hestia_adapters", "hestia_api"]
+forbidden_modules = [
+    "anthropic",
+    "openai",
+    "pydantic_ai",
+    "logfire",
+    "langchain",
+    "langchain_core",
+    "langchain_community",
+    "langchain_openai",
+    "langchain_anthropic",
+    "llama_index",
+    "litellm",
+    "transformers",
+]
 
 [[tool.importlinter.contracts]]
 name = "Layered architecture"

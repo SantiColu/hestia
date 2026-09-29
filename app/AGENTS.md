@@ -11,6 +11,7 @@ Interfaz de Hestia: React + Vite + TanStack Router, TypeScript estricto, Tailwin
 - Las reglas de negocio las decide la API: destinos válidos al arrastrar o vincular (`branch-targets`, `link-targets`), opciones de ramificar (`branch-options`), cambios sin guardar (`unsaved_changes`) y lock (`project_locked`). La UI pregunta al usuario y reintenta; no deduce reglas del workflow.
 - Atajos de edición (`shortcuts.ts`): nunca interceptar en campos de texto, diálogos ni menús abiertos.
 - Nunca mostrar números de etapa (0.1, 1.3…): etapas y celdas van por nombre.
+- Sin IA (ADR 0015): prohibido importar o depender de SDKs de IA (`ai`, `@ai-sdk/*`, `openai`, `@anthropic-ai/*`, `langchain`…); lo verifican ESLint (`no-restricted-imports`) y `scripts/check-no-ai.mjs` en `pnpm lint`.
 - Humano y agente se muestran igual en historial y autoría. Toda escritura pide justificación.
 
 ## Estructura

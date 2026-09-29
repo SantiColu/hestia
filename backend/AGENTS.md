@@ -24,6 +24,7 @@ Las reglas las hace cumplir import-linter (`[tool.importlinter]` en `pyproject.t
 - Autor de cada escritura: headers `X-Hestia-Actor-Kind` / `X-Hestia-Actor` (`hestia_api.deps.get_author`, ADR 0011). Justificación en el cuerpo; obligatoria en eliminar y desvincular.
 - Los modelos expuestos por la API heredan de `hestia_project.base.Schema` (campos con default quedan requeridos en las respuestas del contrato).
 - Errores de dominio: subclases de `hestia_project.errors.ProjectError` con `code` estable; `hestia_api.errors` las mapea a HTTP (`404`, `409`, `422`, `423`). Un fragmento de portapapeles inválido es `invalid_fragment` (422).
+- Sin IA (ADR 0015): prohibido importar o depender de SDKs/frameworks de IA (anthropic, openai, pydantic-ai, logfire, langchain…); lo verifican el contrato de import-linter y `tests/test_no_ai_dependencies.py`. `pydantic` base sí.
 - Cambios en la API → skill `add-api-operation` (regenerar contrato + tool MCP).
 
 ## Comandos (desde `backend/`)
