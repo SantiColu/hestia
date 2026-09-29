@@ -4,7 +4,9 @@ Catálogo de **tipos de etapa** y reglas del esquemático. En el proyecto, cada 
 
 **Estados:** `up_to_date` (actualizada) · `outdated` (desactualizada) · `failed` (fallida) · `never_run` (nunca corrida). Cambiar algo aguas arriba marca como `outdated` todo lo que depende de ello.
 
-> **Estado de la implementación (2026-09-29):** el modelo de este documento (contexto por cadena, [ADR 0016](adr/0016-contexto-de-celda-por-cadena.md)) está decidido y pendiente de implementar. El código todavía usa la regla anterior de «una fuente por entrada» y no tiene la etapa `equipment`. Ninguna etapa calcula todavía; las etapas formulario (Misión, Equipos) se especifican en [ADR 0017](adr/0017-etapas-formulario.md) y en [`etapas/`](etapas/).
+> **Estado de la implementación (2026-09-29):** implementado el modelo de este documento (contexto por cadena, [ADR 0016](adr/0016-contexto-de-celda-por-cadena.md)): catálogo con `equipment`, clases, requisitos y orden; las cinco reglas de vínculo (la de colectores queda preparada sin colectores en el catálogo); contexto resuelto y `missing` en la API (`get_cell_context`, `ProjectView.missing`); plantillas, agregar con autovinculación, ramificar, duplicar, eliminar y la migración de archivos v1. La etapa **Misión** está implementada como formulario ([ADR 0017](adr/0017-etapas-formulario.md), [0019](adr/0019-contrato-de-etapas-formulario.md)). **Equipos** está en el catálogo sin formulario. Ninguna etapa calcula todavía.
+>
+> TODO: formulario de Equipos; cálculo de las etapas; colectores (Comparación); revalidar formularios con contexto cuando exista alguno que no sea raíz.
 
 ## Tipos de etapa
 
@@ -64,8 +66,8 @@ equipment ───────────────┘
   5. **Orden:** todos los tipos del contexto resultante van antes que el tipo de B en el orden del catálogo (0.1 < 0.2 < … < 0.5 < 1.1 < … < 1.6).
 - **Requisitos faltantes no bloquean el vínculo:** p. ej. `mission` → `global_balance` es válido; la celda queda con `missing: [environment, equipment]` hasta que se complete (por unión).
 - **Plantillas:** «Fase 0 · Viabilidad» crea las 5 celdas en orden de lectura con `mission → environment`, `environment → global_balance`, `equipment → global_balance`, `global_balance → tcs_concept`. «Fase 1 · Modelo nodal» crea la cadena lineal de sus 6 celdas.
-- **Agregar celda a un sistema:** la celda nueva se vincula sola:
-  1. Como destino: recorre las celdas del mismo sistema en orden inverso del catálogo y agrega cada vínculo válido hasta cubrir sus requisitos. P. ej., `global_balance` en un sistema con misión, ambiente y equipos toma `equipment` y después `environment` (unión).
+- **Agregar celda a un sistema:** la celda nueva se vincula sola, solo con vínculos que aportan un requisito que le falta (ADR 0019):
+  1. Como destino: recorre las celdas del mismo sistema en orden inverso del catálogo y agrega cada vínculo válido que aporte un requisito faltante, hasta cubrir sus requisitos. P. ej., `global_balance` en un sistema con misión, ambiente y equipos toma `equipment` y después `environment` (unión).
   2. Como fuente: la vincula a las celdas del mismo sistema a las que les falta un requisito, si el vínculo es válido.
 
   No recrea vínculos quitados a propósito entre celdas existentes.
@@ -80,10 +82,11 @@ equipment ───────────────┘
 
 ## Migración de proyectos existentes
 
-Sube `Project.SCHEMA_VERSION`. Al abrir un `.hestia` de la versión anterior:
+Sube `Project.SCHEMA_VERSION` (hoy 3: la 2 es el contexto por cadena, la 3 guarda el artefacto de las etapas formulario; ADR 0019). Al abrir un `.hestia` de la versión 1:
 - Se renumera el catálogo, que es metadato.
 - Los vínculos se reevalúan en orden de creación con las reglas nuevas; los que ya no son válidos se descartan y quedan en un aviso en Mensajes, sin cambio en el historial.
 - Los sistemas de plantilla Fase 0 existentes no ganan una celda `equipment` automáticamente.
+- Las celdas de Misión de archivos v1 y v2 reciben los defaults de biblioteca y quedan «nunca corrida».
 
 ## Pendientes
 

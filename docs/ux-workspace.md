@@ -99,13 +99,18 @@ Alineado con `app/design/workspace.pen` (frames Workspace, Workspace · menú Ar
 Implementado:
 
 - **Inicio:** logotipo, Nuevo y Abrir, y recientes (archivo, carpeta, última apertura; los que ya no existen se marcan como «archivo no encontrado»; quitar de recientes aparece al pasar el mouse). Sin recientes: la marca como plano de construcción. Pie con el estado de la API y la versión.
-- **Barra superior:** menú Archivo (Nuevo Ctrl+N, Abrir Ctrl+O, Recientes, Guardar Ctrl+S, Guardar como Ctrl+Shift+S, Cerrar Ctrl+W) y Editar (ver [Menú Editar y atajos](#menú-editar-y-atajos)); Ver, Proyecto y Ayuda deshabilitados; nombre del archivo, ● de cambios sin guardar y botón guardar solo con cambios; herramientas futuras y Actualizar todo visibles y deshabilitados.
-- **Toolbox:** fases y etapas por nombre. Arrastrar al lienzo crea el sistema (plantilla o celda suelta) donde se suelta; soltar sobre una celda ramifica. Durante el arrastre solo se resaltan las celdas que la API (`branch-targets`) da como válidas.
+- **Barra superior:** menú Archivo (Nuevo Ctrl+N, Abrir Ctrl+O, Recientes, Guardar Ctrl+S, Guardar como Ctrl+Shift+S, Cerrar proyecto Ctrl+Shift+W) y Editar (ver [Menú Editar y atajos](#menú-editar-y-atajos)); Ver, Proyecto y Ayuda deshabilitados; nombre del archivo, ● de cambios sin guardar y botón guardar solo con cambios; herramientas futuras y Actualizar todo visibles y deshabilitados.
+- **Pestañas:** Workflow fija; doble clic en una celda abre su pestaña (o la trae al frente) con título «celda · sistema», ícono de estado y punto si hay borrador sin aplicar; Ctrl+W o la ✕ la cierran (con borrador, pregunta). Se recuerdan por proyecto en `localStorage`. Si la celda desaparece, la pestaña se cierra con un aviso en Mensajes. Los atajos de edición del esquemático solo actúan en Workflow.
+- **Editor de Misión:** formulario de una columna generado desde el JSON Schema del artefacto (`get_artifact_schema`, extensiones `x-` del ADR 0019), con unidades de presentación (km, °, años), selector SSO · LEO/MEO · GEO, modos de actitud como tabla editable y caras de radiador como botones. El borrador vive en la UI y se valida en seco con *debounce* (300 ms); errores por campo y resumen arriba; bajo cada campo cambiado, el valor aplicado; los defaults sin tocar se marcan «por defecto». Barra con Descartar y Aplicar… (ConfirmChangeDialog con el diff y la justificación). Sin borrador y nunca aplicado, Aplicar registra los defaults.
+- **Otras etapas:** su pestaña dice «Sin implementar» y muestra el contexto resuelto y lo que falta (`missing`). En el esquemático, una celda con requisitos faltantes muestra un aviso con la lista.
+- **Borradores sin aplicar:** al cerrar el proyecto, abrir o crear otro, o cerrar la ventana de escritorio, se pregunta antes de descartarlos.
+- **Mensajes:** los vínculos descartados al migrar un archivo viejo aparecen como avisos.
+- **Toolbox:** fases y etapas por nombre (incluye Equipos en Fase 0). Arrastrar al lienzo crea el sistema (plantilla o celda suelta) donde se suelta; soltar sobre una celda ramifica. Durante el arrastre solo se resaltan las celdas que la API (`branch-targets`) da como válidas.
 - **Esquemático (React Flow):** sistemas con sus celdas, estado de cada celda como ícono y vínculos ortogonales entre sistemas (los vínculos dentro de un sistema no se dibujan: el bloque ya los expresa); control de zoom abajo a la izquierda; selección de sistema o celda; mover sistemas; vincular arrastrando de la salida (derecha) a la entrada (izquierda) de otra celda, con destinos válidos según la API (`link-targets`). Menú contextual de sistema (renombrar, agregar etapa, actualizar deshabilitado, cortar, copiar, pegar, duplicar, eliminar) y de celda (renombrar, actualizar deshabilitado, ramificar con opciones de la API, desvincular, cortar, copiar, pegar, duplicar, eliminar).
 - **Justificación:** eliminar, cortar y desvincular la exigen (`ConfirmChangeDialog`); renombrar la ofrece opcional; crear, ramificar, mover, vincular, duplicar, pegar y deshacer van sin justificación.
 - **Errores de render:** la ruta raíz tiene `errorComponent`: un error muestra un mensaje con «Recargar» en lugar de dejar la ventana en blanco.
 - **Diálogos:** cambios sin guardar (al crear, abrir, cerrar proyecto o cerrar la ventana de escritorio), proyecto bloqueado por otra instancia (cancelar o abrir de todos modos), renombrar, confirmar cambio.
-- **Dock derecho:** pestañas Propiedades y Agentes, vacías.
+- **Dock derecho:** pestañas Propiedades y Agentes, vacías (el chat del Agente, ADR 0018, es otra tanda).
 - **Panel inferior:** Mensajes (eventos del proyecto de cualquier actor, por SSE, y errores) e Historial (autor, resumen y justificación); Corridas deshabilitada.
 
 TODO:
@@ -113,7 +118,9 @@ TODO:
 - Selección múltiple (clic con Ctrl/Shift o rectángulo) y, con ella, «Seleccionar todo» (Ctrl+A) y copiar/cortar/eliminar varios a la vez. La API de copiar ya acepta listas de sistemas y celdas.
 - Menú contextual del fondo del lienzo con «Pegar aquí» (hoy se pega en el cursor con Ctrl+V).
 - Portapapeles en Tauri: el plugin compila (clippy) pero solo se probó en el navegador (Chromium); probar copiar entre dos ventanas en `make desktop`.
-- Pestañas y editor de celda (doble clic), borrador + Aplicar, chat del agente. Diseño en `workspace.pen`; formulario de Misión en `docs/etapas/mission.md`.
+- Estilo de las pestañas y del formulario de Misión según `workspace.pen` (hoy estilo mínimo; se rehace desde Pencil).
+- Popover de procedencia e historial de un campo; vista previa (desde la API) de las celdas que desactualiza Aplicar: hoy el diálogo lo dice en genérico.
+- Formulario de Equipos (etapa registrada sin formulario).
 - Chat del Agente (canal de mensajes por la API) e indicador de agente conectado.
 - Cantidad de sistemas en cada reciente (el diseño la muestra; `RecentProject` de la API no la trae).
 - Encuadrar la vista cuando un agente crea un sistema fuera de la zona visible (hoy hay que usar «ajustar vista»).

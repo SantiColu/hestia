@@ -6,7 +6,7 @@ uv workspace (Python 3.12). Toda la lógica de dominio de Hestia vive acá.
 
 | Paquete | Ruta | Contiene | Puede importar |
 |---|---|---|---|
-| `hestia_core` | `packages/hestia-core` | Física pura, modelos de artefactos (pydantic), Protocols de proveedores externos | nada de Hestia |
+| `hestia_core` | `packages/hestia-core` | Física pura, modelos de artefactos (pydantic) y su validación (`mission`, `forms`, `orbits`), Protocols de proveedores externos | nada de Hestia |
 | `hestia_adapters` | `packages/hestia-adapters` | Implementaciones de los Protocols de core (Orekit, pyViewFactor, SciPy…) | `hestia_core` |
 | `hestia_project` | `packages/hestia-project` | Grafo de etapas, estados, procedencia, historial/deshacer, persistencia | `hestia_core` |
 | `hestia_api` | `apps/api` | FastAPI: rutas, DTOs, composición de dependencias | todos |
@@ -21,9 +21,9 @@ Las reglas las hace cumplir import-linter (`[tool.importlinter]` en `pyproject.t
 - Unidades SI, temperaturas en K. Nombres con sufijo de unidad cuando no es SI obvio (`power_w`, `area_m2`, `temperature_k`).
 - Toda escritura por API registra autor y justificación.
 - Persistencia: un `.hestia` SQLite por proyecto con log de cambios (ADR 0006, 0008, 0010). Guardado explícito, lock y recientes en `hestia_project`.
-- Autor de cada escritura: headers `X-Hestia-Actor-Kind` / `X-Hestia-Actor` (`hestia_api.deps.get_author`, ADR 0011). Justificación en el cuerpo; obligatoria en eliminar y desvincular.
+- Autor de cada escritura: headers `X-Hestia-Actor-Kind` / `X-Hestia-Actor` (`hestia_api.deps.get_author`, ADR 0011). Justificación en el cuerpo; obligatoria en eliminar, desvincular y aplicar un artefacto.
 - Los modelos expuestos por la API heredan de `hestia_project.base.Schema` (campos con default quedan requeridos en las respuestas del contrato).
-- Errores de dominio: subclases de `hestia_project.errors.ProjectError` con `code` estable; `hestia_api.errors` las mapea a HTTP (`404`, `409`, `422`, `423`). Un fragmento de portapapeles inválido es `invalid_fragment` (422).
+- Errores de dominio: subclases de `hestia_project.errors.ProjectError` con `code` estable; `hestia_api.errors` las mapea a HTTP (`404`, `409`, `422`, `423`). Un fragmento de portapapeles inválido es `invalid_fragment` (422); una etapa sin formulario, `stage_not_implemented` (422).
 - Sin IA (ADR 0015): prohibido importar o depender de SDKs/frameworks de IA (anthropic, openai, pydantic-ai, logfire, langchain…); lo verifican el contrato de import-linter y `tests/test_no_ai_dependencies.py`. `pydantic` base sí.
 - Cambios en la API → skill `add-api-operation` (regenerar contrato + tool MCP).
 
@@ -42,9 +42,11 @@ uv run uvicorn hestia_api.main:app --reload   # http://localhost:8000/health
 
 | Módulo | Contiene |
 |---|---|
-| `catalog` | Tipos de etapa, entradas válidas, plantillas «Fase 0» y «Fase 1» |
+| `catalog` | Tipos de etapa (clase, requisitos de contexto, orden, implementada), plantillas «Fase 0» y «Fase 1» con sus vínculos |
 | `model` | `Project` (con `SCHEMA_VERSION`), `System`, `Cell`, `Link`, estados, procedencia |
-| `schematic` | Operaciones del esquemático, validación de vínculos, propagación de `outdated` |
+| `schematic` | Operaciones del esquemático, contexto resuelto (ADR 0016), las cinco reglas de vínculo, propagación de `outdated` |
+| `forms`, `artifacts` | Registro de etapas formulario y leer / validar en seco / aplicar su artefacto con procedencia por campo (ADR 0017, 0019) |
+| `migration` | Subir proyectos de versiones anteriores (vínculos reevaluados, avisos) |
 | `clipboard` | Fragmentos versionados para copiar y pegar sistemas y celdas (ADR 0014) |
 | `history`, `document` | Log de cambios con autor y justificación; deshacer/rehacer; dirty |
 | `storage`, `lock`, `recents` | Archivo `.hestia`, lock contra doble apertura, recientes |
@@ -52,7 +54,7 @@ uv run uvicorn hestia_api.main:app --reload   # http://localhost:8000/health
 
 ## `hestia_api`
 
-`main.create_app()` compone `Workspace` + `EventBroker`; rutas en `routes/` (`meta`, `files`, `schematic`, `clipboard`, `history`, `events`), cuerpos de request en `schemas.py`. `HESTIA_HOME` (por defecto `~/.hestia`) guarda los recientes; `HESTIA_CORS_ORIGINS` sobreescribe los orígenes permitidos.
+`main.create_app()` compone `Workspace` + `EventBroker`; rutas en `routes/` (`meta`, `files`, `schematic`, `artifacts`, `clipboard`, `history`, `events`), cuerpos de request en `schemas.py`. `HESTIA_HOME` (por defecto `~/.hestia`) guarda los recientes; `HESTIA_CORS_ORIGINS` sobreescribe los orígenes permitidos.
 
 Dependencias nuevas: `uv add --package <hestia-xxx> <lib>` en el paquete que corresponde a su capa.
 

@@ -1,6 +1,6 @@
 # Etapa 0.1 · Misión (`mission`): campos
 
-> **Especificación para implementar (2026-09-29).** Nada está implementado. Comportamiento de edición, validación, estado y procedencia: [ADR 0017](../adr/0017-etapas-formulario.md). Lo marcado *(propuesta)* se decidió sin revisión y puede cambiar. Los campos se revisan cuando se implementen las etapas que los consumen.
+> **Implementado (2026-09-29):** modelo `hestia_core.mission.MissionArtifact` (v1), validación `validate_mission` con estos códigos (más `format` para el LTAN y `duplicate` para caras repetidas), API y tools MCP (ADR 0019) y formulario en la UI. Pendiente: popover de procedencia e historial por campo. Comportamiento de edición, validación, estado y procedencia: [ADR 0017](../adr/0017-etapas-formulario.md). Lo marcado *(propuesta)* se decidió sin revisión y puede cambiar. Los campos se revisan cuando se implementen las etapas que los consumen.
 
 La etapa es un formulario: su artefacto es exactamente lo cargado, validado. **No calcula nada** (ni disipación total por modo, ni rango común de temperatura, ni unidades críticas): cada derivado vive en la etapa que lo usa (p. ej. `global_balance`). Solo valida consistencia.
 
