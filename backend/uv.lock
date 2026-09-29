@@ -177,6 +177,12 @@ dev = [
 name = "hestia-core"
 version = "0.1.0"
 source = { editable = "packages/hestia-core" }
+dependencies = [
+    { name = "pydantic" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pydantic", specifier = ">=2.9" }]
 
 [[package]]
 name = "hestia-project"
