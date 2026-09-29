@@ -6,7 +6,7 @@ serves requests from several threads) and notifies listeners so clients can reac
 
 import threading
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
@@ -16,6 +16,7 @@ from pydantic import Field
 
 from hestia_project.artifacts import NoChange
 from hestia_project.base import Schema
+from hestia_project.computations import update_cell
 from hestia_project.document import ProjectDocument, ProjectView
 from hestia_project.errors import (
     NoPathError,
@@ -24,7 +25,7 @@ from hestia_project.errors import (
 )
 from hestia_project.history import Author, Change, Operation
 from hestia_project.lock import ProjectLock, acquire_lock
-from hestia_project.model import Project
+from hestia_project.model import Project, StageResult
 from hestia_project.recents import RecentProject, RecentProjects
 from hestia_project.schematic import Outcome
 from hestia_project.storage import FILE_EXTENSION, read_project_file, write_project
@@ -109,6 +110,12 @@ class Workspace:
         with self._mutex:
             return fn(self._require().project)
 
+    def query_results(self, fn: Callable[[Project, Mapping[str, StageResult]], T]) -> T:
+        """Run a read-only function against the open project and its stored results."""
+        with self._mutex:
+            doc = self._require()
+            return fn(doc.project, doc.results)
+
     def recent_projects(self) -> list[RecentProject]:
         return self.recents.list()
 
@@ -154,7 +161,9 @@ class Workspace:
             lock = acquire_lock(path, self.instance_id, force=force)
             self._release()
             self._lock = lock
-            self._doc = ProjectDocument(loaded.project, path=path, history=loaded.history)
+            self._doc = ProjectDocument(
+                loaded.project, path=path, history=loaded.history, results=loaded.results
+            )
             self.recents.touch(path, loaded.project.name)
             self._emit(
                 ProjectEvent(
@@ -193,7 +202,7 @@ class Workspace:
             return self._write(doc, path)
 
     def _write(self, doc: ProjectDocument, path: Path) -> ProjectView:
-        write_project(path, doc.project, doc.history)
+        write_project(path, doc.project, doc.history, doc.results)
         doc.mark_saved(path)
         self.recents.touch(path, doc.project.name)
         self._emit(
@@ -247,6 +256,20 @@ class Workspace:
             except NoChange:
                 return None, doc.view()
             return change, self._changed(doc, change).view
+
+    def update_cell(
+        self, cell_id: str, author: Author, justification: str = ""
+    ) -> tuple[Change | None, ProjectView]:
+        """Update (run) a computation cell (ADR 0021). Null change: it was already up to date,
+        or failed again with the same problems."""
+        with self._mutex:
+            doc = self._require()
+            return self.apply_if_changed(
+                Operation.UPDATE_CELL,
+                author,
+                justification,
+                lambda p: update_cell(p, doc.results, cell_id),
+            )
 
     def undo(self, author: Author, justification: str = "") -> MutationResult:
         with self._mutex:

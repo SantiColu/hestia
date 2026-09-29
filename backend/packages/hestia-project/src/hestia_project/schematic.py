@@ -10,7 +10,8 @@ Rules enforced here (``docs/workflow-fases-0-1.md``):
   context of its source. ``check_link`` holds the five link rules.
 - Linking, unlinking or losing a source marks the target and everything downstream as
   ``outdated``, across systems. Cells that never ran stay ``never_run`` and form stages are not
-  outdated by upstream changes (ADR 0017).
+  outdated by upstream changes (ADR 0017). Computation stages never rerun on their own: an
+  upstream change only outdates them (ADR 0021).
 """
 
 import uuid
@@ -30,7 +31,7 @@ from hestia_project.catalog import (
 )
 from hestia_project.errors import InvalidOperationError, NotFoundError
 from hestia_project.forms import new_form_state
-from hestia_project.model import Cell, CellStatus, Link, Position, Project, System
+from hestia_project.model import Cell, CellStatus, Link, Position, Project, StageResult, System
 
 MAX_NAME_LENGTH = 80
 
@@ -72,6 +73,9 @@ class Outcome(Schema):
     summary: str
     created_ids: list[str] = Field(default_factory=list[str])
     outdated_cell_ids: list[str] = Field(default_factory=list[str])
+    results: list[StageResult] = Field(default_factory=list[StageResult], exclude=True)
+    """Results produced by the operation (updates), kept by ``ProjectDocument`` outside the
+    history snapshots (ADR 0021)."""
 
 
 # ---------------------------------------------------------------- lookups

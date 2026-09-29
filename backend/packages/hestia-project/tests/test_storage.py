@@ -3,11 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from hestia_project.catalog import TemplateId
+from hestia_core.forms import Problem, ProblemCode
+from hestia_project.catalog import StageType, TemplateId
 from hestia_project.document import ProjectDocument
 from hestia_project.errors import ProjectFileError
 from hestia_project.history import ActorKind, Author, Operation
-from hestia_project.model import CellStatus, Provenance
+from hestia_project.model import CellStatus, ContextSource, Provenance
 from hestia_project.schematic import Blueprint, branch, create_system, delete_system, rename_cell
 from hestia_project.storage import APPLICATION_ID, read_project, write_project
 
@@ -39,8 +40,17 @@ def test_roundtrip(tmp_path: Path) -> None:
     doc = _document()
     doc.project.cells[0].status = CellStatus.FAILED
     doc.project.cells[0].provenance = Provenance(
-        produced_at=doc.changes()[0].timestamp, code_version="0.1.0", input_cell_ids=["x"]
+        produced_at=doc.changes()[0].timestamp,
+        change_id=doc.changes()[0].id,
+        provider="analytic",
+        provider_version="1",
+        code_version="0.1.0",
+        context=[ContextSource(stage=StageType.MISSION, cell_id="x", change_id=None)],
+        parameters_change_id=None,
     )
+    doc.project.cells[0].problems = [
+        Problem(path="context", code=ProblemCode.MISSING, message="Falta «Misión».")
+    ]
     path = tmp_path / "sat.hestia"
     write_project(path, doc.project, doc.history)
 

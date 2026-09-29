@@ -5,7 +5,8 @@ them. Copying never changes the project. Pasting creates everything with new ids
 internal links (validated like any other link) and drops links to cells outside the fragment.
 Pasted cells are ``never_run``: results and provenance are not copied. Form cells are the
 exception (fragment v2): their artifact is input data, so it travels with the fragment and the
-pasted cell keeps whether it was applied (revalidated) and where each value came from.
+pasted cell keeps whether it was applied (revalidated) and where each value came from. The
+parameters of computation cells travel the same way (ADR 0021); their results never do.
 """
 
 from typing import Any, Literal
@@ -15,7 +16,7 @@ from pydantic import Field, ValidationError
 from hestia_project.base import Schema
 from hestia_project.catalog import StageType
 from hestia_project.errors import InvalidFragmentError, InvalidOperationError
-from hestia_project.forms import form_from_artifact, new_form_state, status_for
+from hestia_project.forms import form_from_artifact, is_form_stage, new_form_state, status_for
 from hestia_project.model import Cell, CellStatus, FieldSource, Position, Project, System
 from hestia_project.schematic import (
     SYSTEM_GAP,
@@ -248,7 +249,7 @@ def _paste_form(cell: Cell, form: FragmentForm | None) -> None:
     if cell.form is None or form is None:
         return
     try:
-        cell.form = form_from_artifact(cell.stage, form.artifact, form.sources)
+        cell.form = form_from_artifact(cell.stage, form.artifact, form.sources, form.applied)
     except InvalidOperationError as exc:
         raise InvalidFragmentError(
             f"El contenido copiado tiene un artefacto inválido en «{cell.name}»."
@@ -257,7 +258,8 @@ def _paste_form(cell: Cell, form: FragmentForm | None) -> None:
         raise InvalidFragmentError(
             f"El contenido copiado tiene un artefacto inválido en «{cell.name}»."
         ) from exc
-    if form.applied:
+    # A computation cell pastes its parameters only: it has no result, so it never ran.
+    if form.applied and is_form_stage(cell.stage):
         cell.status = status_for(cell.form.problems)
 
 

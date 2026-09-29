@@ -1,10 +1,11 @@
-"""Registry of implemented form stages (ADR 0017) and helpers on their stored state.
+"""Registry of implemented forms (ADR 0017, 0021) and helpers on their stored state.
 
 A form stage's artifact is what the user enters, validated: the model, its library defaults and
-its validation live in ``hestia_core``. Operations on artifacts are in ``artifacts``.
+its validation live in ``hestia_core``. The parameters of a computation stage are edited the
+same way. Operations on artifacts are in ``artifacts``.
 """
 
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
 from typing import Any, cast
 
@@ -21,11 +22,16 @@ PENDING_CHANGE = "__pending__"
 with the id of the change that records the operation."""
 
 
+FormContext = Mapping[StageType, BaseModel]
+"""Upstream inputs a form is validated against: the artifacts of the form stages in the cell's
+context, by stage type. Empty for roots and when nothing is linked."""
+
+
 @dataclass(frozen=True)
 class FormSpec:
     model: type[BaseModel]
     defaults: Callable[[], BaseModel]
-    validate: Callable[[Any], list[Problem]]
+    validate: Callable[[Any, FormContext], list[Problem]]
     id_prefixes: dict[str, str] = field(default_factory=dict[str, str])
     """Lists whose items get a backend id (list path → id prefix)."""
 
@@ -34,11 +40,17 @@ FORMS: dict[StageType, FormSpec] = {
     StageType.MISSION: FormSpec(
         model=MissionArtifact,
         defaults=mission_defaults,
-        validate=validate_mission,
+        validate=lambda artifact, _context: validate_mission(artifact),
         id_prefixes={"attitude_modes": "mode"},
     ),
 }
-"""Implemented form stages. ``equipment`` is a form stage without an editor yet."""
+"""Implemented forms: form stages (``mission``; ``equipment`` has no editor yet) and the
+parameters of computation stages (registered by ``computations``)."""
+
+
+def is_form_stage(stage: StageType) -> bool:
+    """Form stages: the artifact is the form. Computation stages only edit parameters."""
+    return STAGES[stage].kind is StageKind.FORM
 
 
 def form_spec(stage: StageType) -> FormSpec:
@@ -50,14 +62,14 @@ def form_spec(stage: StageType) -> FormSpec:
                 f"La etapa «{name}» todavía no tiene formulario.", stage=stage
             )
         raise StageNotImplementedError(
-            f"La etapa «{name}» no es un formulario: su artefacto se calcula.", stage=stage
+            f"La etapa «{name}» todavía no tiene parámetros ni cálculo.", stage=stage
         )
     return spec
 
 
 def artifact_schema(stage: StageType) -> dict[str, Any]:
-    """JSON Schema of a form stage's artifact, with the ``x-`` extensions the UI builds the
-    form from (units, labels, conditional fields)."""
+    """JSON Schema of a form stage's artifact (or a computation stage's parameters), with the
+    ``x-`` extensions the UI builds the form from (units, labels, conditional fields)."""
     return form_spec(stage).model.model_json_schema()
 
 
@@ -74,7 +86,7 @@ def new_form_state(stage: StageType, change_id: str | None = PENDING_CHANGE) -> 
     data = artifact.model_dump(mode="json")
     return FormState(
         artifact=data,
-        problems=spec.validate(artifact),
+        problems=spec.validate(artifact, {}),
         provenance={
             leaf.path: FieldProvenance(source=FieldSource.DEFAULT, change_id=change_id)
             for leaf in leaves(data)
@@ -84,15 +96,17 @@ def new_form_state(stage: StageType, change_id: str | None = PENDING_CHANGE) -> 
 
 
 def form_from_artifact(
-    stage: StageType, data: dict[str, Any], sources: dict[str, FieldSource]
+    stage: StageType, data: dict[str, Any], sources: dict[str, FieldSource], applied: bool
 ) -> FormState:
-    """State for a copied artifact (paste): revalidated, provenance from ``sources``."""
+    """State for a copied artifact (paste): revalidated without context, provenance from
+    ``sources``."""
     spec = form_spec(stage)
     artifact = spec.model.model_validate(data)
     dumped = artifact.model_dump(mode="json")
     return FormState(
         artifact=dumped,
-        problems=spec.validate(artifact),
+        applied_change_id=PENDING_CHANGE if applied else None,
+        problems=spec.validate(artifact, {}),
         provenance={
             leaf.path: FieldProvenance(
                 source=sources.get(leaf.path, FieldSource.ENTERED), change_id=PENDING_CHANGE

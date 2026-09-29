@@ -36,6 +36,7 @@ class Operation(StrEnum):
     DELETE_CELL = "delete_cell"
     PASTE = "paste"
     APPLY_ARTIFACT = "apply_artifact"
+    UPDATE_CELL = "update_cell"
     UNDO = "undo"
     REDO = "redo"
 
@@ -44,7 +45,7 @@ JUSTIFICATION_REQUIRED: frozenset[Operation] = frozenset(
     {Operation.DELETE_SYSTEM, Operation.DELETE_CELL, Operation.UNLINK, Operation.APPLY_ARTIFACT}
 )
 """Destructive operations and applying an artifact (ADR 0017): an empty justification is
-rejected. Elsewhere it may be empty."""
+rejected. Elsewhere it may be empty (e.g. updating a computation cell, ADR 0021)."""
 
 OPERATION_LABELS: dict[Operation, str] = {
     Operation.CREATE_SYSTEM: "crear sistema",
@@ -60,6 +61,7 @@ OPERATION_LABELS: dict[Operation, str] = {
     Operation.DELETE_CELL: "eliminar celda",
     Operation.PASTE: "pegar",
     Operation.APPLY_ARTIFACT: "aplicar cambios",
+    Operation.UPDATE_CELL: "actualizar",
     Operation.UNDO: "deshacer",
     Operation.REDO: "rehacer",
 }

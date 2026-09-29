@@ -21,7 +21,7 @@ from hestia_project.history import (
     ChangeRecord,
     Operation,
 )
-from hestia_project.model import Project
+from hestia_project.model import Project, StageResult
 from hestia_project.schematic import Outcome, missing_requirements
 
 DEFAULT_PROJECT_NAME = "Sin título"
@@ -64,10 +64,14 @@ class ProjectDocument:
         project: Project,
         path: Path | None = None,
         history: list[ChangeRecord] | None = None,
+        results: dict[str, StageResult] | None = None,
     ) -> None:
         self.project = project
         self.path = path
         self.history: list[ChangeRecord] = history or []
+        self.results: dict[str, StageResult] = results or {}
+        """Results of computation cells by id, outside the history snapshots (ADR 0021).
+        Immutable; undo and redo only change which ones the cells reference."""
         self._undo: list[ChangeRecord] = []
         self._redo: list[ChangeRecord] = []
         self.revision = 0
@@ -132,6 +136,7 @@ class ProjectDocument:
         record = self._record(
             operation, author, justification, outcome, self.project, working, change_id=change_id
         )
+        self.results.update({r.id: r for r in outcome.results})
         self.project = working
         self._undo.append(record)
         self._redo.clear()
@@ -208,10 +213,18 @@ class ProjectDocument:
 
 
 def _stamp(project: Project, change_id: str) -> None:
-    """Point the field provenance set by an operation to the change that records it."""
+    """Point the provenance set by an operation (fields, applies, results) to the change that
+    records it."""
     for cell in project.cells:
+        if cell.provenance is not None:
+            if cell.provenance.change_id == PENDING_CHANGE:
+                cell.provenance.change_id = change_id
+            if cell.provenance.parameters_change_id == PENDING_CHANGE:
+                cell.provenance.parameters_change_id = change_id
         if cell.form is None:
             continue
+        if cell.form.applied_change_id == PENDING_CHANGE:
+            cell.form.applied_change_id = change_id
         for provenance in cell.form.provenance.values():
             if provenance.change_id == PENDING_CHANGE:
                 provenance.change_id = change_id

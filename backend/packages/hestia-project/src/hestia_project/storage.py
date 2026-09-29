@@ -10,17 +10,28 @@ import json
 import os
 import sqlite3
 import tempfile
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from pydantic import ValidationError
 
+from hestia_core.forms import Problem
 from hestia_project import __version__
+from hestia_project.computations import referenced_results
 from hestia_project.errors import ProjectFileError
 from hestia_project.forms import new_form_state
 from hestia_project.history import Change, ChangeRecord
-from hestia_project.migration import relink
-from hestia_project.model import SCHEMA_VERSION, Cell, Link, Position, Project, System
+from hestia_project.migration import recover_applied_changes, relink
+from hestia_project.model import (
+    SCHEMA_VERSION,
+    Cell,
+    Link,
+    Position,
+    Project,
+    StageResult,
+    System,
+)
 
 FILE_EXTENSION = ".hestia"
 APPLICATION_ID = 0x48535441  # "HSTA": identifies Hestia files (PRAGMA application_id).
@@ -45,7 +56,9 @@ CREATE TABLE cells (
     name       TEXT NOT NULL,
     status     TEXT NOT NULL,
     provenance TEXT,
-    form       TEXT
+    form       TEXT,
+    result_id  TEXT,
+    problems   TEXT
 );
 CREATE TABLE links (
     id             TEXT PRIMARY KEY,
@@ -53,6 +66,13 @@ CREATE TABLE links (
     source_cell_id TEXT NOT NULL REFERENCES cells(id),
     target_cell_id TEXT NOT NULL REFERENCES cells(id),
     UNIQUE (source_cell_id, target_cell_id)
+);
+CREATE TABLE results (
+    id         TEXT PRIMARY KEY,
+    cell_id    TEXT NOT NULL,
+    stage      TEXT NOT NULL,
+    parameters TEXT NOT NULL,
+    data       TEXT NOT NULL
 );
 CREATE TABLE changes (
     seq         INTEGER PRIMARY KEY,
@@ -64,7 +84,16 @@ CREATE TABLE changes (
 """
 
 
-def _build(conn: sqlite3.Connection, project: Project, history: list[ChangeRecord]) -> None:
+def _problems_json(problems: list[Problem]) -> str:
+    return json.dumps([p.model_dump(mode="json") for p in problems])
+
+
+def _build(
+    conn: sqlite3.Connection,
+    project: Project,
+    history: list[ChangeRecord],
+    results: Mapping[str, StageResult],
+) -> None:
     conn.executescript(_SCHEMA)
     conn.execute(f"PRAGMA application_id = {APPLICATION_ID}")
     conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
@@ -84,7 +113,7 @@ def _build(conn: sqlite3.Connection, project: Project, history: list[ChangeRecor
     )
     # Cells keep project order; within each system it matches ``System.cell_ids``.
     conn.executemany(
-        "INSERT INTO cells VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO cells VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
             (
                 c.id,
@@ -95,6 +124,8 @@ def _build(conn: sqlite3.Connection, project: Project, history: list[ChangeRecor
                 c.status.value,
                 c.provenance.model_dump_json() if c.provenance else None,
                 c.form.model_dump_json() if c.form else None,
+                c.result_id,
+                _problems_json(c.problems) if c.problems else None,
             )
             for i, c in enumerate(project.cells)
         ],
@@ -103,6 +134,18 @@ def _build(conn: sqlite3.Connection, project: Project, history: list[ChangeRecor
     conn.executemany(
         "INSERT INTO links VALUES (?, ?, ?, ?)",
         [(lk.id, i, lk.source_cell_id, lk.target_cell_id) for i, lk in enumerate(project.links)],
+    )
+    # Results referenced by the project or its history (ADR 0021); the others are dropped.
+    referenced = referenced_results(
+        [project, *(r.before for r in history), *(r.after for r in history)]
+    )
+    conn.executemany(
+        "INSERT INTO results VALUES (?, ?, ?, ?, ?)",
+        [
+            (r.id, r.cell_id, r.stage.value, json.dumps(r.parameters), json.dumps(r.data))
+            for rid, r in results.items()
+            if rid in referenced
+        ],
     )
     conn.executemany(
         "INSERT INTO changes VALUES (?, ?, ?, ?, ?)",
@@ -120,7 +163,12 @@ def _build(conn: sqlite3.Connection, project: Project, history: list[ChangeRecor
     conn.commit()
 
 
-def write_project(path: Path, project: Project, history: list[ChangeRecord]) -> None:
+def write_project(
+    path: Path,
+    project: Project,
+    history: list[ChangeRecord],
+    results: Mapping[str, StageResult] | None = None,
+) -> None:
     """Write the project to ``path`` atomically (backup API + rename)."""
     path = path.resolve()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -130,7 +178,7 @@ def write_project(path: Path, project: Project, history: list[ChangeRecord]) -> 
     try:
         memory = sqlite3.connect(":memory:")
         try:
-            _build(memory, project, history)
+            _build(memory, project, history, results or {})
             target = sqlite3.connect(tmp)
             try:
                 memory.backup(target)
@@ -153,6 +201,8 @@ class ProjectFile:
     warnings: list[str] = field(default_factory=list[str])
     """What an upgrade from an older schema version dropped (e.g. links that are no longer
     valid). Not part of the history."""
+    results: dict[str, StageResult] = field(default_factory=dict[str, StageResult])
+    """Results of computation cells by id (ADR 0021)."""
 
 
 def read_project(path: Path) -> tuple[Project, list[ChangeRecord]]:
@@ -206,9 +256,12 @@ def _read(conn: sqlite3.Connection, path: Path) -> ProjectFile:
     cells: list[Cell] = []
     # Version < 3 has no ``form``: form cells get the library defaults, as new cells do.
     form_column = "form" if version >= 3 else "NULL"
-    for cid, system_id, stage, name, status, provenance, form in conn.execute(
-        f"SELECT id, system_id, stage, name, status, provenance, {form_column} FROM cells "
-        "ORDER BY ord"
+    # Version < 4 has no results: computation cells never ran and their provenance was always
+    # empty; their parameters get the library defaults.
+    result_columns = "result_id, problems" if version >= 4 else "NULL, NULL"
+    for cid, system_id, stage, name, status, provenance, form, result_id, problems in conn.execute(
+        f"SELECT id, system_id, stage, name, status, provenance, {form_column}, "
+        f"{result_columns} FROM cells ORDER BY ord"
     ):
         cell = Cell.model_validate(
             {
@@ -217,8 +270,10 @@ def _read(conn: sqlite3.Connection, path: Path) -> ProjectFile:
                 "stage": stage,
                 "name": name,
                 "status": status,
-                "provenance": json.loads(provenance) if provenance else None,
+                "provenance": json.loads(provenance) if provenance and version >= 4 else None,
                 "form": json.loads(form) if form else None,
+                "result_id": result_id,
+                "problems": json.loads(problems) if problems else [],
             }
         )
         if cell.form is None:
@@ -255,4 +310,21 @@ def _read(conn: sqlite3.Connection, path: Path) -> ProjectFile:
             "SELECT change, before, after FROM changes ORDER BY seq"
         )
     ]
-    return ProjectFile(project=project, history=history, warnings=warnings)
+    results: dict[str, StageResult] = {}
+    if version >= 4:
+        for rid, cell_id, stage, parameters, data in conn.execute(
+            "SELECT id, cell_id, stage, parameters, data FROM results"
+        ):
+            results[rid] = StageResult.model_validate(
+                {
+                    "id": rid,
+                    "cell_id": cell_id,
+                    "stage": stage,
+                    "parameters": json.loads(parameters),
+                    "data": json.loads(data),
+                }
+            )
+    else:
+        # Applies older than version 4 record no change id: recover it from the history.
+        recover_applied_changes(project, history)
+    return ProjectFile(project=project, history=history, warnings=warnings, results=results)
