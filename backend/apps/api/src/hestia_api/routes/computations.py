@@ -26,8 +26,7 @@ def update_cell(
     was already up to date or fails again the same way. 422 `stage_not_implemented` for stages
     without a computation.
     """
-    change, view = workspace.update_cell(cell_id, author, body.justification)
-    result = workspace.query_results(lambda p, r: computations.read_result(p, r, cell_id))
+    change, view, result = workspace.update_cell(cell_id, author, body.justification)
     return UpdateCellResult(change=change, view=view, result=result)
 
 

@@ -88,7 +88,14 @@ def _form_cell(project: Project, cell_id: str) -> tuple[Cell, FormSpec, FormStat
 
 
 def _coerce(spec: FormSpec, draft: BaseModel | dict[str, Any]) -> BaseModel:
-    data = draft.model_dump(mode="json") if isinstance(draft, BaseModel) else draft
+    if isinstance(draft, spec.model):
+        data = draft.model_dump(mode="json")
+    elif isinstance(draft, BaseModel):
+        # The request body resolved to another member of ``Artifact`` (e.g. ``{}`` parses as a
+        # mission): only what the client sent counts, never the other model's defaults.
+        data = draft.model_dump(mode="json", exclude_unset=True)
+    else:
+        data = draft
     try:
         return spec.model.model_validate(data)
     except ValidationError as exc:

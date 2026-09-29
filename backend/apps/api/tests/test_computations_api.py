@@ -58,6 +58,16 @@ def test_parameters_use_the_generic_artifact_endpoints(opened: TestClient) -> No
     assert schema["$defs"]["Sampling"]["properties"]["mission_step"]["x-display-unit"] == "días"
 
 
+def test_an_empty_draft_is_valid_parameters(opened: TestClient) -> None:
+    # {} matches both members of the body union; for an environment cell it is parameters.
+    cells = _phase0(opened)
+    response = opened.post(
+        f"/project/cells/{cells['environment']}/artifact/validate", json={"artifact": {}}
+    )
+    assert response.status_code == 200
+    assert response.json()["problems"] == []
+
+
 def test_a_mission_draft_is_rejected_for_the_environment(opened: TestClient) -> None:
     cells = _phase0(opened)
     response = opened.post(

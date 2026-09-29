@@ -16,7 +16,7 @@ from pydantic import Field
 
 from hestia_project.artifacts import NoChange
 from hestia_project.base import Schema
-from hestia_project.computations import update_cell
+from hestia_project.computations import CellResult, read_result, update_cell
 from hestia_project.document import ProjectDocument, ProjectView
 from hestia_project.errors import (
     NoPathError,
@@ -259,17 +259,18 @@ class Workspace:
 
     def update_cell(
         self, cell_id: str, author: Author, justification: str = ""
-    ) -> tuple[Change | None, ProjectView]:
-        """Update (run) a computation cell (ADR 0021). Null change: it was already up to date,
-        or failed again with the same problems."""
+    ) -> tuple[Change | None, ProjectView, CellResult]:
+        """Update (run) a computation cell (ADR 0021) and read its result, atomically. Null
+        change: it was already up to date, or failed again with the same problems."""
         with self._mutex:
             doc = self._require()
-            return self.apply_if_changed(
+            change, view = self.apply_if_changed(
                 Operation.UPDATE_CELL,
                 author,
                 justification,
                 lambda p: update_cell(p, doc.results, cell_id),
             )
+            return change, view, read_result(doc.project, doc.results, cell_id)
 
     def undo(self, author: Author, justification: str = "") -> MutationResult:
         with self._mutex:

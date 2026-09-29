@@ -24,7 +24,7 @@ server = MCPServer(
         "(get_cell_context shows what is missing). Form stages (mission) are edited with "
         "apply_cell_artifact; computation stages (environment) take parameters the same way "
         "and run with update_cell, then get_cell_result. Start with get_session and get_catalog. "
-        "Every write needs a justification. "
+        "Every write needs a justification (updating a computation cell accepts an empty one). "
         "All numbers come from the Hestia API; never compute physical results yourself."
     ),
 )
