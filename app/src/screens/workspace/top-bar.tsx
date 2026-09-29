@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -116,9 +117,11 @@ export function TopBar({ view }: { view: ProjectView }) {
               <Redo2 /> Rehacer <DropdownMenuShortcut>Ctrl+Shift+Z</DropdownMenuShortcut>
             </DropdownMenuItem>
             {document.undo_summary && (
-              <DropdownMenuLabel className="truncate">
-                Último: {document.undo_summary}
-              </DropdownMenuLabel>
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="truncate">
+                  Último: {document.undo_summary}
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
