@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from hestia_project.base import Schema
 from hestia_project.catalog import StageType
+from hestia_project.clipboard import Fragment
 from hestia_project.document import ProjectView
 from hestia_project.model import Position
 from hestia_project.schematic import Blueprint
@@ -88,3 +89,23 @@ class LinkRequest(WriteRequest):
 
 class CellIds(Schema):
     cell_ids: list[str]
+
+
+class CopyRequest(BaseModel):
+    """What to copy: whole systems and/or loose cells."""
+
+    system_ids: list[str] = Field(default_factory=list[str])
+    cell_ids: list[str] = Field(default_factory=list[str])
+
+
+class PasteRequest(WriteRequest):
+    fragment: Fragment = Field(description="A fragment returned by copy (any project).")
+    position: Position | None = Field(
+        default=None,
+        description="Canvas position of the fragment's top-left system. "
+        "When omitted, systems are shifted from the originals.",
+    )
+    target_system_id: str | None = Field(
+        default=None,
+        description="System that receives loose cells. When omitted they get a new system.",
+    )

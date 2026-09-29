@@ -168,6 +168,49 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/project/clipboard/copy": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Copy To Clipboard
+     * @description Snapshot systems and cells as a versioned fragment. Changes nothing in the project.
+     */
+    post: operations["copy_to_clipboard"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/project/clipboard/paste": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Paste From Clipboard
+     * @description Create a fragment's systems and cells with new ids and its internal links.
+     *
+     *     One change in the history (one undo reverts it). Links to cells outside the fragment are
+     *     not copied; pasted cells are never run.
+     */
+    post: operations["paste_from_clipboard"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/project/close": {
     parameters: {
       query?: never;
@@ -652,6 +695,16 @@ export interface components {
       discard_unsaved: boolean;
     };
     /**
+     * CopyRequest
+     * @description What to copy: whole systems and/or loose cells.
+     */
+    CopyRequest: {
+      /** Cell Ids */
+      cell_ids?: string[];
+      /** System Ids */
+      system_ids?: string[];
+    };
+    /**
      * CreateSystemRequest
      * @description Create a system from a template (``template``) or with a single cell (``stage``).
      */
@@ -683,10 +736,14 @@ export interface components {
       file_name: string | null;
       /** Path */
       path: string | null;
+      /** Redo Label */
+      redo_label: string | null;
       /** Redo Summary */
       redo_summary: string | null;
       /** Revision */
       revision: number;
+      /** Undo Label */
+      undo_label: string | null;
       /** Undo Summary */
       undo_summary: string | null;
     };
@@ -710,6 +767,77 @@ export interface components {
       | "project_saved"
       | "project_closed"
       | "project_changed";
+    /** Fragment */
+    "Fragment-Input": {
+      /**
+       * Kind
+       * @default hestia.fragment
+       * @constant
+       */
+      kind: "hestia.fragment";
+      /** Links */
+      links?: components["schemas"]["FragmentLink"][];
+      /**
+       * Schema Version
+       * @default 1
+       */
+      schema_version: number;
+      /** Source Project Id */
+      source_project_id: string;
+      /** Systems */
+      systems?: components["schemas"]["FragmentSystem"][];
+    };
+    /** Fragment */
+    "Fragment-Output": {
+      /**
+       * Kind
+       * @default hestia.fragment
+       * @constant
+       */
+      kind: "hestia.fragment";
+      /** Links */
+      links: components["schemas"]["FragmentLink"][];
+      /**
+       * Schema Version
+       * @default 1
+       */
+      schema_version: number;
+      /** Source Project Id */
+      source_project_id: string;
+      /** Systems */
+      systems: components["schemas"]["FragmentSystem"][];
+    };
+    /** FragmentCell */
+    FragmentCell: {
+      /** Id */
+      id: string;
+      /** Name */
+      name: string;
+      stage: components["schemas"]["StageType"];
+    };
+    /** FragmentLink */
+    FragmentLink: {
+      /** Source Cell Id */
+      source_cell_id: string;
+      /** Target Cell Id */
+      target_cell_id: string;
+    };
+    /**
+     * FragmentSystem
+     * @description A system of the source project with the copied cells, in display order.
+     *
+     *     ``whole`` is false when only some of its cells were copied: pasting then adds those cells
+     *     to the target system if one is given, or creates a system with this name.
+     */
+    FragmentSystem: {
+      /** Cells */
+      cells: components["schemas"]["FragmentCell"][];
+      /** Name */
+      name: string;
+      position: components["schemas"]["Position"];
+      /** Whole */
+      whole: boolean;
+    };
     /**
      * Link
      * @description Feeds the output of ``source_cell_id`` into the ``input`` of ``target_cell_id``.
@@ -797,8 +925,26 @@ export interface components {
       | "duplicate_system"
       | "delete_system"
       | "delete_cell"
+      | "paste"
       | "undo"
       | "redo";
+    /** PasteRequest */
+    PasteRequest: {
+      /** @description A fragment returned by copy (any project). */
+      fragment: components["schemas"]["Fragment-Input"];
+      /**
+       * Justification
+       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       */
+      justification: string;
+      /** @description Canvas position of the fragment's top-left system. When omitted, systems are shifted from the originals. */
+      position?: components["schemas"]["Position"] | null;
+      /**
+       * Target System Id
+       * @description System that receives loose cells. When omitted they get a new system.
+       */
+      target_system_id?: string | null;
+    };
     /**
      * Phase
      * @enum {string}
@@ -1392,6 +1538,131 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["CellIds"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Locked */
+      423: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  copy_to_clipboard: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["CopyRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["Fragment-Output"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Locked */
+      423: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  paste_from_clipboard: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Author name. Defaults to the OS user running the API. */
+        "x-hestia-actor"?: string | null;
+        /** @description `human` (UI) or `agent` (MCP and other agents). */
+        "x-hestia-actor-kind"?: components["schemas"]["ActorKind"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PasteRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MutationResult"];
         };
       };
       /** @description Not Found */

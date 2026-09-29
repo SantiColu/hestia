@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from hestia_api import __version__, errors
 from hestia_api.events import EventBroker
-from hestia_api.routes import events, files, history, meta, schematic
+from hestia_api.routes import clipboard, events, files, history, meta, schematic
 from hestia_project.workspace import Workspace
 
 # Origins of the UI: Vite dev server and the Tauri webview (macOS/Linux and Windows).
@@ -46,7 +46,7 @@ def create_app(home: Path | None = None) -> FastAPI:
         allow_headers=["*"],
     )
     errors.install(app)
-    for module in (meta, files, schematic, history, events):
+    for module in (meta, files, schematic, clipboard, history, events):
         app.include_router(module.router)
     return app
 

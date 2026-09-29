@@ -353,6 +353,27 @@
         "title": "CloseProjectRequest",
         "type": "object"
       },
+      "CopyRequest": {
+        "description": "What to copy: whole systems and/or loose cells.",
+        "properties": {
+          "cell_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cell Ids",
+            "type": "array"
+          },
+          "system_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "System Ids",
+            "type": "array"
+          }
+        },
+        "title": "CopyRequest",
+        "type": "object"
+      },
       "CreateSystemRequest": {
         "description": "Create a system from a template (``template``) or with a single cell (``stage``).",
         "properties": {
@@ -447,6 +468,17 @@
             ],
             "title": "Path"
           },
+          "redo_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Redo Label"
+          },
           "redo_summary": {
             "anyOf": [
               {
@@ -461,6 +493,17 @@
           "revision": {
             "title": "Revision",
             "type": "integer"
+          },
+          "undo_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Undo Label"
           },
           "undo_summary": {
             "anyOf": [
@@ -482,7 +525,9 @@
           "can_undo",
           "can_redo",
           "undo_summary",
-          "redo_summary"
+          "redo_summary",
+          "undo_label",
+          "redo_label"
         ],
         "title": "DocumentState",
         "type": "object"
@@ -522,6 +567,157 @@
         ],
         "title": "EventType",
         "type": "string"
+      },
+      "Fragment-Input": {
+        "properties": {
+          "kind": {
+            "const": "hestia.fragment",
+            "default": "hestia.fragment",
+            "title": "Kind",
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/FragmentLink"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source_project_id": {
+            "title": "Source Project Id",
+            "type": "string"
+          },
+          "systems": {
+            "items": {
+              "$ref": "#/components/schemas/FragmentSystem"
+            },
+            "title": "Systems",
+            "type": "array"
+          }
+        },
+        "required": [
+          "source_project_id"
+        ],
+        "title": "Fragment",
+        "type": "object"
+      },
+      "Fragment-Output": {
+        "properties": {
+          "kind": {
+            "const": "hestia.fragment",
+            "default": "hestia.fragment",
+            "title": "Kind",
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/FragmentLink"
+            },
+            "title": "Links",
+            "type": "array"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source_project_id": {
+            "title": "Source Project Id",
+            "type": "string"
+          },
+          "systems": {
+            "items": {
+              "$ref": "#/components/schemas/FragmentSystem"
+            },
+            "title": "Systems",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind",
+          "schema_version",
+          "source_project_id",
+          "systems",
+          "links"
+        ],
+        "title": "Fragment",
+        "type": "object"
+      },
+      "FragmentCell": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/StageType"
+          }
+        },
+        "required": [
+          "id",
+          "stage",
+          "name"
+        ],
+        "title": "FragmentCell",
+        "type": "object"
+      },
+      "FragmentLink": {
+        "properties": {
+          "source_cell_id": {
+            "title": "Source Cell Id",
+            "type": "string"
+          },
+          "target_cell_id": {
+            "title": "Target Cell Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_cell_id",
+          "target_cell_id"
+        ],
+        "title": "FragmentLink",
+        "type": "object"
+      },
+      "FragmentSystem": {
+        "description": "A system of the source project with the copied cells, in display order.\n\n``whole`` is false when only some of its cells were copied: pasting then adds those cells\nto the target system if one is given, or creates a system with this name.",
+        "properties": {
+          "cells": {
+            "items": {
+              "$ref": "#/components/schemas/FragmentCell"
+            },
+            "title": "Cells",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/Position"
+          },
+          "whole": {
+            "title": "Whole",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "position",
+          "whole",
+          "cells"
+        ],
+        "title": "FragmentSystem",
+        "type": "object"
       },
       "Link": {
         "description": "Feeds the output of ``source_cell_id`` into the ``input`` of ``target_cell_id``.\n\nEach stage type has one output, so the input is named after the source stage type.",
@@ -670,11 +866,54 @@
           "duplicate_system",
           "delete_system",
           "delete_cell",
+          "paste",
           "undo",
           "redo"
         ],
         "title": "Operation",
         "type": "string"
+      },
+      "PasteRequest": {
+        "properties": {
+          "fragment": {
+            "$ref": "#/components/schemas/Fragment-Input",
+            "description": "A fragment returned by copy (any project)."
+          },
+          "justification": {
+            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "title": "Justification",
+            "type": "string"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Canvas position of the fragment's top-left system. When omitted, systems are shifted from the originals."
+          },
+          "target_system_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "System that receives loose cells. When omitted they get a new system.",
+            "title": "Target System Id"
+          }
+        },
+        "required": [
+          "justification",
+          "fragment"
+        ],
+        "title": "PasteRequest",
+        "type": "object"
       },
       "Phase": {
         "enum": [
@@ -1783,6 +2022,181 @@
         "summary": "List Link Targets",
         "tags": [
           "schematic"
+        ]
+      }
+    },
+    "/project/clipboard/copy": {
+      "post": {
+        "description": "Snapshot systems and cells as a versioned fragment. Changes nothing in the project.",
+        "operationId": "copy_to_clipboard",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Fragment-Output"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Copy To Clipboard",
+        "tags": [
+          "clipboard"
+        ]
+      }
+    },
+    "/project/clipboard/paste": {
+      "post": {
+        "description": "Create a fragment's systems and cells with new ids and its internal links.\n\nOne change in the history (one undo reverts it). Links to cells outside the fragment are\nnot copied; pasted cells are never run.",
+        "operationId": "paste_from_clipboard",
+        "parameters": [
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Paste From Clipboard",
+        "tags": [
+          "clipboard"
         ]
       }
     },

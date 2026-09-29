@@ -8,6 +8,7 @@ from pydantic import Field
 
 from hestia_project.base import Schema
 from hestia_project.errors import (
+    InvalidFragmentError,
     InvalidOperationError,
     JustificationRequiredError,
     NoPathError,
@@ -33,6 +34,7 @@ class ApiError(Schema):
 STATUS: dict[type[ProjectError], int] = {
     NotFoundError: 404,
     InvalidOperationError: 422,
+    InvalidFragmentError: 422,
     JustificationRequiredError: 422,
     ProjectFileError: 422,
     NothingToUndoError: 409,

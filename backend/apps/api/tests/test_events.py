@@ -97,3 +97,26 @@ def test_sse_stream_reports_changes_from_any_client(live_api: str) -> None:
         assert event == "project_changed"
         assert data["revision"] == 1
         assert data["change"]["author"] == {"kind": "agent", "name": "stefan"}
+
+
+def test_sse_stream_reports_a_paste(live_api: str) -> None:
+    with httpx.Client(base_url=live_api, timeout=10) as client:
+        client.post("/project/new", json={})
+        view = client.post(
+            "/project/systems", json={"template": "phase_0", "justification": ""}
+        ).json()["view"]
+        fragment = client.post(
+            "/project/clipboard/copy", json={"system_ids": [view["project"]["systems"][0]["id"]]}
+        ).json()
+        with client.stream("GET", "/events") as stream:
+            lines = stream.iter_lines()
+            assert _next_event(lines)[0] == "connected"
+            client.post(
+                "/project/clipboard/paste",
+                json={"fragment": fragment, "justification": "copy for a variant"},
+                headers={"X-Hestia-Actor-Kind": "agent", "X-Hestia-Actor": "stefan"},
+            )
+            event, data = _next_event(lines)
+            assert event == "project_changed"
+            assert data["change"]["operation"] == "paste"
+            assert data["change"]["justification"] == "copy for a variant"
