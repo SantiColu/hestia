@@ -53,6 +53,11 @@ export class ApiError extends Error {
   }
 }
 
+/** `error` is an `ApiError` with that stable `code` (e.g. `unsaved_changes`). */
+export function isApiError(error: unknown, code: string): error is ApiError {
+  return error instanceof ApiError && error.code === code;
+}
+
 type FetchResult<T> = { data?: T; error?: unknown; response: Response };
 
 /** Unwrap an openapi-fetch call: the data, or an `ApiError`. */

@@ -17,9 +17,9 @@ export function Metric({ label, value, unit, detail, className }: MetricProps) {
       <span className="text-xs text-muted-foreground">{label}</span>
       <span className="flex items-baseline gap-1.5">
         <span className="font-mono text-2xl tabular-nums">{value}</span>
-        {unit && <span className="font-mono text-[13px] text-subtle-foreground">{unit}</span>}
+        {unit && <span className="font-mono text-ui text-subtle-foreground">{unit}</span>}
       </span>
-      {detail && <span className="font-mono text-[11px] text-subtle-foreground">{detail}</span>}
+      {detail && <span className="font-mono text-2xs text-subtle-foreground">{detail}</span>}
     </div>
   );
 }

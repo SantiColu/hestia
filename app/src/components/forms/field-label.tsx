@@ -25,6 +25,6 @@ export function FieldLabel({
 /** Line under the input: the validation message or else a hint (e.g. the applied value). */
 export function FieldFootnote({ error, hint }: { error?: string; hint?: ReactNode }) {
   if (error) return <p className="text-xs text-error">{error}</p>;
-  if (hint) return <p className="font-mono text-[11px] text-subtle-foreground">{hint}</p>;
+  if (hint) return <p className="font-mono text-2xs text-subtle-foreground">{hint}</p>;
   return null;
 }

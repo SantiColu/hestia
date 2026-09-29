@@ -118,12 +118,11 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setDraft = useCallback((cellId: string, draft: JsonObject | null) => {
-    setDrafts((current) => {
-      const next = { ...current };
-      if (draft) next[cellId] = draft;
-      else delete next[cellId];
-      return next;
-    });
+    setDrafts((current) =>
+      draft
+        ? { ...current, [cellId]: draft }
+        : Object.fromEntries(Object.entries(current).filter(([id]) => id !== cellId)),
+    );
   }, []);
 
   const draftsRef = useRef(drafts);
@@ -195,7 +194,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
+// eslint-disable-next-line react-refresh/only-export-components -- the provider and its hook live together
 export function useEditor(): EditorValue {
   const value = useContext(EditorContext);
   if (!value) throw new Error("useEditor must be used inside EditorProvider");

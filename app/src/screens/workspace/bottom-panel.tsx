@@ -6,21 +6,16 @@ import {
   PanelTabsList,
   PanelTabsTrigger,
 } from "@/components/navigation/panel-tabs";
+import { timeFormat } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useProject } from "@/project/store";
-
-const timeFormat = new Intl.DateTimeFormat("es-AR", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-});
 
 /** Messages (project events from every actor, and errors) and the project history. */
 export function BottomPanel() {
   const { messages, history } = useProject();
 
   return (
-    <section className="flex h-[168px] shrink-0 flex-col border-t border-border bg-surface">
+    <section className="flex h-42 shrink-0 flex-col border-t border-border bg-surface">
       <PanelTabs defaultValue="messages" className="min-h-0 flex-1 gap-0">
         <PanelTabsList>
           <PanelTabsTrigger value="messages">Mensajes</PanelTabsTrigger>
@@ -40,7 +35,7 @@ export function BottomPanel() {
               const Icon = error ? CircleX : warning ? TriangleAlert : Info;
               return (
                 <li key={message.id} className="flex min-h-6 items-center gap-2.5 text-xs">
-                  <time className="font-mono text-[11px] text-subtle-foreground tabular-nums">
+                  <time className="font-mono text-2xs text-subtle-foreground tabular-nums">
                     {timeFormat.format(message.time)}
                   </time>
                   <Icon

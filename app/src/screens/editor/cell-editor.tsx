@@ -9,38 +9,47 @@ import {
   type MissionArtifact,
   type Problem,
   type ProjectView,
+  type StageType,
 } from "@/api/client";
 import { EmptyState } from "@/components/data/empty-state";
 import { Notice } from "@/components/feedback/notice";
 import { StageStatusBadge, type StageStatus } from "@/components/feedback/stage-status";
 import { SectionLabel } from "@/components/navigation/section-label";
 import { Button } from "@/components/ui/button";
+import { joinList, plural } from "@/lib/format";
 import { deepEqual, setAt, type Json, type JsonObject, type JsonPath } from "@/lib/json";
+import { cn } from "@/lib/utils";
 import { useDialogs } from "@/project/dialogs";
 import { useEditor } from "@/project/editor";
+import { findCell, findSystem, stageName } from "@/project/lookup";
 import { useProject } from "@/project/store";
-import { cn } from "@/lib/utils";
 import { ComputationEditor } from "./computation-editor";
-import { column, listNames, plural, useStageNames } from "./layout";
+import { column } from "./layout";
 import { changedLeaves, problemsBySection, type JsonSchema } from "./schema";
 import { SchemaForm } from "./schema-form";
 
 const VALIDATE_DEBOUNCE_MS = 300;
 
+/** Downstream cells named in the apply summary before "y N más". */
+const MAX_NAMED_CELLS = 3;
+
 /** Body of the generic artifact endpoints (ADR 0019): a form artifact or a computation's
  * parameters. The API validates it against the cell's stage. */
 type Artifact = MissionArtifact | EnvironmentParameters;
 
-/** Schemas of form artifacts, fetched once per stage. */
-const schemas = new Map<string, Promise<JsonSchema>>();
+/** The draft is plain JSON built from the stage's JSON Schema; the API validates its shape. */
+function asArtifact(value: JsonObject): Artifact {
+  return value as unknown as Artifact;
+}
 
-function artifactSchema(stage: string): Promise<JsonSchema> {
+/** Schemas of form artifacts, fetched once per stage. */
+const schemas = new Map<StageType, Promise<JsonSchema>>();
+
+function artifactSchema(stage: StageType): Promise<JsonSchema> {
   let schema = schemas.get(stage);
   if (!schema) {
     schema = unwrap(
-      api.GET("/catalog/stages/{stage}/artifact-schema", {
-        params: { path: { stage: stage as never } },
-      }),
+      api.GET("/catalog/stages/{stage}/artifact-schema", { params: { path: { stage } } }),
     ) as Promise<JsonSchema>;
     schema.catch(() => schemas.delete(stage));
     schemas.set(stage, schema);
@@ -54,11 +63,10 @@ function artifactSchema(stage: string): Promise<JsonSchema> {
  */
 export function CellEditor({ cellId, view }: { cellId: string; view: ProjectView }) {
   const { catalog } = useProject();
-  const cell = view.project.cells.find((c) => c.id === cellId);
+  const cell = findCell(view.project, cellId);
   if (!cell) return null;
-  const stage = catalog?.stages.find((s) => s.stage === cell.stage);
-  const system = view.project.systems.find((s) => s.id === cell.system_id)?.name ?? "";
-  const title = { name: cell.name, system };
+  const stage = catalog?.stages.find((entry) => entry.stage === cell.stage);
+  const title = { name: cell.name, system: findSystem(view.project, cell.system_id)?.name ?? "" };
   if (stage?.kind === "form" && stage.implemented) {
     return <FormEditor cellId={cellId} stage={cell.stage} title={title} view={view} />;
   }
@@ -74,7 +82,7 @@ export function EditorHeader({ title, badge }: { title: Title; badge: ReactNode 
   return (
     <header className="flex items-center gap-2.5">
       <h1 className="truncate text-lg font-semibold">{title.name}</h1>
-      <span className="truncate text-[13px] text-subtle-foreground">{title.system}</span>
+      <span className="truncate text-ui text-subtle-foreground">{title.system}</span>
       <span className="flex-1" />
       {badge}
     </header>
@@ -93,8 +101,7 @@ function NotImplemented({
   status: StageStatus;
   view: ProjectView;
 }) {
-  const { fail } = useProject();
-  const stageName = useStageNames();
+  const { catalog, fail } = useProject();
   const [context, setContext] = useState<CellContext | null>(null);
   const revision = view.document.revision;
 
@@ -119,15 +126,16 @@ function NotImplemented({
         />
         {context && context.missing.length > 0 && (
           <Notice tone="warning" title="Falta en su contexto">
-            {context.missing.map(stageName).join(", ")}. Vinculá las celdas que los proveen.
+            {context.missing.map((stage) => stageName(catalog, stage)).join(", ")}. Vinculá las
+            celdas que los proveen.
           </Notice>
         )}
         {context && context.entries.length > 0 && (
           <section className="flex flex-col gap-3.5">
             <SectionLabel>Contexto</SectionLabel>
             {context.entries.map((entry) => (
-              <p key={`${entry.stage}:${entry.cell_id}`} className="text-[13px]">
-                {stageName(entry.stage)} ← «{entry.cell_name}»
+              <p key={`${entry.stage}:${entry.cell_id}`} className="text-ui">
+                {stageName(catalog, entry.stage)} ← «{entry.cell_name}»
               </p>
             ))}
           </section>
@@ -150,7 +158,7 @@ export function FormEditor({
   computation = false,
 }: {
   cellId: string;
-  stage: string;
+  stage: StageType;
   title: Title;
   view: ProjectView;
   computation?: boolean;
@@ -160,10 +168,8 @@ export function FormEditor({
   const dialogs = useDialogs();
   const [schema, setSchema] = useState<JsonSchema | null>(null);
   const [cellArtifact, setCellArtifact] = useState<CellArtifact | null>(null);
-  const [draftProblems, setDraftProblems] = useState<{
-    draft: JsonObject;
-    problems: Problem[];
-  } | null>(null);
+  /** Problems of the latest validated draft (kept while a newer one is being validated). */
+  const [draftProblems, setDraftProblems] = useState<Problem[] | null>(null);
   const [applying, setApplying] = useState(false);
   const revision = view.document.revision;
 
@@ -204,23 +210,18 @@ export function FormEditor({
       unwrap(
         api.POST("/project/cells/{cell_id}/artifact/validate", {
           params: { path: { cell_id: cellId } },
-          body: { artifact: draft as unknown as Artifact },
+          body: { artifact: asArtifact(draft) },
         }),
       )
         .then(({ problems }) => {
-          if (latestDraft.current === draft) setDraftProblems({ draft, problems });
+          if (latestDraft.current === draft) setDraftProblems(problems);
         })
         .catch(fail);
     }, VALIDATE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [cellId, draft, fail]);
 
-  const problems =
-    draft && draftProblems?.draft === draft
-      ? draftProblems.problems
-      : draft && draftProblems
-        ? draftProblems.problems // previous answer while the new one is on its way
-        : (cellArtifact?.problems ?? []);
+  const problems = draft && draftProblems ? draftProblems : (cellArtifact?.problems ?? []);
 
   const onChange = useCallback(
     (path: JsonPath, value: Json) => {
@@ -244,21 +245,58 @@ export function FormEditor({
     [cellArtifact],
   );
 
+  if (!schema || !cellArtifact || !current || !applied) {
+    return <p className="p-6 text-xs text-subtle-foreground">Cargando…</p>;
+  }
+
+  const errorCount = plural(problems.length, "error", "errores");
+  /** What errors mean for this cell: a form cell fails; a computation cannot update. */
+  const errorConsequence = computation
+    ? "Actualizar falla hasta corregirlos."
+    : "la celda queda Fallida hasta corregirlos.";
+
+  /** Impact of applying: the downstream cells it outdates (from the API) and the errors. */
+  const applySummary = () => {
+    const outdated = cellArtifact.outdates.map((id) => findCell(view.project, id)?.name ?? id);
+    return [
+      outdated.length > 0
+        ? `Desactualiza las celdas aguas abajo: ${joinList(outdated, MAX_NAMED_CELLS)}.`
+        : "No desactualiza ninguna celda aguas abajo.",
+      problems.length > 0 && `Con ${errorCount}: ${errorConsequence}`,
+    ]
+      .filter(Boolean)
+      .join(" ");
+  };
+
+  /** Ask for the justification and apply the draft, or the untouched defaults (first apply). */
   const apply = async () => {
-    if (!draft || !applied || !schema) return;
-    const justification = await dialogs.askJustification({
-      title: `Aplicar cambios · ${title.name}`,
-      summary: [outdatesText(), failedText()].filter(Boolean).join(" "),
-      changes: changes.map((c) => ({ field: c.path, from: c.from, to: c.to, value: c.change })),
-      confirmLabel: "Aplicar",
-    });
+    const justification = await dialogs.askJustification(
+      draft
+        ? {
+            title: `Aplicar cambios · ${title.name}`,
+            summary: applySummary(),
+            changes: changes.map((c) => ({
+              field: c.path,
+              from: c.from,
+              to: c.to,
+              value: c.change,
+            })),
+            confirmLabel: "Aplicar",
+          }
+        : {
+            title: `Aplicar · ${title.name}`,
+            summary: "Se aplica el contenido actual (valores por defecto) y se valida.",
+            changes: [],
+            confirmLabel: "Aplicar",
+          },
+    );
     if (justification === null) return;
     setApplying(true);
     try {
       const result = await unwrap(
         api.PUT("/project/cells/{cell_id}/artifact", {
           params: { path: { cell_id: cellId } },
-          body: { artifact: draft as unknown as Artifact, justification },
+          body: { artifact: asArtifact(draft ?? applied), justification },
         }),
       );
       setView(result.view);
@@ -273,40 +311,34 @@ export function FormEditor({
     }
   };
 
-  if (!schema || !cellArtifact || !current || !applied) {
-    return <p className="p-6 text-xs text-subtle-foreground">Cargando…</p>;
-  }
-
-  const errorsText = plural(problems.length, "error", "errores");
-  const badge =
-    draft && problems.length > 0 ? (
-      <StageStatusBadge status="failed" label="Borrador con errores" />
-    ) : (
-      <StageStatusBadge status={cellArtifact.status} />
-    );
-  const showBar = draft !== null || !cellArtifact.applied;
   const sections = [...new Set(changes.map((c) => c.section))];
 
   return (
     <div className="flex h-full flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
         <div className={cn(column, "gap-7")}>
-          {!computation && <EditorHeader title={title} badge={badge} />}
+          {!computation && (
+            <EditorHeader
+              title={title}
+              badge={
+                draft && problems.length > 0 ? (
+                  <StageStatusBadge status="failed" label="Borrador con errores" />
+                ) : (
+                  <StageStatusBadge status={cellArtifact.status} />
+                )
+              }
+            />
+          )}
           {problems.length > 0 && (
-            <Notice
-              tone="error"
-              title={`${plural(problems.length, "error", "errores")} de validación`}
-            >
+            <Notice tone="error" title={`${errorCount} de validación`}>
               {problemsBySection(
                 schema,
                 problems.map((p) => p.path),
               )}
               .{" "}
-              {computation
-                ? "Podés aplicar igual: Actualizar falla hasta corregirlos."
-                : draft
-                  ? "Podés aplicar igual: la celda queda Fallida hasta corregirlos."
-                  : "La celda queda Fallida hasta corregirlos."}
+              {computation || draft
+                ? `Podés aplicar igual: ${errorConsequence}`
+                : "La celda queda Fallida hasta corregirlos."}
             </Notice>
           )}
           <SchemaForm
@@ -319,8 +351,8 @@ export function FormEditor({
           />
         </div>
       </div>
-      {showBar && (
-        <footer className="h-[52px] shrink-0 border-t border-border bg-surface px-6">
+      {(draft !== null || !cellArtifact.applied) && (
+        <footer className="h-13 shrink-0 border-t border-border bg-surface px-6">
           <div className={cn(column, "h-full flex-row items-center gap-3")}>
             <span
               aria-hidden
@@ -329,10 +361,10 @@ export function FormEditor({
                 !draft ? "bg-idle" : problems.length > 0 ? "bg-error" : "bg-primary",
               )}
             />
-            <span className="flex-1 truncate text-[13px] text-muted-foreground">
+            <span className="flex-1 truncate text-ui text-muted-foreground">
               {draft
                 ? `${plural(changes.length, "cambio", "cambios")} sin aplicar · ${
-                    problems.length > 0 ? errorsText : sections.join(", ")
+                    problems.length > 0 ? errorCount : sections.join(", ")
                   }`
                 : "Sin aplicar · valores por defecto"}
             </span>
@@ -343,7 +375,7 @@ export function FormEditor({
             >
               <Undo2 data-icon="inline-start" /> Descartar
             </Button>
-            <Button disabled={applying} onClick={() => void (draft ? apply() : applyUnchanged())}>
+            <Button disabled={applying} onClick={() => void apply()}>
               <Check data-icon="inline-start" /> Aplicar…
             </Button>
           </div>
@@ -351,46 +383,4 @@ export function FormEditor({
       )}
     </div>
   );
-
-  /** Downstream cells the apply outdates (preview from the API). */
-  function outdatesText(): string {
-    const names = (cellArtifact?.outdates ?? []).map(
-      (id) => view.project.cells.find((c) => c.id === id)?.name ?? id,
-    );
-    return names.length > 0
-      ? `Desactualiza las celdas aguas abajo: ${listNames(names)}.`
-      : "No desactualiza ninguna celda aguas abajo.";
-  }
-
-  function failedText(): string {
-    if (problems.length === 0) return "";
-    const errors = plural(problems.length, "error", "errores");
-    return computation
-      ? `Con ${errors}: Actualizar falla hasta corregirlos.`
-      : `Con ${errors}: la celda queda Fallida hasta corregirlos.`;
-  }
-
-  /** First apply of an untouched artifact (the defaults): records it and validates it. */
-  async function applyUnchanged() {
-    if (!applied) return;
-    const justification = await dialogs.askJustification({
-      title: `Aplicar · ${title.name}`,
-      summary: "Se aplica el contenido actual (valores por defecto) y se valida.",
-      changes: [],
-      confirmLabel: "Aplicar",
-    });
-    if (justification === null) return;
-    try {
-      const result = await unwrap(
-        api.PUT("/project/cells/{cell_id}/artifact", {
-          params: { path: { cell_id: cellId } },
-          body: { artifact: applied as unknown as Artifact, justification },
-        }),
-      );
-      setView(result.view);
-      setCellArtifact(result.cell);
-    } catch (error) {
-      fail(error);
-    }
-  }
 }

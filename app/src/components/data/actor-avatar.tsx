@@ -11,7 +11,7 @@ export function ActorAvatar({ name, className }: { name: string; className?: str
     .toUpperCase();
   return (
     <Avatar className={cn("size-6 border border-border-strong", className)}>
-      <AvatarFallback className="bg-surface-2 font-mono text-[10px] text-muted-foreground">
+      <AvatarFallback className="bg-surface-2 font-mono text-3xs text-muted-foreground">
         {initials}
       </AvatarFallback>
     </Avatar>

@@ -149,7 +149,7 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
+// eslint-disable-next-line react-refresh/only-export-components -- the provider and its hook live together
 export function useDialogs(): DialogsValue {
   const value = useContext(DialogsContext);
   if (!value) throw new Error("useDialogs must be used inside DialogsProvider");

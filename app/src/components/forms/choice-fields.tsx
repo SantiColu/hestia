@@ -16,7 +16,7 @@ export function CheckboxField({
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Checkbox id={inputId} className="bg-background" {...props} />
-      <label htmlFor={inputId} className="text-[13px]">
+      <label htmlFor={inputId} className="text-ui">
         {label}
       </label>
     </div>
@@ -34,7 +34,7 @@ export function SwitchField({
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Switch id={inputId} size="sm" {...props} />
-      <label htmlFor={inputId} className="text-[13px]">
+      <label htmlFor={inputId} className="text-ui">
         {label}
       </label>
     </div>

@@ -40,7 +40,7 @@ export function TextField({
           id={inputId}
           aria-invalid={error ? true : undefined}
           className={cn(
-            "min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:font-sans placeholder:text-subtle-foreground",
+            "min-w-0 flex-1 bg-transparent text-ui outline-none placeholder:font-sans placeholder:text-subtle-foreground",
             mono && "font-mono tabular-nums",
           )}
           {...props}

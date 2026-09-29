@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useEditActions } from "@/project/actions";
+import { findCell } from "@/project/lookup";
 import { useProject } from "@/project/store";
 import type { SchematicActions } from "./actions";
 import { useWorkspaceUi, type Target } from "./context";
@@ -24,7 +25,7 @@ export function useEditCommands(actions: SchematicActions) {
   const targetSystemId = useMemo(() => {
     if (!target || !project) return undefined;
     if (target.kind === "system") return target.id;
-    return project.cells.find((cell) => cell.id === target.id)?.system_id;
+    return findCell(project, target.id)?.system_id;
   }, [target, project]);
 
   const withTarget = useCallback(

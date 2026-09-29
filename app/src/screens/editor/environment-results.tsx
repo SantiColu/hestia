@@ -153,7 +153,7 @@ function Summary({ environment }: { environment: EnvironmentSummary }) {
       </section>
 
       {environment.conditions.some((c) => c.note) && (
-        <p className="-mt-4 text-[11px] text-subtle-foreground">
+        <p className="-mt-4 text-2xs text-subtle-foreground">
           <span className="text-warn">*</span> La misión nunca tiene ese β: pasá el cursor por el
           nombre para ver cómo se dibuja su órbita.
         </p>
@@ -199,7 +199,7 @@ const RANGE_COLUMNS: DenseColumn<RangeEntry>[] = [
   {
     key: "notes",
     header: "Motivo",
-    className: "max-w-[260px] truncate",
+    className: "max-w-65 truncate",
     cell: (r) => (
       <span title={`${why(r.min_note, r.min_at)} / ${why(r.max_note, r.max_at)}`}>
         {r.min_note === r.max_note && !r.min_at
@@ -308,7 +308,7 @@ function FluxTable({ environment }: { environment: EnvironmentSummary }) {
         />
       </div>
       <DenseTable columns={FLUX_COLUMNS} rows={rows} rowKey={(f) => f.face} />
-      <p className="text-[11px] text-subtle-foreground">
+      <p className="text-2xs text-subtle-foreground">
         Flujos incidentes (no absorbidos), con los valores de diseño mínimos y máximos: solar con la
         irradiancia mínima y máxima de la misión, albedo con irradiancia × albedo, IR con la IR
         terrestre mínima y máxima.

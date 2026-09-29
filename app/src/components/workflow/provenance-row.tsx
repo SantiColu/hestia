@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 type ProvenanceRowProps = {
   /** Artifact reference, e.g. "environment.load_cases". */
   artifact: string;
-  /** Where it comes from, e.g. "de 0.2 Entorno · esquema v3 · hace 5 min". */
+  /** Where it comes from, e.g. "de Entorno · esquema v3 · hace 5 min". */
   source: string;
   status: StageStatus;
   className?: string;
@@ -18,7 +18,7 @@ export function ProvenanceRow({ artifact, source, status, className }: Provenanc
       <ArrowDownToLine className="size-3.5 shrink-0 text-subtle-foreground" aria-hidden />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="truncate font-mono text-xs">{artifact}</span>
-        <span className="truncate text-[11px] text-subtle-foreground">{source}</span>
+        <span className="truncate text-2xs text-subtle-foreground">{source}</span>
       </div>
       <StageStatusBadge status={status} />
     </div>

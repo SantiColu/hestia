@@ -113,7 +113,7 @@ export function OrbitView({
           {result?.status !== "up_to_date" && (
             <ResultState result={result} updating={updating} onUpdate={onUpdate} />
           )}
-          {condition.note && <p className="text-[11px] text-warn">{condition.note}</p>}
+          {condition.note && <p className="text-2xs text-warn">{condition.note}</p>}
           <div className="grid grid-cols-2 gap-4">
             <SelectField
               label="Condición"
@@ -175,7 +175,7 @@ export function OrbitView({
                 style={{ background: "linear-gradient(to right, var(--cold), var(--hot))" }}
                 aria-hidden
               />
-              <div className="flex justify-between font-mono text-[10px] text-subtle-foreground">
+              <div className="flex justify-between font-mono text-3xs text-subtle-foreground">
                 <span>0</span>
                 <span>{fmt(maxFlux, 0)} W/m² · flujo total máx.</span>
               </div>

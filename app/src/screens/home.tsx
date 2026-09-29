@@ -3,17 +3,11 @@ import { File, FileX, FolderOpen, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SectionLabel } from "@/components/navigation/section-label";
 import { API_URL, type RecentProject } from "@/api/client";
+import { dateFormat, plural, timeFormat } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useFileActions } from "@/project/actions";
 import { useProject } from "@/project/store";
 import { version } from "../../package.json";
-
-const timeFormat = new Intl.DateTimeFormat("es-AR", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-});
-const dateFormat = new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" });
 
 /** "hoy 14:32", "ayer 18:10" or "12 sep 2026". */
 function formatOpened(iso: string): string {
@@ -62,10 +56,9 @@ function Actions() {
 }
 
 function WithRecents({ recents }: { recents: RecentProject[] }) {
-  const { openProject, removeRecent } = useFileActions();
   return (
     <main className="flex min-h-0 flex-1 justify-center overflow-y-auto pt-24">
-      <div className="flex w-[720px] flex-col gap-10">
+      <div className="flex w-180 flex-col gap-10">
         <div className="flex flex-col gap-4">
           <img src="/brand/hestia-logo.svg" alt="Hestia" className="h-10 w-fit" />
           <p className="text-sm text-muted-foreground">
@@ -76,62 +69,67 @@ function WithRecents({ recents }: { recents: RecentProject[] }) {
         <section className="flex flex-col gap-2 pb-8">
           <div className="flex items-center justify-between">
             <SectionLabel>Recientes</SectionLabel>
-            <span className="font-mono text-[11px] text-subtle-foreground">
-              {recents.length} {recents.length === 1 ? "proyecto" : "proyectos"}
+            <span className="font-mono text-2xs text-subtle-foreground">
+              {plural(recents.length, "proyecto", "proyectos")}
             </span>
           </div>
           <ul className="flex flex-col border-t border-border">
             {recents.map((recent) => (
-              <li
-                key={recent.path}
-                className="group/recent flex h-[52px] items-center gap-3 border-b border-border px-3 hover:bg-surface"
-              >
-                <button
-                  type="button"
-                  disabled={!recent.exists}
-                  title={recent.path}
-                  onClick={() => void openProject(recent.path)}
-                  className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:cursor-default"
-                >
-                  {recent.exists ? (
-                    <File className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                  ) : (
-                    <FileX className="size-4 shrink-0 text-subtle-foreground" aria-hidden />
-                  )}
-                  <span className="flex min-w-0 flex-col gap-[3px]">
-                    <span
-                      className={cn(
-                        "truncate text-[13px] font-medium",
-                        !recent.exists && "text-muted-foreground",
-                      )}
-                    >
-                      {splitPath(recent.path)[1]}
-                    </span>
-                    <span className="truncate font-mono text-[11px] text-subtle-foreground">
-                      {splitPath(recent.path)[0]}
-                      {!recent.exists && " · archivo no encontrado"}
-                    </span>
-                  </span>
-                </button>
-                <Button
-                  variant="ghost"
-                  size="icon-xs"
-                  aria-label="Quitar de recientes"
-                  title="Quitar de recientes"
-                  className="invisible group-hover/recent:visible"
-                  onClick={() => void removeRecent(recent.path)}
-                >
-                  <X />
-                </Button>
-                <span className="w-24 shrink-0 font-mono text-[11px] text-muted-foreground">
-                  {formatOpened(recent.opened_at)}
-                </span>
-              </li>
+              <RecentRow key={recent.path} recent={recent} />
             ))}
           </ul>
         </section>
       </div>
     </main>
+  );
+}
+
+function RecentRow({ recent }: { recent: RecentProject }) {
+  const { openProject, removeRecent } = useFileActions();
+  const [directory, fileName] = splitPath(recent.path);
+  return (
+    <li className="group/recent flex h-13 items-center gap-3 border-b border-border px-3 hover:bg-surface">
+      <button
+        type="button"
+        disabled={!recent.exists}
+        title={recent.path}
+        onClick={() => void openProject(recent.path)}
+        className="flex min-w-0 flex-1 items-center gap-3 text-left disabled:cursor-default"
+      >
+        {recent.exists ? (
+          <File className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        ) : (
+          <FileX className="size-4 shrink-0 text-subtle-foreground" aria-hidden />
+        )}
+        <span className="flex min-w-0 flex-col gap-0.75">
+          <span
+            className={cn(
+              "truncate text-ui font-medium",
+              !recent.exists && "text-muted-foreground",
+            )}
+          >
+            {fileName}
+          </span>
+          <span className="truncate font-mono text-2xs text-subtle-foreground">
+            {directory}
+            {!recent.exists && " · archivo no encontrado"}
+          </span>
+        </span>
+      </button>
+      <Button
+        variant="ghost"
+        size="icon-xs"
+        aria-label="Quitar de recientes"
+        title="Quitar de recientes"
+        className="invisible group-hover/recent:visible"
+        onClick={() => void removeRecent(recent.path)}
+      >
+        <X />
+      </Button>
+      <span className="w-24 shrink-0 font-mono text-2xs text-muted-foreground">
+        {formatOpened(recent.opened_at)}
+      </span>
+    </li>
   );
 }
 
@@ -142,15 +140,15 @@ function at(dx: number, top: number, extra?: CSSProperties): CSSProperties {
 
 const LINE = "bg-border";
 const DIM = "bg-border-strong";
-const DIM_LABEL = "font-mono text-[10px] tracking-[0.06em] text-subtle-foreground";
+const DIM_LABEL = "font-mono text-3xs tracking-wider text-subtle-foreground";
 
 /** First use: the mark as a construction drawing (dimensions, axes, annotated core). */
 function FirstUse() {
   const half = 105.6; // Half the mark's width (211.2 px).
   return (
     <main className="relative min-h-0 flex-1 overflow-hidden">
-      <div className={cn("absolute inset-x-0 top-[132px] h-px", LINE)} />
-      <div className={cn("absolute inset-x-0 top-[372px] h-px", LINE)} />
+      <div className={cn("absolute inset-x-0 top-33 h-px", LINE)} />
+      <div className={cn("absolute inset-x-0 top-93 h-px", LINE)} />
       <div className={LINE} style={at(-half, 40, { width: 1, height: 388 })} />
       <div className={LINE} style={at(half, 40, { width: 1, height: 388 })} />
 
@@ -172,7 +170,7 @@ function FirstUse() {
       <div className={DIM} style={at(half + 196, 248, { width: 1, height: 9 })} />
       <div className="flex flex-col gap-1" style={at(half + 208, 237)}>
         <span className={DIM_LABEL}>NÚCLEO</span>
-        <span className="font-mono text-[11px] text-muted-foreground">T 20 °C · 22 × 22</span>
+        <span className="font-mono text-2xs text-muted-foreground">T 20 °C · 22 × 22</span>
       </div>
 
       <img
@@ -181,13 +179,13 @@ function FirstUse() {
         style={at(-half, 132, { width: 2 * half, height: 240 })}
       />
 
-      <div className="absolute inset-x-0 top-[444px] flex flex-col items-center gap-3.5 text-center">
-        <h1 className="text-[30px] font-semibold tracking-[-0.01em]">Todo empieza por el núcleo</h1>
-        <p className="w-[470px] text-[15px] text-muted-foreground">
+      <div className="absolute inset-x-0 top-111 flex flex-col items-center gap-3.5 text-center">
+        <h1 className="text-3xl font-semibold">Todo empieza por el núcleo</h1>
+        <p className="w-117.5 text-title text-muted-foreground">
           Creá un proyecto para dimensionar el control térmico de tu satélite: de la viabilidad al
           modelo nodal.
         </p>
-        <div className="pt-[18px]">
+        <div className="pt-4.5">
           <Actions />
         </div>
         <p className="text-xs text-subtle-foreground">
@@ -195,7 +193,7 @@ function FirstUse() {
         </p>
       </div>
 
-      <dl className="absolute right-6 bottom-[26px] flex w-[280px] flex-col border border-border">
+      <dl className="absolute right-6 bottom-6.5 flex w-70 flex-col border border-border">
         {[
           ["HESTIA", "TCS · prediseño"],
           ["FASES", "0 viabilidad · 1 nodal"],
@@ -205,8 +203,8 @@ function FirstUse() {
             key={key}
             className="flex h-7 items-center gap-3 border-b border-border px-2.5 last:border-b-0"
           >
-            <dt className={cn(DIM_LABEL, "w-[52px]")}>{key}</dt>
-            <dd className="font-mono text-[11px] text-muted-foreground">{value}</dd>
+            <dt className={cn(DIM_LABEL, "w-13")}>{key}</dt>
+            <dd className="font-mono text-2xs text-muted-foreground">{value}</dd>
           </div>
         ))}
       </dl>
@@ -218,7 +216,7 @@ function FirstUse() {
 function Footer() {
   const { offline } = useProject();
   return (
-    <footer className="flex h-8 shrink-0 items-center gap-2 border-t border-border px-4 font-mono text-[11px] text-subtle-foreground">
+    <footer className="flex h-8 shrink-0 items-center gap-2 border-t border-border px-4 font-mono text-2xs text-subtle-foreground">
       <span className={cn("size-1.5 rounded-full", offline ? "bg-error" : "bg-ok")} aria-hidden />
       {offline ? (
         <span title={API_URL}>

@@ -31,7 +31,7 @@ export function JustificationField({
         required
         placeholder={placeholder}
         aria-invalid={error ? true : undefined}
-        className="min-h-20 bg-background text-[13px] placeholder:text-subtle-foreground md:text-[13px]"
+        className="min-h-20 bg-background text-ui placeholder:text-subtle-foreground md:text-ui"
         {...props}
       />
       <p className={cn("text-xs", error ? "text-error" : "text-subtle-foreground")}>

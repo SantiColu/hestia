@@ -39,7 +39,7 @@ export function DenseTable<Row>({ columns, rows, rowKey, className }: DenseTable
               <TableHead
                 key={column.key}
                 className={cn(
-                  "h-7 px-2.5 text-[11px] font-medium text-subtle-foreground",
+                  "h-7 px-2.5 text-2xs font-medium text-subtle-foreground",
                   column.numeric && "text-right",
                   column.className,
                 )}

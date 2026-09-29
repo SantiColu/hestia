@@ -112,7 +112,7 @@ export function WorkspaceUiProvider({ children }: { children: ReactNode }) {
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
+// eslint-disable-next-line react-refresh/only-export-components -- the provider and its hook live together
 export function useWorkspaceUi(): WorkspaceUi {
   const value = useContext(Context);
   if (!value) throw new Error("useWorkspaceUi must be used inside WorkspaceUiProvider");

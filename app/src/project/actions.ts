@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { ApiError, api, unwrap, type ProjectView } from "@/api/client";
+import { api, isApiError, unwrap, type ProjectView } from "@/api/client";
 import { pickProjectToOpen, pickProjectToSave } from "@/lib/native";
 import { useDialogs } from "./dialogs";
 import { useEditor } from "./editor";
@@ -40,7 +40,7 @@ export function useFileActions() {
       setView(await unwrap(api.POST("/project/save")));
       return true;
     } catch (error) {
-      if (error instanceof ApiError && error.code === "no_path") return saveAs();
+      if (isApiError(error, "no_path")) return saveAs();
       fail(error);
       return false;
     }
@@ -52,7 +52,7 @@ export function useFileActions() {
       try {
         return await run(false);
       } catch (error) {
-        if (!(error instanceof ApiError && error.code === "unsaved_changes")) throw error;
+        if (!isApiError(error, "unsaved_changes")) throw error;
         const choice = await dialogs.askUnsaved(fileLabel(view) || "El proyecto");
         if (choice === "cancel") return null;
         if (choice === "save") return (await save()) ? run(false) : null;
@@ -86,7 +86,7 @@ export function useFileActions() {
           try {
             return await open(discard, false);
           } catch (error) {
-            if (!(error instanceof ApiError && error.code === "project_locked")) throw error;
+            if (!isApiError(error, "project_locked")) throw error;
             return (await dialogs.askLocked(error.message)) ? open(discard, true) : null;
           }
         });

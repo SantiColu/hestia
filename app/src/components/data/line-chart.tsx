@@ -114,7 +114,7 @@ export function LineChart({
               x={PAD.left - 6}
               y={py(t) + 3}
               textAnchor="end"
-              className="fill-subtle-foreground font-mono text-[10px]"
+              className="fill-subtle-foreground font-mono text-3xs"
             >
               {formatY(t)}
             </text>
@@ -126,7 +126,7 @@ export function LineChart({
             x={px(t)}
             y={height - 6}
             textAnchor={i === 0 ? "start" : i === 2 ? "end" : "middle"}
-            className="fill-subtle-foreground font-mono text-[10px]"
+            className="fill-subtle-foreground font-mono text-3xs"
           >
             {formatX(t)}
           </text>
@@ -140,7 +140,7 @@ export function LineChart({
       </svg>
       <figcaption
         id={`${id}-legend`}
-        className="flex flex-wrap gap-4 text-[11px] text-muted-foreground"
+        className="flex flex-wrap gap-4 text-2xs text-muted-foreground"
       >
         {bands.map((b) => (
           <span key={b.label} className="flex items-center gap-1.5">

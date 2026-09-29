@@ -23,8 +23,8 @@ export function PanelTabsTrigger({ className, ...props }: ComponentProps<typeof 
   return (
     <TabsTrigger
       className={cn(
-        "h-8 flex-none rounded-none px-3 text-[13px] font-normal text-muted-foreground data-active:font-medium data-active:text-foreground",
-        "after:bottom-[-1px]! after:bg-primary",
+        "h-8 flex-none rounded-none px-3 text-ui font-normal text-muted-foreground data-active:font-medium data-active:text-foreground",
+        "after:-bottom-px! after:bg-primary",
         className,
       )}
       {...props}

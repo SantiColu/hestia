@@ -20,8 +20,6 @@ export type SystemNodeData = {
 
 export type SystemNodeType = Node<SystemNodeData, "system">;
 
-export const SYSTEM_WIDTH = 224;
-
 const headerButton =
   "nodrag flex size-6 items-center justify-center rounded-lg text-subtle-foreground hover:bg-border hover:text-foreground";
 
@@ -51,9 +49,8 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
 
   return (
     <div
-      style={{ width: SYSTEM_WIDTH }}
       className={cn(
-        "overflow-hidden rounded-lg border border-border-strong bg-surface",
+        "w-56 overflow-hidden rounded-lg border border-border-strong bg-surface",
         systemSelected && "border-primary",
       )}
     >
@@ -63,7 +60,7 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
           onClick={() => select({ kind: "system", id: system.id })}
           onDoubleClick={() => void actions.renameSystem(system.id)}
         >
-          <span className="flex-1 truncate text-[13px] font-semibold">{system.name}</span>
+          <span className="flex-1 truncate text-ui font-semibold">{system.name}</span>
           <button
             type="button"
             className={headerButton}
@@ -96,7 +93,7 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
             <div
               data-cell-id={cell.id}
               className={cn(
-                "group/cell relative flex h-[30px] items-center gap-2 border-b border-border px-2.5 last:border-b-0",
+                "group/cell relative flex h-7.5 items-center gap-2 border-b border-border px-2.5 last:border-b-0",
                 selected && "bg-primary-soft outline-1 -outline-offset-1 outline-primary",
                 validTargets && !target && "opacity-40",
                 target && "outline-1 -outline-offset-1 outline-primary",
@@ -110,7 +107,7 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
                 position={HandlePosition.Left}
                 className={handleClass}
               />
-              <span className="flex-1 truncate text-[13px] font-medium">{cell.name}</span>
+              <span className="flex-1 truncate text-ui font-medium">{cell.name}</span>
               {cellMissing && !target && (
                 <TriangleAlert
                   className="size-3.5 shrink-0 text-warn"

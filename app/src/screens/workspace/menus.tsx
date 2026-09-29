@@ -1,4 +1,16 @@
 import { useState, type ReactElement } from "react";
+import {
+  ClipboardPaste,
+  Copy,
+  CopyPlus,
+  GitBranchPlus,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Scissors,
+  Trash2,
+  Unlink,
+} from "lucide-react";
 import { api, unwrap, type Blueprint, type Cell, type Link, type System } from "@/api/client";
 import {
   ContextMenu,
@@ -13,21 +25,9 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { useProject } from "@/project/store";
-import {
-  ClipboardPaste,
-  Copy,
-  CopyPlus,
-  GitBranchPlus,
-  Pencil,
-  Plus,
-  RefreshCw,
-  Scissors,
-  Trash2,
-  Unlink,
-} from "lucide-react";
-import { STAGE_ICONS } from "./stage-icons";
 import type { SchematicActions } from "./actions";
 import { useWorkspaceUi, type Target } from "./context";
+import { STAGE_ICONS } from "./stage-icons";
 
 type MenuProps<T> = { actions: SchematicActions; children: ReactElement } & T;
 

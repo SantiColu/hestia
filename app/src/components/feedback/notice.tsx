@@ -26,7 +26,7 @@ export function Notice({ tone, title, children, className }: NoticeProps) {
   return (
     <Alert
       className={cn(
-        "rounded-none border-0 border-l-2 px-3 py-2.5 text-[13px] text-foreground",
+        "rounded-none border-0 border-l-2 px-3 py-2.5 text-ui text-foreground",
         toneClass,
         className,
       )}

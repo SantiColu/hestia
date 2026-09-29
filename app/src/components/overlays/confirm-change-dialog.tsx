@@ -46,17 +46,17 @@ export function ConfirmChangeDialog({
       {trigger}
       <DialogContent
         showCloseButton={false}
-        className="gap-0 rounded-lg bg-surface p-0 ring-border-strong sm:max-w-[480px]"
+        className="gap-0 rounded-lg bg-surface p-0 ring-border-strong sm:max-w-120"
       >
         <DialogHeader className="flex-row items-center gap-3 px-5 py-4">
-          <DialogTitle className="flex-1 text-[15px] font-semibold">{title}</DialogTitle>
+          <DialogTitle className="flex-1 text-title font-semibold">{title}</DialogTitle>
           <DialogClose render={<Button variant="outline" size="icon-sm" aria-label="Cerrar" />}>
             <X />
           </DialogClose>
         </DialogHeader>
         <div className="flex flex-col gap-4 px-5 pt-1 pb-5">
           {summary && (
-            <DialogDescription className="text-[13px] leading-[1.45] text-muted-foreground">
+            <DialogDescription className="text-ui leading-normal text-muted-foreground">
               {summary}
             </DialogDescription>
           )}

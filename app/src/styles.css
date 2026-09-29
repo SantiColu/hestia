@@ -54,6 +54,15 @@
   --font-heading: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
 
+  /* Type scale of the design between Tailwind's steps (xs = 12, sm = 14, 3xl = 30). Font size
+     only: the line height is inherited, as with Tailwind's arbitrary sizes. */
+  --text-3xs: 0.625rem; /* 10px: drawing dimensions, avatar initials */
+  --text-2xs: 0.6875rem; /* 11px: captions, mono metadata, section labels */
+  --text-ui: 0.8125rem; /* 13px: body text of the desktop UI (menus, fields, lists) */
+  --text-title: 0.9375rem; /* 15px: dialog titles, lead paragraphs */
+
+  --tracking-label: 0.08em; /* SectionLabel: mono uppercase */
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

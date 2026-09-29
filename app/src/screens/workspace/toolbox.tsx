@@ -8,7 +8,7 @@ import { useWorkspaceUi } from "./context";
 import { STAGE_ICONS } from "./stage-icons";
 
 const itemClass =
-  "group/item flex h-7 cursor-grab items-center gap-2 rounded-lg px-2 text-[13px] text-foreground hover:bg-surface-2 active:cursor-grabbing";
+  "group/item flex h-7 cursor-grab items-center gap-2 rounded-lg px-2 text-ui text-foreground hover:bg-surface-2 active:cursor-grabbing";
 
 /** Phase tree. Drag a phase (whole system) or a single stage onto the canvas or a cell. */
 export function Toolbox() {
@@ -34,9 +34,9 @@ export function Toolbox() {
     });
 
   return (
-    <aside className="flex w-[232px] shrink-0 flex-col border-r border-border bg-surface">
+    <aside className="flex w-58 shrink-0 flex-col border-r border-border bg-surface">
       <header className="flex h-9 shrink-0 items-center border-b border-border px-3">
-        <h2 className="text-[13px] font-semibold">Toolbox</h2>
+        <h2 className="text-ui font-semibold">Toolbox</h2>
       </header>
       <div className="flex min-h-0 flex-col gap-1.5 overflow-y-auto p-2">
         {catalog?.phases.map((phase) => {
@@ -47,7 +47,7 @@ export function Toolbox() {
             <div key={phase.phase} className="flex flex-col">
               <div
                 {...dragProps({ template: phase.template, stage: null })}
-                className="group/item flex h-[30px] cursor-grab items-center gap-1.5 rounded-lg pr-2 pl-1 hover:bg-surface-2 active:cursor-grabbing"
+                className="group/item flex h-7.5 cursor-grab items-center gap-1.5 rounded-lg pr-2 pl-1 hover:bg-surface-2 active:cursor-grabbing"
               >
                 <button
                   type="button"
@@ -61,7 +61,7 @@ export function Toolbox() {
                   />
                 </button>
                 <Layers className="size-3.5 text-muted-foreground" aria-hidden />
-                <span className="text-[13px] font-semibold">{label}</span>
+                <span className="text-ui font-semibold">{label}</span>
                 <span className="flex-1 truncate text-xs text-subtle-foreground">
                   {description}
                 </span>
@@ -71,7 +71,7 @@ export function Toolbox() {
                 />
               </div>
               {open && (
-                <div className="pb-1 pl-[9px]">
+                <div className="pb-1 pl-2.25">
                   <div className="flex flex-col border-l border-border py-0.5 pl-1.5">
                     {catalog.stages
                       .filter((stage) => stage.phase === phase.phase)
@@ -109,7 +109,7 @@ export function Toolbox() {
           Comparación
         </div>
       </div>
-      <p className="px-4 py-2 text-[11px] leading-snug text-subtle-foreground">
+      <p className="px-4 py-2 text-2xs leading-snug text-subtle-foreground">
         Arrastrá una fase para crearla completa, o una etapa sola. Soltala sobre una celda para
         ramificar.
       </p>

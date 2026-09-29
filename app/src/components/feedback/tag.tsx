@@ -18,7 +18,7 @@ export function Tag({ tone = "neutral", children, className }: TagProps) {
   return (
     <span
       className={cn(
-        "inline-flex h-5 w-fit shrink-0 items-center rounded-lg border px-1.5 font-mono text-[11px] font-medium tracking-wide whitespace-nowrap",
+        "inline-flex h-5 w-fit shrink-0 items-center rounded-lg border px-1.5 font-mono text-2xs font-medium tracking-wide whitespace-nowrap",
         TONE[tone],
         className,
       )}

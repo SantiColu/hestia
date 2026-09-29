@@ -1,7 +1,7 @@
 /** Plain JSON helpers for form drafts (no domain logic). */
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
-export type JsonObject = { [key: string]: Json };
+export type JsonObject = Record<string, Json>;
 /** A path into a JSON value: object keys and array indexes. */
 export type JsonPath = (string | number)[];
 

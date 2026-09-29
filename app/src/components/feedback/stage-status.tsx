@@ -6,13 +6,11 @@ import {
   RefreshCw,
   type LucideIcon,
 } from "lucide-react";
+import type { CellStatus } from "@/api/client";
 import { cn } from "@/lib/utils";
 
-/**
- * Stage state as reported by the API. `running` is transient (a run in progress).
- * TODO: replace with the type from the generated API client once it exists.
- */
-export type StageStatus = "up_to_date" | "outdated" | "failed" | "never_run" | "running";
+/** A cell's status as reported by the API, plus `running` (transient: a run in progress). */
+export type StageStatus = CellStatus | "running";
 
 const STATUS: Record<StageStatus, { label: string; className: string; dot: string }> = {
   up_to_date: { label: "Actualizada", className: "bg-ok-soft text-ok", dot: "bg-ok" },

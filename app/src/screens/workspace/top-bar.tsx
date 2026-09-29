@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { ProjectView } from "@/api/client";
+import { plural } from "@/lib/format";
 import { fileLabel, useFileActions } from "@/project/actions";
 import { useProject } from "@/project/store";
 import { useSchematicActions } from "./actions";
@@ -42,7 +43,7 @@ import { useWorkspaceUi } from "./context";
 import { useEditCommands } from "./edit";
 
 const menuTrigger =
-  "flex h-7 items-center rounded-lg px-2 text-[13px] text-muted-foreground hover:bg-surface-2 hover:text-foreground aria-expanded:bg-surface-2 aria-expanded:text-foreground disabled:pointer-events-none disabled:opacity-40";
+  "flex h-7 items-center rounded-lg px-2 text-ui text-muted-foreground hover:bg-surface-2 hover:text-foreground aria-expanded:bg-surface-2 aria-expanded:text-foreground disabled:pointer-events-none disabled:opacity-40";
 
 /** «Deshacer renombrar sistema»: the verb plus the operation's label from the API. */
 function withLabel(verb: string, label: string | null): string {
@@ -70,11 +71,11 @@ export function TopBar({ view }: { view: ProjectView }) {
 
   return (
     <header className="flex h-11 shrink-0 items-center gap-2.5 border-b border-border bg-surface pr-2.5 pl-3.5">
-      <img src="/brand/hestia-mark.svg" alt="Hestia" className="h-6 w-[21px]" />
+      <img src="/brand/hestia-mark.svg" alt="Hestia" className="h-6 w-5.25" />
       <nav className="flex items-center px-1.5">
         <DropdownMenu>
           <DropdownMenuTrigger className={menuTrigger}>Archivo</DropdownMenuTrigger>
-          <DropdownMenuContent className="w-[260px]" sideOffset={4}>
+          <DropdownMenuContent className="w-65" sideOffset={4}>
             <DropdownMenuItem onClick={() => void file.newProject()}>
               <FilePlus /> Nuevo proyecto <DropdownMenuShortcut>Ctrl+N</DropdownMenuShortcut>
             </DropdownMenuItem>
@@ -123,7 +124,7 @@ export function TopBar({ view }: { view: ProjectView }) {
         </DropdownMenu>
         <DropdownMenu onOpenChange={(open) => open && void checkClipboard()}>
           <DropdownMenuTrigger className={menuTrigger}>Editar</DropdownMenuTrigger>
-          <DropdownMenuContent className="w-[280px]" sideOffset={4}>
+          <DropdownMenuContent className="w-70" sideOffset={4}>
             <DropdownMenuItem
               disabled={!document.can_undo}
               title={document.undo_summary ?? undefined}
@@ -179,7 +180,7 @@ export function TopBar({ view }: { view: ProjectView }) {
 
       <div className="flex h-7 items-center gap-1.5 pl-2">
         <span
-          className="text-[13px] font-semibold text-foreground"
+          className="text-ui font-semibold text-foreground"
           title={document.path ?? "Sin guardar"}
         >
           {fileLabel(view)}
@@ -223,9 +224,9 @@ export function TopBar({ view }: { view: ProjectView }) {
       </div>
       {divider}
       {outdated > 0 && (
-        <span className="inline-flex items-center gap-1.5 rounded-lg bg-warn-soft px-2 py-[3px] text-xs font-medium text-warn tabular-nums">
+        <span className="inline-flex items-center gap-1.5 rounded-lg bg-warn-soft px-2 py-0.75 text-xs font-medium text-warn tabular-nums">
           <span className="size-1.5 rounded-full bg-warn" aria-hidden />
-          {outdated} desactualizada{outdated === 1 ? "" : "s"}
+          {plural(outdated, "desactualizada", "desactualizadas")}
         </span>
       )}
       <Button size="sm" disabled title="Requiere cálculo (pronto)">

@@ -1,5 +1,12 @@
-import type { Json, JsonObject, JsonPath } from "@/lib/json";
-import { deepEqual, formatPath, getAt } from "@/lib/json";
+import { joinList } from "@/lib/format";
+import {
+  deepEqual,
+  formatPath,
+  getAt,
+  type Json,
+  type JsonObject,
+  type JsonPath,
+} from "@/lib/json";
 import { toDisplay } from "@/lib/units";
 
 /** JSON Schema of an artifact as the API serves it (pydantic), with Hestia's `x-` hints. */
@@ -171,11 +178,6 @@ export function changedLeaves(
 function lowerFirst(text: string): string {
   // Keep acronyms ("LTAN") as they are.
   return /^.[A-ZÁÉÍÓÚÑ]/.test(text) ? text : text.charAt(0).toLowerCase() + text.slice(1);
-}
-
-function joinList(items: string[]): string {
-  if (items.length <= 1) return items.join("");
-  return `${items.slice(0, -1).join(", ")} y ${items[items.length - 1]}`;
 }
 
 /**

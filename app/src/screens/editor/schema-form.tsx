@@ -45,8 +45,9 @@ export type FormContext = {
   onChange: (path: JsonPath, value: Json) => void;
 };
 
-/** Most fields side by side in a row. */
-const MAX_COLUMNS = 4;
+/** Grid of a row by its number of fields: at most MAX_COLUMNS side by side. */
+const ROW_GRID = ["grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4"] as const;
+const MAX_COLUMNS = ROW_GRID.length;
 
 function problemsAt(ctx: FormContext, path: JsonPath): Problem[] {
   const key = formatPath(path);
@@ -142,8 +143,7 @@ function ObjectFields({
       {rows.map((row) => (
         <div
           key={row.map(([key]) => key).join()}
-          className="grid items-start gap-4"
-          style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0, 1fr))` }}
+          className={cn("grid items-start gap-4", ROW_GRID[row.length - 1])}
         >
           {row.map(([key, meta]) => (
             <LeafField key={key} ctx={ctx} path={[...path, key]} f={field(meta, ctx.root)} />
@@ -310,12 +310,12 @@ function ChoicesField({
           className={cn(fieldBoxClass({ error: !!error, modified }), "w-full gap-1.5 px-2")}
         >
           {selected.length === 0 ? (
-            <span className="px-0.5 text-[13px] text-subtle-foreground">—</span>
+            <span className="px-0.5 text-ui text-subtle-foreground">—</span>
           ) : (
             options
               .filter((option) => selected.includes(option))
               .map((option) => (
-                <Tag key={option} className="h-[19px] font-normal tracking-normal">
+                <Tag key={option} className="h-4.75 font-normal tracking-normal">
                   {labels[option] ?? option}
                 </Tag>
               ))
@@ -352,12 +352,12 @@ function ChoicesField({
 
 const cellClass = "h-8 border-b border-border px-2.5";
 const cellInput =
-  "h-full w-full bg-transparent text-[12px] outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset aria-invalid:ring-1 aria-invalid:ring-error aria-invalid:ring-inset";
+  "h-full w-full bg-transparent text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset aria-invalid:ring-1 aria-invalid:ring-error aria-invalid:ring-inset";
 
 /** Width of an option column: short codes (axes) or labels (directions). */
 function columnWidth(f: Field): string {
   const labels = enumOptions(f).map((o) => o.label.length);
-  return Math.max(...labels) <= 3 ? "w-[104px]" : "w-[120px]";
+  return Math.max(...labels) <= 3 ? "w-26" : "w-30";
 }
 
 /** A list of objects as an editable table (`Table/*`): one row per item, add and delete rows. */
@@ -392,7 +392,7 @@ function TableField({ ctx, path, f }: { ctx: FormContext; path: JsonPath; f: Fie
                   <th
                     key={name}
                     className={cn(
-                      "h-7 border-b border-border px-2.5 text-[11px] font-medium text-subtle-foreground",
+                      "h-7 border-b border-border px-2.5 text-2xs font-medium text-subtle-foreground",
                       cf.node.enum && columnWidth(cf),
                     )}
                   >
@@ -479,7 +479,7 @@ function TableField({ ctx, path, f }: { ctx: FormContext; path: JsonPath; f: Fie
         </p>
       ))}
       {modified && (
-        <p className="-mt-1.5 font-mono text-[11px] text-subtle-foreground">
+        <p className="-mt-1.5 font-mono text-2xs text-subtle-foreground">
           Aplicado: {Array.isArray(appliedRows) ? appliedRows.length : 0} fila(s)
         </p>
       )}

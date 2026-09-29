@@ -7,7 +7,7 @@ import { ChevronRightIcon } from "lucide-react";
 // item classes match dropdown-menu.tsx.
 
 const ITEM =
-  "group/context-menu-item relative flex cursor-pointer items-center h-[30px] gap-2 rounded-lg px-2 text-[13px] outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:*:[svg]:text-destructive! data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:data-highlighted:bg-destructive/10 data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 [&_svg:not([class*='text-'])]:text-muted-foreground";
+  "group/context-menu-item relative flex cursor-pointer items-center h-7.5 gap-2 rounded-lg px-2 text-ui outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-highlighted:bg-accent data-highlighted:text-accent-foreground data-[variant=destructive]:text-destructive data-[variant=destructive]:*:[svg]:text-destructive! data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:data-highlighted:bg-destructive/10 data-disabled:pointer-events-none data-disabled:opacity-40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 [&_svg:not([class*='text-'])]:text-muted-foreground";
 
 const POPUP =
   "z-50 max-h-(--available-height) min-w-40 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground flex flex-col gap-0.5 border border-border-strong outline-none";
@@ -108,7 +108,7 @@ function ContextMenuShortcut({ className, ...props }: React.ComponentProps<"span
   return (
     <span
       data-slot="context-menu-shortcut"
-      className={cn("ml-auto pl-4 font-mono text-[11px] text-subtle-foreground", className)}
+      className={cn("ml-auto pl-4 font-mono text-2xs text-subtle-foreground", className)}
       {...props}
     />
   );

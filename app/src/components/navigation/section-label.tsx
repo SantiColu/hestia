@@ -6,7 +6,7 @@ export function SectionLabel({ className, ...props }: ComponentProps<"h3">) {
   return (
     <h3
       className={cn(
-        "font-mono text-[11px] font-medium tracking-[0.08em] text-subtle-foreground uppercase",
+        "font-mono text-2xs font-medium tracking-label text-subtle-foreground uppercase",
         className,
       )}
       {...props}

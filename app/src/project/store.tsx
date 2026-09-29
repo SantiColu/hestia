@@ -10,8 +10,8 @@ import {
 } from "react";
 import {
   API_URL,
-  ApiError,
   api,
+  isApiError,
   unwrap,
   type Catalog,
   type Change,
@@ -96,7 +96,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       if (session.project) setHistory(await unwrap(api.GET("/project/history")));
       else setHistory([]);
     } catch (error) {
-      if (error instanceof ApiError && error.code === "unreachable") setOffline(true);
+      if (isApiError(error, "unreachable")) setOffline(true);
       else fail(error);
     } finally {
       setLoaded(true);
@@ -129,7 +129,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     try {
       setCatalog(await unwrap(api.GET("/catalog")));
     } catch (error) {
-      if (error instanceof ApiError && error.code === "unreachable") setOffline(true);
+      if (isApiError(error, "unreachable")) setOffline(true);
     }
   }, []);
 
@@ -195,7 +195,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   return <ProjectContext.Provider value={value}>{children}</ProjectContext.Provider>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
+// eslint-disable-next-line react-refresh/only-export-components -- the provider and its hook live together
 export function useProject(): ProjectContextValue {
   const value = useContext(ProjectContext);
   if (!value) throw new Error("useProject must be used inside ProjectProvider");

@@ -32,10 +32,10 @@ export function HistoryItem({
     <article className={cn("flex gap-2.5 py-2.5", className)}>
       <ActorAvatar name={author} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <header className="flex items-center gap-1.5 text-[13px]">
+        <header className="flex items-center gap-1.5 text-ui">
           <span className="font-medium">{author}</span>
           <span className="truncate text-muted-foreground">{action}</span>
-          <time className="ml-auto font-mono text-[11px] text-subtle-foreground">{time}</time>
+          <time className="ml-auto font-mono text-2xs text-subtle-foreground">{time}</time>
         </header>
         {changes.map((change) => (
           <p key={change.field} className="flex items-center gap-2 font-mono text-xs">

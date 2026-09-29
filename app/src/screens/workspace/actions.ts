@@ -9,6 +9,7 @@ import {
 } from "@/api/client";
 import { useDialogs } from "@/project/dialogs";
 import { readFragment, writeFragment } from "@/project/fragment";
+import { findCell, findSystem, stageName as stageNameOf } from "@/project/lookup";
 import { useProject } from "@/project/store";
 import { useWorkspaceUi, type Target } from "./context";
 
@@ -25,10 +26,7 @@ export function useSchematicActions() {
   const dialogs = useDialogs();
   const project = view?.project;
 
-  const stageName = useCallback(
-    (stage: StageType) => catalog?.stages.find((s) => s.stage === stage)?.name ?? stage,
-    [catalog],
-  );
+  const stageName = useCallback((stage: StageType) => stageNameOf(catalog, stage), [catalog]);
   const blueprintName = useCallback(
     (blueprint: Blueprint) =>
       blueprint.template
@@ -39,7 +37,7 @@ export function useSchematicActions() {
     [catalog, stageName],
   );
   const cellName = useCallback(
-    (cellId: string) => project?.cells.find((c) => c.id === cellId)?.name ?? cellId,
+    (cellId: string) => findCell(project, cellId)?.name ?? cellId,
     [project],
   );
 
@@ -108,7 +106,7 @@ export function useSchematicActions() {
 
   const renameSystem = useCallback(
     async (systemId: string) => {
-      const current = project?.systems.find((s) => s.id === systemId)?.name ?? "";
+      const current = findSystem(project, systemId)?.name ?? "";
       const answer = await dialogs.askRename({ title: "Renombrar sistema", current });
       if (!answer || answer.name === current) return;
       await mutate(() =>
@@ -156,7 +154,7 @@ export function useSchematicActions() {
   const targetName = useCallback(
     (target: Target) =>
       target.kind === "system"
-        ? (project?.systems.find((s) => s.id === target.id)?.name ?? target.id)
+        ? (findSystem(project, target.id)?.name ?? target.id)
         : cellName(target.id),
     [project, cellName],
   );
@@ -306,7 +304,7 @@ export function useSchematicActions() {
         await duplicateSystem(target.id);
         return;
       }
-      const systemId = project?.cells.find((c) => c.id === target.id)?.system_id;
+      const systemId = findCell(project, target.id)?.system_id;
       await pasteFragment(() => copyFragment(target), { targetSystemId: systemId });
     },
     [duplicateSystem, project, pasteFragment, copyFragment],

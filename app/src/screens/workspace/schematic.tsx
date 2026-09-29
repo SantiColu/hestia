@@ -43,7 +43,7 @@ function ZoomControl() {
       >
         <Minus className="size-3.5" />
       </button>
-      <span className="px-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
+      <span className="px-1.5 font-mono text-2xs text-muted-foreground tabular-nums">
         {Math.round(zoom * 100)} %
       </span>
       <button
@@ -85,23 +85,22 @@ function SchematicCanvas({
     useWorkspaceUi();
   const { screenToFlowPosition } = useReactFlow();
 
-  const built = useMemo<SystemNodeType[]>(
-    () =>
-      project.systems.map((system) => ({
-        id: system.id,
-        type: "system",
-        position: system.position,
-        dragHandle: ".system-drag",
-        data: {
-          system,
-          cells: system.cell_ids.flatMap((id) => project.cells.find((c) => c.id === id) ?? []),
-          links: project.links,
-          missing,
-          actions,
-        },
-      })),
-    [project, missing, actions],
-  );
+  const built = useMemo<SystemNodeType[]>(() => {
+    const cellsById = new Map(project.cells.map((cell) => [cell.id, cell]));
+    return project.systems.map((system) => ({
+      id: system.id,
+      type: "system",
+      position: system.position,
+      dragHandle: ".system-drag",
+      data: {
+        system,
+        cells: system.cell_ids.flatMap((id) => cellsById.get(id) ?? []),
+        links: project.links,
+        missing,
+        actions,
+      },
+    }));
+  }, [project, missing, actions]);
 
   // Local copy so dragging is smooth; the API position wins on every project change.
   const [nodes, setNodes] = useState<SystemNodeType[]>(built);
