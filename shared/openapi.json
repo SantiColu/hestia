@@ -793,6 +793,17 @@
             "title": "Name",
             "type": "string"
           },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
           "origin": {
             "$ref": "#/components/schemas/ConditionOrigin"
           },
@@ -2612,6 +2623,10 @@
             "title": "Mode Id",
             "type": "string"
           },
+          "period": {
+            "title": "Period",
+            "type": "number"
+          },
           "position": {
             "items": {
               "items": {
@@ -2671,6 +2686,7 @@
           "condition_id",
           "mode_id",
           "epoch",
+          "period",
           "time",
           "position",
           "velocity",

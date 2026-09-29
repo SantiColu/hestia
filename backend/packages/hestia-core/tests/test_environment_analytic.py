@@ -148,8 +148,57 @@ def test_extreme_and_custom_conditions() -> None:
     assert custom.eclipse_fraction == pytest.approx(expected, abs=1e-6)
     assert custom.period == pytest.approx(orbital_period_s(r), abs=1e-3)
     assert custom.eclipse_duration == pytest.approx(expected * orbital_period_s(r), abs=0.01)
+    # β = 30° never happens in this SSO (β between -29° and -11°): drawn at launch, with a note.
+    assert custom.date == series.dates[0] and custom.note is not None
+    assert "inclinación" in custom.note
     # Without end-of-life altitude there are only two extreme conditions.
     assert len(compute(mission(SSO)).conditions) == 2
+
+
+def test_custom_conditions_go_to_the_first_date_that_has_their_beta() -> None:
+    # Without dispersion the envelope is the nominal line: β = -20° happens between two daily
+    # samples, and the condition takes the nearer one (within one day of change of β).
+    result = compute(
+        mission(SSO), custom_conditions=[{"id": "c", "name": "β -20°", "beta": math.radians(-20)}]
+    )
+    series = result.mission_series
+    custom = next(c for c in result.conditions if c.id == "c")
+    assert custom.note is None
+    k = series.dates.index(custom.date)
+    beta = np.array(series.beta_nominal, dtype=float)
+    daily_change = float(np.max(np.abs(np.diff(beta))))
+    assert abs(beta[k] - math.radians(-20)) <= daily_change
+    earlier = beta[: max(k - 1, 0)]
+    assert np.all(earlier > math.radians(-20)) or np.all(earlier < math.radians(-20))
+
+
+def test_period_uses_the_semi_major_axis() -> None:
+    # r_p = R + 500 km, r_a = R + 600 km (e = 0.0073): a = R + 550 km, T = 2π √(a³/μ).
+    orbit = {
+        "type": "keplerian",
+        "perigee_altitude": 500e3,
+        "apogee_altitude": 600e3,
+        "inclination": 1.0,
+    }
+    result = compute(mission(orbit))
+    assert result.orbit.period == pytest.approx(orbital_period_s(EARTH_RADIUS_M + 550e3))
+    assert result.conditions[0].period == pytest.approx(
+        orbital_period_s(EARTH_RADIUS_M + 550e3), abs=1e-3
+    )
+
+
+def test_ltan_sets_the_node_against_the_sun_at_an_equinox() -> None:
+    # Independent of the LTAN → node formula: at the March equinox (2028-03-20, δ ≈ 0) the
+    # Sun is in the equator, so sin β = sin i sin(Ω - alpha☉) (hand calculation). LTAN 12:00
+    # puts the node at the Sun: β ≈ 0. LTAN 06:00 puts it 90° west of the Sun:
+    # β = -asin(sin i) = -(180° - i) ≈ -82.2° at 600 km (i = 97.8°). Tolerance 2.5°: the node
+    # follows the mean Sun, which the true Sun leads by the equation of time (-7.5 min ≈ 1.9°
+    # on 2028-03-20, Astronomical Almanac), plus δ ≈ 0.2° at 00:00 UTC.
+    for ltan, expected in (("12:00", 0.0), ("06:00", -82.2), ("18:00", 82.2)):
+        m = mission({**SSO, "ltan": ltan}, launch_date="2028-03-20")
+        beta = compute(m).mission_series.beta_nominal[0]
+        assert beta is not None
+        assert math.degrees(beta) == pytest.approx(expected, abs=2.5), ltan
 
 
 def test_ltan_dispersion_widens_the_beta_envelope() -> None:

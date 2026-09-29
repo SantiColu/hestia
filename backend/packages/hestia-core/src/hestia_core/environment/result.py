@@ -58,7 +58,7 @@ class OrbitSummary(BaseModel):
     eccentricity: float
     """Of the mission's orbit (the provider treats it as circular)."""
     period: float
-    """s, at the nominal altitude."""
+    """s, from the semi-major axis of the mission's orbit."""
     raan_swept: bool
     """True when the mission does not fix the node (LEO/MEO, inclined GEO): β is given as the
     envelope over every node."""
@@ -122,12 +122,15 @@ class Condition(BaseModel):
     altitude: float
     """m."""
     date: datetime
-    """Date the geometry happens (extremes) or is drawn at (custom: launch date)."""
+    """Date the geometry happens (extremes), or the first date whose β envelope holds it
+    (custom; the launch date if none does)."""
     period: float
-    """s."""
+    """s. The nominal altitude uses the semi-major axis of the mission's orbit."""
     eclipse_fraction: float
     eclipse_duration: float
     """s."""
+    note: str | None = None
+    """How the geometry is drawn when the mission never has it (custom conditions)."""
 
 
 class AttitudeModeRef(BaseModel):
@@ -185,6 +188,8 @@ class OrbitProfile(BaseModel):
     mode_id: str
     epoch: datetime
     """Time of the first sample."""
+    period: float
+    """s. The samples cover one period of the drawn circular orbit uniformly."""
     time: list[float]
     """s from the epoch."""
     position: list[list[float]]

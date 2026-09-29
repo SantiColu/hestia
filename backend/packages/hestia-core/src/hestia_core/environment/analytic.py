@@ -195,6 +195,8 @@ class _Orbit:
     altitude: float
     eol_altitude: float | None
     eccentricity: float
+    semi_major_axis: float
+    """m. Sets the nominal period (with an apogee it is above the perigee radius)."""
     raan0: float | None
     """SSO: node at the launch epoch."""
     raan_rate: float
@@ -257,7 +259,7 @@ class AnalyticEnvironmentProvider:
         durations: list[FloatArray] = []
         for altitude in altitudes:
             radius = EARTH_RADIUS_M + altitude
-            period = orbital_period_s(radius)
+            period = _period(orbit, altitude)
             for beta in (abs_low, abs_high):
                 fraction = eclipse_fraction(beta, radius, conical, distance)
                 fractions.append(fraction)
@@ -279,7 +281,13 @@ class AnalyticEnvironmentProvider:
         irradiance_max = float(np.max(irradiance))
         ranges = _ranges(orbit, values, dates, irradiance, beta_min, beta_max)
         conditions = _conditions(
-            orbit, parameters, dates, distance, conical, largest_eclipse, smallest_eclipse
+            orbit,
+            parameters,
+            dates,
+            (sun, distance),
+            (beta_min, beta_max),
+            conical,
+            (largest_eclipse, smallest_eclipse),
         )
         modes = [
             (mode, mode.id or f"mode_{i + 1}", mode.name or f"Modo {i + 1}")
@@ -318,7 +326,7 @@ class AnalyticEnvironmentProvider:
                 altitude=orbit.altitude,
                 eol_altitude=orbit.eol_altitude,
                 eccentricity=orbit.eccentricity,
-                period=orbital_period_s(EARTH_RADIUS_M + orbit.altitude),
+                period=_period(orbit, orbit.altitude),
                 raan_swept=orbit.type is not OrbitType.SSO
                 and not (orbit.type is OrbitType.GEO and orbit.geo_max_inclination == 0),
                 eclipse_model=EclipseModel.CONICAL if conical else EclipseModel.CYLINDRICAL,
@@ -381,6 +389,12 @@ def _orbit(mission: MissionArtifact, parameters: EnvironmentParameters) -> _Orbi
         altitude=altitude,
         eol_altitude=dispersion.eol_altitude if orbit.type is not OrbitType.GEO else None,
         eccentricity=e,
+        semi_major_axis=EARTH_RADIUS_M
+        + (
+            (altitude + orbit.apogee_altitude) / 2
+            if orbit.type is OrbitType.KEPLERIAN and orbit.apogee_altitude is not None
+            else altitude
+        ),
         raan0=raan0,
         raan_rate=raan_rate,
         raan_dispersion=raan_dispersion,
@@ -406,6 +420,14 @@ def _mission_times(design_life_s: float, step_s: float) -> FloatArray:
     if design_life_s - times[-1] > 1e-6:
         times = np.append(times, design_life_s)
     return times
+
+
+def _period(orbit: _Orbit, altitude: float) -> float:
+    """Period at an altitude: the nominal one uses the semi-major axis of the mission's orbit;
+    the others (end of life, custom) are circular."""
+    if altitude == orbit.altitude:
+        return orbital_period_s(orbit.semi_major_axis)
+    return orbital_period_s(EARTH_RADIUS_M + altitude)
 
 
 def _altitudes(orbit: _Orbit) -> list[float]:
@@ -519,13 +541,20 @@ def _conditions(
     orbit: _Orbit,
     parameters: EnvironmentParameters,
     dates: list[datetime],
-    distance: FloatArray,
+    sun: tuple[FloatArray, FloatArray],
+    envelope: tuple[FloatArray, FloatArray],
     conical: bool,
-    largest: _Extreme,
-    smallest: _Extreme,
+    extremes: tuple[_Extreme, _Extreme],
 ) -> list[Condition]:
     """Extreme conditions (β of largest and smallest eclipse x nominal and end-of-life
-    altitude, without repeats) and then the custom ones."""
+    altitude, without repeats) and then the custom ones.
+
+    A custom condition is placed at the first date whose β envelope holds its β (the launch
+    date if none does, with a note saying how its orbit is drawn).
+    """
+    sun_unit, distance = sun
+    beta_min, beta_max = envelope
+    largest, smallest = extremes
     altitudes = [(orbit.altitude, "", "altitud nominal")]
     if orbit.eol_altitude is not None and orbit.eol_altitude != orbit.altitude:
         altitudes.append((orbit.eol_altitude, "_eol", "fin de vida"))
@@ -534,10 +563,16 @@ def _conditions(
         geometries.append((smallest, "min_eclipse", "Eclipse mínimo"))
 
     def condition(
-        cid: str, name: str, origin: ConditionOrigin, beta: float, altitude: float, index: int
+        cid: str,
+        name: str,
+        origin: ConditionOrigin,
+        beta: float,
+        altitude: float,
+        index: int,
+        note: str | None = None,
     ) -> Condition:
         radius = EARTH_RADIUS_M + altitude
-        period = orbital_period_s(radius)
+        period = _period(orbit, altitude)
         fraction = float(eclipse_fraction(beta, radius, conical, float(distance[index])))
         return Condition(
             id=cid,
@@ -549,6 +584,7 @@ def _conditions(
             period=round(period, 3),
             eclipse_fraction=round(fraction, 6),
             eclipse_duration=round(fraction * period, 2),
+            note=note,
         )
 
     result: list[Condition] = []
@@ -564,8 +600,24 @@ def _conditions(
                     extreme.date_index,
                 )
             )
+    tolerance = 1e-9
     for i, custom in enumerate(parameters.custom_conditions):
         assert custom.beta is not None
+        index = _first_date_with(custom.beta, beta_min, beta_max)
+        note = None
+        if index is None:
+            index = 0
+            low, high = beta_envelope(sun_unit[index], orbit.solve_inclination)
+            if float(low) - tolerance <= custom.beta <= float(high) + tolerance:
+                note = (
+                    "El β no ocurre en la misión: se dibuja con otro nodo de la misma "
+                    "inclinación, en la fecha de lanzamiento."
+                )
+            else:
+                note = (
+                    "Ninguna órbita con la inclinación de Misión tiene este β: se dibuja con el "
+                    "plano inclinado hasta alcanzarlo, en la fecha de lanzamiento."
+                )
         result.append(
             condition(
                 custom.id or f"custom_{i + 1}",
@@ -573,10 +625,30 @@ def _conditions(
                 ConditionOrigin.CUSTOM,
                 custom.beta,
                 custom.altitude if custom.altitude is not None else orbit.altitude,
-                0,
+                index,
+                note,
             )
         )
     return result
+
+
+def _first_date_with(beta: float, beta_min: FloatArray, beta_max: FloatArray) -> int | None:
+    """First date whose β envelope holds ``beta``, or None. The envelope is continuous in time,
+    so a β between two consecutive samples happens between them: the nearer one is taken."""
+    tolerance = 1e-9
+
+    def distance(k: int) -> float:
+        return max(float(beta_min[k]) - beta, beta - float(beta_max[k]), 0.0)
+
+    if beta_min.size == 1:
+        return 0 if distance(0) <= tolerance else None
+    low = np.minimum(beta_min[:-1], beta_min[1:])
+    high = np.maximum(beta_max[:-1], beta_max[1:])
+    crossing = np.flatnonzero((low - tolerance <= beta) & (beta <= high + tolerance))
+    if not crossing.size:
+        return None
+    k = int(crossing[0])
+    return k if distance(k) <= distance(k + 1) else k + 1
 
 
 # ---------------------------------------------------------------- orbit profiles and fluxes
@@ -671,6 +743,7 @@ def _profile(
         condition_id=condition.id,
         mode_id=mode_id,
         epoch=condition.date,
+        period=round(_TWO_PI / mean_motion, 3),
         time=_round(time, 3),
         position=np.round(position, 1).tolist(),
         velocity=np.round(velocity, 4).tolist(),

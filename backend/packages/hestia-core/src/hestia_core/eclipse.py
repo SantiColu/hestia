@@ -14,8 +14,10 @@ centre is below rho (rho_E for the cylinder, rho_E + rho_S for the penumbra cone
 Earth and Sun apparent radii rho_E = asin(R/r), rho_S = asin(R☉/d)). Along the orbit
 ``cos θ = -cos β cos Δu`` (Δu from the point nearest the Sun), so the shadow half-arc φ from
 the anti-Sun point obeys ``cos φ = cos rho / cos β`` and the fraction is ``φ/π`` when |β| < rho.
-With rho = rho_E this is the usual ``acos(√(h² + 2Rh) / ((R + h) cos β)) / π`` (Gilmore,
-«Spacecraft Thermal Control Handbook», 2nd ed., 2002, eq. 2.4).
+The Sun's direction is taken from the Earth's centre (parallax r/d: 5e-5 rad in LEO, 3e-4 rad
+in GEO, negligible). With rho = rho_E this is the usual
+``acos(√(h² + 2Rh) / ((R + h) cos β)) / π`` (Gilmore, «Spacecraft Thermal Control Handbook»,
+2nd ed., 2002, eq. 2.4).
 """
 
 import math

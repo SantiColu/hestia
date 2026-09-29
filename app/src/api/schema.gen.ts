@@ -1015,6 +1015,8 @@ export interface components {
       id: string;
       /** Name */
       name: string;
+      /** Note */
+      note?: string | null;
       origin: components["schemas"]["ConditionOrigin"];
       /** Period */
       period: number;
@@ -1730,6 +1732,8 @@ export interface components {
       faces: components["schemas"]["FaceProfile"][];
       /** Mode Id */
       mode_id: string;
+      /** Period */
+      period: number;
       /** Position */
       position: number[][];
       /** Quaternion */
