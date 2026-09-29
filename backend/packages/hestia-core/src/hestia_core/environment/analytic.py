@@ -512,7 +512,7 @@ def _design_range(
 
 
 def _deg(beta: float) -> str:
-    return f"{math.degrees(beta):.1f}".replace(".", ",") + "°"
+    return f"{math.degrees(beta):.1f}°"
 
 
 def _conditions(
@@ -644,15 +644,27 @@ def _profile(
         solar = sunlit * np.maximum(np.sum(normal_i * sun_b, axis=-1), 0.0)
         view = plate_to_earth_view_factor(np.sum(normal_i * -r_hat, axis=-1), radius)
         albedo = view * cos_zenith
+        low = (
+            irradiance_min * solar,
+            irradiance_min * values.albedo_min.value * albedo,
+            values.olr_min.value * view,
+        )
+        high = (
+            irradiance_max * solar,
+            irradiance_max * values.albedo_max.value * albedo,
+            values.olr_max.value * view,
+        )
         faces.append(
             FaceProfile(
                 face=face,
-                solar_min=_round(irradiance_min * solar, 3),
-                solar_max=_round(irradiance_max * solar, 3),
-                albedo_min=_round(irradiance_min * values.albedo_min.value * albedo, 3),
-                albedo_max=_round(irradiance_max * values.albedo_max.value * albedo, 3),
-                ir_min=_round(values.olr_min.value * view, 3),
-                ir_max=_round(values.olr_max.value * view, 3),
+                solar_min=_round(low[0], 3),
+                solar_max=_round(high[0], 3),
+                albedo_min=_round(low[1], 3),
+                albedo_max=_round(high[1], 3),
+                ir_min=_round(low[2], 3),
+                ir_max=_round(high[2], 3),
+                total_min=_round(low[0] + low[1] + low[2], 3),
+                total_max=_round(high[0] + high[1] + high[2], 3),
             )
         )
     return OrbitProfile(
@@ -688,8 +700,6 @@ def _stats(low: list[float], high: list[float]) -> FluxStats:
 def _face_fluxes(profile: OrbitProfile) -> list[FaceFluxes]:
     result: list[FaceFluxes] = []
     for face in profile.faces:
-        total_min = np.add(np.add(face.solar_min, face.albedo_min), face.ir_min)
-        total_max = np.add(np.add(face.solar_max, face.albedo_max), face.ir_max)
         result.append(
             FaceFluxes(
                 condition_id=profile.condition_id,
@@ -698,7 +708,7 @@ def _face_fluxes(profile: OrbitProfile) -> list[FaceFluxes]:
                 solar=_stats(face.solar_min, face.solar_max),
                 albedo=_stats(face.albedo_min, face.albedo_max),
                 ir=_stats(face.ir_min, face.ir_max),
-                total=_stats(total_min.tolist(), total_max.tolist()),
+                total=_stats(face.total_min, face.total_max),
             )
         )
     return result

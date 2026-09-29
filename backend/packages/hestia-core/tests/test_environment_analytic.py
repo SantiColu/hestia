@@ -239,12 +239,17 @@ def test_nadir_face_ir_and_subsolar_albedo() -> None:
 
 
 def test_total_is_the_sum_of_the_three_fluxes() -> None:
+    # Stored values are rounded to 1e-3 W/m² each: sums agree within 2e-3.
     result = compute(mission(SSO))
     for f in result.fluxes:
         assert f.total.average_max == pytest.approx(
             f.solar.average_max + f.albedo.average_max + f.ir.average_max, abs=2e-3
         )
-        assert f.total.peak_max <= f.solar.peak_max + f.albedo.peak_max + f.ir.peak_max + 1e-6
+        assert f.total.peak_max <= f.solar.peak_max + f.albedo.peak_max + f.ir.peak_max + 2e-3
+    for p in result.orbit_profiles:
+        for face in p.faces:
+            total = np.add(np.add(face.solar_max, face.albedo_max), face.ir_max)
+            assert face.total_max == pytest.approx(total.tolist(), abs=2e-3)
 
 
 def test_attitude_of_the_profiles() -> None:

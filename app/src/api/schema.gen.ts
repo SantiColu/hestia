@@ -1353,6 +1353,10 @@ export interface components {
       solar_max: number[];
       /** Solar Min */
       solar_min: number[];
+      /** Total Max */
+      total_max: number[];
+      /** Total Min */
+      total_min: number[];
     };
     /** FieldProvenance */
     FieldProvenance: {

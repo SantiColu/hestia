@@ -1723,6 +1723,20 @@
             },
             "title": "Solar Min",
             "type": "array"
+          },
+          "total_max": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Total Max",
+            "type": "array"
+          },
+          "total_min": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Total Min",
+            "type": "array"
           }
         },
         "required": [
@@ -1732,7 +1746,9 @@
           "albedo_min",
           "albedo_max",
           "ir_min",
-          "ir_max"
+          "ir_max",
+          "total_min",
+          "total_max"
         ],
         "title": "FaceProfile",
         "type": "object"

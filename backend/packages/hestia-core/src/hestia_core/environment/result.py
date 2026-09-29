@@ -171,6 +171,10 @@ class FaceProfile(BaseModel):
     albedo_max: list[float]
     ir_min: list[float]
     ir_max: list[float]
+    total_min: list[float]
+    """Solar + albedo + IR, all at their minimum."""
+    total_max: list[float]
+    """Solar + albedo + IR, all at their maximum."""
 
 
 class OrbitProfile(BaseModel):
