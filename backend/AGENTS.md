@@ -27,6 +27,16 @@ Las reglas las hace cumplir import-linter (`[tool.importlinter]` en `pyproject.t
 - Sin IA (ADR 0015): prohibido importar o depender de SDKs/frameworks de IA (anthropic, openai, pydantic-ai, logfire, langchain…); lo verifican el contrato de import-linter y `tests/test_no_ai_dependencies.py`. `pydantic` base sí.
 - Cambios en la API → skill `add-api-operation` (regenerar contrato + tool MCP).
 
+## Estilo de código
+
+Reglas completas en `docs/conventions.md` («Código limpio» → General y Python). Lo esencial:
+
+- pyright strict y ruff con reglas ampliadas (`[tool.ruff.lint]` en `pyproject.toml`: comprensiones, `pathlib`, sin `print`, sin código comentado, `datetime` con zona, sin `except` ciego, sin argumentos sin usar). No se relajan sin motivo escrito.
+- Mensajes para personas (`Problem.message`, errores de dominio, `Outcome.summary`) en español; código, identificadores y docstrings en inglés.
+- Validaciones repetidas → helper (ver `_Problems` en `hestia_core.mission`); búsquedas por id → `get_cell`/`get_system`/`get_link` de `hestia_project.schematic`, que lanzan `NotFoundError`.
+- `assert x is not None` solo para estrechar tipos después de una validación que ya lo garantiza; nunca como validación de entrada.
+- Antes de terminar: skill `clean-code-review`.
+
 ## Comandos (desde `backend/`)
 
 ```sh

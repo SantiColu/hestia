@@ -12,6 +12,7 @@ Servidor MCP de Hestia. Proyecto uv independiente (Python 3.12, SDK oficial `mcp
 - El autor de las escrituras va en los headers `X-Hestia-Actor-Kind: agent` y `X-Hestia-Actor` (`HESTIA_AGENT_NAME`, ADR 0011).
 - Los errores de la API llegan al agente como `ToolError` con `código: mensaje` (p. ej. `project_locked: …`).
 - Nueva operación → skill `add-api-operation`. Paridad verificada por el subagente `parity-checker`.
+- Estilo: el de Python de `docs/conventions.md` (mismas reglas de ruff que el backend). Docstring de cada tool en inglés, orientado al agente: qué hace, qué devuelve y cuándo falla (con el `code` del error).
 
 ## Correr localmente
 

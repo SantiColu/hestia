@@ -11,6 +11,6 @@ description: Agrega o modifica un endpoint de la API de Hestia manteniendo el co
 2. **Test de la API** con `fastapi.testclient.TestClient`.
 3. **Contrato**: skill `regenerate-contract` (actualiza `shared/openapi.json` y el cliente TS). Commiteá el diff del contrato junto con el endpoint.
 4. **Tool MCP** en `mcp/src/hestia_mcp/`: una tool por operación (`@_tool("<operationId>")` en `server.py` y método/ruta en `api.OPERATIONS`). Si escribe, exige `justification`. Agregar el caso en `tests/test_tools.py`; si la operación no debe tener tool, justificarlo en `api.NOT_TOOLS`.
-5. **Web**: si la operación es usable por humanos, agregar su uso vía el cliente generado.
+5. **Web**: si la operación es usable por humanos, agregar su uso vía el cliente generado (estilos según la skill `ui-styling`).
 6. **Paridad**: `mcp/tests/test_parity.py` falla si una operación del contrato no tiene tool. Paridad con la UI: TODO test automático; pedí revisión al subagente `parity-checker`.
-7. `make test && make lint`.
+7. Skill `clean-code-review` (incluye `make test && make lint`).

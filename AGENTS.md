@@ -41,6 +41,8 @@ Aplicación de escritorio local (ADR 0008): cada proyecto es un archivo `.hestia
 - Todo artefacto tiene esquema versionado.
 - Decisiones de arquitectura nuevas → ADR en `docs/adr/` (skill `write-adr`).
 - Commits: `tipo(scope): message` en inglés e imperativo (`feat(app): add x`); global sin scope (`feat: x`); `fix` describe el problema. Ver `docs/conventions.md`.
+- Código limpio (`docs/conventions.md`, «Código limpio»): sin duplicar helpers, sin código muerto, sin números mágicos, supresiones de lint siempre con motivo. En la UI, Tailwind sin valores arbitrarios (`text-[13px]` no: `text-ui`; `w-[232px]` no: `w-58`), solo tokens de `app/src/styles.css`. Lo verificable lo hace cumplir `make lint`.
+- Skills de calidad: `ui-styling` al escribir UI; `clean-code-review` antes de dar por terminado cualquier cambio.
 
 ## Más contexto
 
