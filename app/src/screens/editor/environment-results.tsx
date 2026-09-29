@@ -152,6 +152,13 @@ function Summary({ environment }: { environment: EnvironmentSummary }) {
         />
       </section>
 
+      {environment.conditions.some((c) => c.note) && (
+        <p className="-mt-4 text-[11px] text-subtle-foreground">
+          <span className="text-warn">*</span> La misión nunca tiene ese β: pasá el cursor por el
+          nombre para ver cómo se dibuja su órbita.
+        </p>
+      )}
+
       <FluxTable environment={environment} />
     </>
   );
@@ -206,7 +213,16 @@ const RANGE_COLUMNS: DenseColumn<RangeEntry>[] = [
 // ---------------------------------------------------------------- conditions
 
 const CONDITION_COLUMNS: DenseColumn<EnvironmentCondition>[] = [
-  { key: "name", header: "Condición", cell: (c) => c.name },
+  {
+    key: "name",
+    header: "Condición",
+    cell: (c) => (
+      <span title={c.note ?? undefined}>
+        {c.name}
+        {c.note && <span className="text-warn"> *</span>}
+      </span>
+    ),
+  },
   { key: "beta", header: "β (°)", numeric: true, cell: (c) => deg(c.beta) },
   { key: "altitude", header: "Altitud (km)", numeric: true, cell: (c) => km(c.altitude) },
   { key: "period", header: "Período (min)", numeric: true, cell: (c) => minutes(c.period) },

@@ -113,6 +113,7 @@ export function OrbitView({
           {result?.status !== "up_to_date" && (
             <ResultState result={result} updating={updating} onUpdate={onUpdate} />
           )}
+          {condition.note && <p className="text-[11px] text-warn">{condition.note}</p>}
           <div className="grid grid-cols-2 gap-4">
             <SelectField
               label="Condición"

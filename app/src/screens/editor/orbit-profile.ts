@@ -3,7 +3,8 @@ import type { OrbitProfile } from "@/api/client";
 /**
  * Interpolation between the samples of an orbit profile, to animate it (docs/etapas/environment.md:
  * «la UI dibuja `orbit_profiles` tal como llegan y solo interpola entre muestras»). No physics:
- * positions and fluxes are blended linearly, attitudes with a spherical blend, angles unwrapped.
+ * positions are blended linearly, attitudes with a spherical blend, angles unwrapped; fluxes are
+ * the nearest sample's, so every number shown comes from the API.
  */
 
 export type Vec3 = [number, number, number];
@@ -24,14 +25,14 @@ export type Instant = {
   /** Body → inertial, [w, x, y, z]. */
   quaternion: Quat;
   earthRotation: number;
-  /** Incident fluxes at their maximum design values, W/m². */
+  /** Incident fluxes at their maximum design values at the nearest sample, W/m² (as the API
+   * computed them, never interpolated). */
   faces: Record<FaceName, FaceFlux>;
 };
 
-/** Period of the profile: the samples cover one orbit uniformly. */
+/** Period of the profile (from the API): the samples cover it uniformly. */
 export function profilePeriod(profile: OrbitProfile): number {
-  const n = profile.time.length;
-  return n > 1 ? (at(profile.time, 1) - at(profile.time, 0)) * n : 0;
+  return profile.period;
 }
 
 /** Element k of a list the API guarantees to have (every profile list has one per sample). */
@@ -76,14 +77,14 @@ export function instantAt(profile: OrbitProfile, time: number): Instant {
   const i = Math.min(Math.floor(t / step), n - 1);
   const j = (i + 1) % n;
   const f = (t - i * step) / step;
+  const nearest = f < 0.5 ? i : j;
   const faces = {} as Record<FaceName, FaceFlux>;
   for (const face of profile.faces) {
-    const blend = (values: number[]) => lerp(at(values, i), at(values, j), f);
     faces[face.face as FaceName] = {
-      solar: blend(face.solar_max),
-      albedo: blend(face.albedo_max),
-      ir: blend(face.ir_max),
-      total: blend(face.total_max),
+      solar: at(face.solar_max, nearest),
+      albedo: at(face.albedo_max, nearest),
+      ir: at(face.ir_max, nearest),
+      total: at(face.total_max, nearest),
     };
   }
   return {
