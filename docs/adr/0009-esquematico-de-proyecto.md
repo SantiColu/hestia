@@ -1,6 +1,6 @@
 # 0009. Esquemático de proyecto: celdas, vínculos y sistemas
 
-- **Estado:** aceptado
+- **Estado:** aceptado; la regla de vínculos por entrada, reemplazada por 0016
 - **Fecha:** 2026-09-28
 - **Amplía:** 0005
 
