@@ -13,6 +13,8 @@ const CONVERSIONS: Record<string, Conversion> = {
   "rad→°": { scale: 180 / Math.PI, offset: 0 },
   "s→años": { scale: 1 / YEAR_S, offset: 0 },
   "s→h": { scale: 1 / 3600, offset: 0 },
+  "s→min": { scale: 1 / 60, offset: 0 },
+  "s→días": { scale: 1 / 86400, offset: 0 },
   // Absolute temperature only: differences (ΔT) declare K → K.
   "K→°C": { scale: 1, offset: -273.15 },
 };

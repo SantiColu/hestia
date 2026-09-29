@@ -20,7 +20,7 @@ Interfaz de Hestia: React + Vite + TanStack Router, TypeScript estricto, Tailwin
 - `src/api/`: cliente de la API (`client.ts`) y tipos generados (`schema.gen.ts`, no editar).
 - `src/project/`: estado del proyecto abierto (`store.tsx`, con la suscripción SSE), diálogos por promesa (`dialogs.tsx`), acciones de Archivo y deshacer/rehacer (`actions.ts`), pestañas y borradores sin aplicar (`editor.tsx`), atajos (`shortcuts.ts`) y fragmentos del portapapeles (`fragment.ts`: solo reconoce el marcador; valida la API, ADR 0014).
 - `src/screens/`: pantallas. `home.tsx` (inicio) y `workspace/` (barra superior, Toolbox, esquemático con React Flow, dock y panel inferior). En `workspace/`, `actions.ts` son las escrituras del esquemático (incluidos cortar, copiar, pegar y duplicar) y `edit.ts` el menú Editar y sus atajos sobre la selección.
-- `src/screens/editor/`: pestaña de una celda. `cell-editor.tsx` (formulario o «sin implementar»), `schema-form.tsx` y `schema.ts` (formulario generado desde el JSON Schema del artefacto con las extensiones `x-`, ADR 0019). `src/lib/units.ts`: conversión de unidades solo para mostrar (`x-unit` → `x-display-unit`); `src/lib/json.ts`: utilidades para borradores.
+- `src/screens/editor/`: pestaña de una celda. `cell-editor.tsx` (formulario, etapa de cálculo o «sin implementar»), `schema-form.tsx` y `schema.ts` (formulario generado desde el JSON Schema del artefacto con las extensiones `x-`, ADR 0019). Etapas de cálculo (ADR 0021): `computation-editor.tsx` (encabezado con estado y Actualizar; secciones Parámetros, Resultados y Órbita 3D), `environment-results.tsx` (métricas, gráficos, rangos, condiciones y flujos por cara), `orbit-view.tsx` y `orbit-scene.tsx` (vista 3D con three.js + `@react-three/fiber`; Global/Local, play/pausa, barra de tiempo), `orbit-profile.ts` (solo interpola entre muestras del perfil del backend), `format.ts` y `layout.ts`. `src/lib/units.ts`: conversión de unidades solo para mostrar (`x-unit` → `x-display-unit`); `src/lib/json.ts`: utilidades para borradores.
 - `public/brand/`: marca y logotipo (copias de `design/brand/`; si cambia la marca, volver a copiarlos).
 - `src/screens/workspace/stage-icons.ts`: ícono de cada tipo de etapa (Toolbox y menús), según `workspace.pen`.
 - `src/lib/native.ts`: diálogos nativos de Tauri (con `window.prompt` como respaldo en el navegador). `src/lib/clipboard.ts`: portapapeles de texto (plugin de Tauri o `navigator.clipboard`, con copia en memoria).
@@ -51,6 +51,6 @@ pnpm build        # dist/
 
 ## Librerías
 
-Instaladas: React Flow (`@xyflow/react`, esquemático), openapi-fetch + openapi-typescript (cliente), `@tauri-apps/api`, `@tauri-apps/plugin-dialog` y `@tauri-apps/plugin-clipboard-manager`.
+Instaladas: React Flow (`@xyflow/react`, esquemático), openapi-fetch + openapi-typescript (cliente), `@tauri-apps/api`, `@tauri-apps/plugin-dialog`, `@tauri-apps/plugin-clipboard-manager` y three.js + `@react-three/fiber` (órbita 3D de Entorno).
 
-Previstas (no instaladas): Plotly (gráficos), TanStack Table.
+Previstas (no instaladas): Plotly (gráficos; hoy `components/data/line-chart.tsx` es un SVG mínimo), TanStack Table.

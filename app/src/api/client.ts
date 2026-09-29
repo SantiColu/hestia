@@ -15,21 +15,29 @@ export type Catalog = Schemas["Catalog"];
 export type Cell = Schemas["Cell"];
 export type CellArtifact = Schemas["CellArtifact"];
 export type CellContext = Schemas["CellContext"];
+export type CellResult = Schemas["CellResult"];
 export type CellStatus = Schemas["CellStatus"];
 export type Change = Schemas["Change"];
+export type EnvironmentCondition = Schemas["Condition"];
+export type EnvironmentParameters = Schemas["EnvironmentParameters"];
+export type EnvironmentSummary = Schemas["EnvironmentSummary"];
+export type FaceFluxes = Schemas["FaceFluxes"];
 export type Fragment = Schemas["Fragment-Output"];
 export type Link = Schemas["Link"];
 export type MissionArtifact = Schemas["MissionArtifact"];
 export type MutationResult = Schemas["MutationResult"];
+export type OrbitProfile = Schemas["OrbitProfile"];
 export type Position = Schemas["Position"];
 export type Problem = Schemas["Problem"];
 export type Project = Schemas["Project"];
 export type ProjectEvent = Schemas["ProjectEvent"];
 export type ProjectView = Schemas["ProjectView"];
+export type RangeEntry = Schemas["RangeEntry"];
 export type RecentProject = Schemas["RecentProject"];
 export type StageType = Schemas["StageType"];
 export type System = Schemas["System"];
 export type TemplateId = Schemas["TemplateId"];
+export type UpdateCellResult = Schemas["UpdateCellResult"];
 
 /** An error answered by the API. `code` is stable (e.g. `project_locked`). */
 export class ApiError extends Error {

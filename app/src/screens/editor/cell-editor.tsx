@@ -5,6 +5,7 @@ import {
   unwrap,
   type CellArtifact,
   type CellContext,
+  type EnvironmentParameters,
   type MissionArtifact,
   type Problem,
   type ProjectView,
@@ -19,10 +20,16 @@ import { useDialogs } from "@/project/dialogs";
 import { useEditor } from "@/project/editor";
 import { useProject } from "@/project/store";
 import { cn } from "@/lib/utils";
+import { ComputationEditor } from "./computation-editor";
+import { column, listNames, plural, useStageNames } from "./layout";
 import { changedLeaves, problemsBySection, type JsonSchema } from "./schema";
 import { SchemaForm } from "./schema-form";
 
 const VALIDATE_DEBOUNCE_MS = 300;
+
+/** Body of the generic artifact endpoints (ADR 0019): a form artifact or a computation's
+ * parameters. The API validates it against the cell's stage. */
+type Artifact = MissionArtifact | EnvironmentParameters;
 
 /** Schemas of form artifacts, fetched once per stage. */
 const schemas = new Map<string, Promise<JsonSchema>>();
@@ -41,7 +48,10 @@ function artifactSchema(stage: string): Promise<JsonSchema> {
   return schema;
 }
 
-/** The editor of a cell's tab: a form for implemented form stages, a placeholder otherwise. */
+/**
+ * The editor of a cell's tab: a form for implemented form stages, parameters + Update + results
+ * for implemented computation stages (ADR 0021), a placeholder otherwise.
+ */
 export function CellEditor({ cellId, view }: { cellId: string; view: ProjectView }) {
   const { catalog } = useProject();
   const cell = view.project.cells.find((c) => c.id === cellId);
@@ -52,15 +62,15 @@ export function CellEditor({ cellId, view }: { cellId: string; view: ProjectView
   if (stage?.kind === "form" && stage.implemented) {
     return <FormEditor cellId={cellId} stage={cell.stage} title={title} view={view} />;
   }
+  if (stage?.kind === "computation" && stage.implemented) {
+    return <ComputationEditor cellId={cellId} status={cell.status} title={title} view={view} />;
+  }
   return <NotImplemented cellId={cellId} title={title} status={cell.status} view={view} />;
 }
 
-type Title = { name: string; system: string };
+export type Title = { name: string; system: string };
 
-/** Centered column of the editor (`Form` in the design: 760 px). */
-const column = "mx-auto flex w-full max-w-[760px] flex-col";
-
-function EditorHeader({ title, badge }: { title: Title; badge: ReactNode }) {
+export function EditorHeader({ title, badge }: { title: Title; badge: ReactNode }) {
   return (
     <header className="flex items-center gap-2.5">
       <h1 className="truncate text-lg font-semibold">{title.name}</h1>
@@ -68,27 +78,6 @@ function EditorHeader({ title, badge }: { title: Title; badge: ReactNode }) {
       <span className="flex-1" />
       {badge}
     </header>
-  );
-}
-
-function plural(count: number, one: string, many: string): string {
-  return `${count} ${count === 1 ? one : many}`;
-}
-
-/** "A, B, C y 6 más" / "A y B". */
-function listNames(names: string[], shown = 3): string {
-  if (names.length > shown) {
-    return `${names.slice(0, shown).join(", ")} y ${names.length - shown} más`;
-  }
-  if (names.length <= 1) return names.join("");
-  return `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`;
-}
-
-function useStageNames() {
-  const { catalog } = useProject();
-  return useCallback(
-    (stage: string) => catalog?.stages.find((s) => s.stage === stage)?.name ?? stage,
-    [catalog],
   );
 }
 
@@ -150,18 +139,21 @@ function NotImplemented({
 
 /**
  * Draft + dry validation + Apply (ADR 0017). The draft lives in the editor store; the API
- * validates it (debounced) and decides status and provenance.
+ * validates it (debounced) and decides status and provenance. `computation`: the parameters of
+ * a computation stage (ADR 0021), shown inside its editor (no header of its own).
  */
-function FormEditor({
+export function FormEditor({
   cellId,
   stage,
   title,
   view,
+  computation = false,
 }: {
   cellId: string;
   stage: string;
   title: Title;
   view: ProjectView;
+  computation?: boolean;
 }) {
   const { fail, notify, setView } = useProject();
   const { drafts, setDraft } = useEditor();
@@ -212,7 +204,7 @@ function FormEditor({
       unwrap(
         api.POST("/project/cells/{cell_id}/artifact/validate", {
           params: { path: { cell_id: cellId } },
-          body: { artifact: draft as unknown as MissionArtifact },
+          body: { artifact: draft as unknown as Artifact },
         }),
       )
         .then(({ problems }) => {
@@ -266,7 +258,7 @@ function FormEditor({
       const result = await unwrap(
         api.PUT("/project/cells/{cell_id}/artifact", {
           params: { path: { cell_id: cellId } },
-          body: { artifact: draft as unknown as MissionArtifact, justification },
+          body: { artifact: draft as unknown as Artifact, justification },
         }),
       );
       setView(result.view);
@@ -299,7 +291,7 @@ function FormEditor({
     <div className="flex h-full flex-col">
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
         <div className={cn(column, "gap-7")}>
-          <EditorHeader title={title} badge={badge} />
+          {!computation && <EditorHeader title={title} badge={badge} />}
           {problems.length > 0 && (
             <Notice
               tone="error"
@@ -310,9 +302,11 @@ function FormEditor({
                 problems.map((p) => p.path),
               )}
               .{" "}
-              {draft
-                ? "Podés aplicar igual: la celda queda Fallida hasta corregirlos."
-                : "La celda queda Fallida hasta corregirlos."}
+              {computation
+                ? "Podés aplicar igual: Actualizar falla hasta corregirlos."
+                : draft
+                  ? "Podés aplicar igual: la celda queda Fallida hasta corregirlos."
+                  : "La celda queda Fallida hasta corregirlos."}
             </Notice>
           )}
           <SchemaForm
@@ -369,9 +363,11 @@ function FormEditor({
   }
 
   function failedText(): string {
-    return problems.length > 0
-      ? `Con ${plural(problems.length, "error", "errores")}: la celda queda Fallida hasta corregirlos.`
-      : "";
+    if (problems.length === 0) return "";
+    const errors = plural(problems.length, "error", "errores");
+    return computation
+      ? `Con ${errors}: Actualizar falla hasta corregirlos.`
+      : `Con ${errors}: la celda queda Fallida hasta corregirlos.`;
   }
 
   /** First apply of an untouched artifact (the defaults): records it and validates it. */
@@ -388,7 +384,7 @@ function FormEditor({
       const result = await unwrap(
         api.PUT("/project/cells/{cell_id}/artifact", {
           params: { path: { cell_id: cellId } },
-          body: { artifact: applied as unknown as MissionArtifact, justification },
+          body: { artifact: applied as unknown as Artifact, justification },
         }),
       );
       setView(result.view);
