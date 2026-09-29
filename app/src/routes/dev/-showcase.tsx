@@ -35,7 +35,7 @@ import { SelectField } from "@/components/forms/select-field";
 import { JustificationField } from "@/components/forms/justification-field";
 import { CheckboxField, SwitchField } from "@/components/forms/choice-fields";
 import { Segmented } from "@/components/forms/segmented";
-import { StageStatusBadge, type StageStatus } from "@/components/feedback/stage-status";
+import { StageStatusBadge } from "@/components/feedback/stage-status";
 import { Tag } from "@/components/feedback/tag";
 import { Notice } from "@/components/feedback/notice";
 import { SectionLabel } from "@/components/navigation/section-label";
@@ -50,7 +50,6 @@ import { DenseTable } from "@/components/data/dense-table";
 import { KeyValue, Metric } from "@/components/data/readouts";
 import { ActorAvatar } from "@/components/data/actor-avatar";
 import { EmptyState } from "@/components/data/empty-state";
-import { StageNode } from "@/components/workflow/stage-node";
 import { HistoryItem } from "@/components/workflow/history-item";
 import { ProvenanceRow } from "@/components/workflow/provenance-row";
 import { ConfirmChangeDialog } from "@/components/overlays/confirm-change-dialog";
@@ -59,13 +58,6 @@ import { ConfirmChangeDialog } from "@/components/overlays/confirm-change-dialog
 const CASES = [
   { id: "hot", tone: "hot" as const, node: "38.2", limit: "45.0", margin: "6.8" },
   { id: "cold", tone: "cold" as const, node: "-12.4", limit: "-20.0", margin: "7.6" },
-];
-
-const PHASE_0: { number: string; title: string; id: string; status: StageStatus }[] = [
-  { number: "0.1", title: "Misión", id: "mission", status: "up_to_date" },
-  { number: "0.2", title: "Entorno", id: "environment", status: "up_to_date" },
-  { number: "0.3", title: "Balance global", id: "global_balance", status: "outdated" },
-  { number: "0.4", title: "Concepto TCS", id: "tcs_concept", status: "never_run" },
 ];
 
 function Section({
@@ -81,7 +73,7 @@ function Section({
     <section className="flex flex-col gap-6 border-t border-border pt-8">
       <header className="flex flex-col gap-1">
         <h2 className="text-lg font-semibold">{title}</h2>
-        <p className="text-[13px] text-muted-foreground">{description}</p>
+        <p className="text-ui text-muted-foreground">{description}</p>
       </header>
       {children}
     </section>
@@ -211,18 +203,17 @@ export function Showcase() {
         </Row>
         <div className="flex max-w-xl flex-col gap-3">
           <Notice tone="info" title="Celda alimentada por un vínculo">
-            Las entradas de 1.3 load_cases vienen de «Entorno · LEO 600». Editalas ahí o desvinculá
+            Las entradas de Casos de carga vienen de «Entorno · LEO 600». Editalas ahí o desvinculá
             la celda.
           </Notice>
           <Notice tone="warning" title="3 etapas desactualizadas">
-            Cambió 0.1 mission. Actualizá 0.2 → 0.4 para ver resultados consistentes.
+            Cambió Misión. Actualizá Entorno y lo que sigue para ver resultados consistentes.
           </Notice>
           <Notice tone="error" title="La solución no convergió">
-            1.4 solution: residuo 3.2e-2 tras 500 iteraciones. Revisá acoplamientos de los nodos
-            12–14.
+            Solución: residuo 3.2e-2 tras 500 iteraciones. Revisá acoplamientos de los nodos 12–14.
           </Notice>
           <Notice tone="success" title="Etapa actualizada">
-            0.3 global_balance corrió en 0.8 s sin advertencias.
+            Balance global corrió en 0.8 s sin advertencias.
           </Notice>
         </div>
       </Section>
@@ -249,13 +240,13 @@ export function Showcase() {
             </PanelTabs>
             <SectionLabel>Entradas</SectionLabel>
             <Breadcrumb>
-              <BreadcrumbList className="text-[13px]">
+              <BreadcrumbList className="text-ui">
                 <BreadcrumbItem className="font-mono">SAT-M1</BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>Fase 0</BreadcrumbItem>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>0.3 Balance global</BreadcrumbPage>
+                  <BreadcrumbPage>Balance global</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -311,28 +302,11 @@ export function Showcase() {
         />
       </Section>
 
-      <Section
-        title="Workflow"
-        description="Nodos del grafo de etapas, historial con autor y justificación, procedencia."
-      >
-        <div className="flex items-center overflow-x-auto pb-2">
-          {PHASE_0.map((stage, index) => (
-            <div key={stage.id} className="flex items-center">
-              {index > 0 && <span className="h-px w-6 bg-border-strong" aria-hidden />}
-              <StageNode
-                number={stage.number}
-                title={stage.title}
-                stageId={stage.id}
-                status={stage.status}
-                selected={stage.id === "global_balance"}
-              />
-            </div>
-          ))}
-        </div>
+      <Section title="Workflow" description="Historial con autor y justificación, procedencia.">
         <div className="grid max-w-4xl grid-cols-2 gap-10">
           <HistoryItem
             author="Stefan"
-            action="modificó 0.3"
+            action="modificó Balance global"
             time="14:32"
             changes={[{ field: "radiator_area_m2", from: "0.42", to: "0.48" }]}
             justification="Margen cold < 5 K en modo seguro; se amplía el radiador y se recalcula heater."
@@ -340,12 +314,12 @@ export function Showcase() {
           <div>
             <ProvenanceRow
               artifact="environment.load_cases"
-              source="de 0.2 Entorno · esquema v3 · hace 5 min"
+              source="de Entorno · esquema v3 · hace 5 min"
               status="up_to_date"
             />
             <ProvenanceRow
               artifact="mission.dissipation"
-              source="de 0.1 Misión · esquema v2 · hace 2 h"
+              source="de Misión · esquema v2 · hace 2 h"
               status="up_to_date"
             />
           </div>
@@ -384,7 +358,7 @@ export function Showcase() {
                 Abrir confirmación
               </DialogTrigger>
             }
-            summary="Este cambio desactualiza 3 etapas aguas abajo (0.4, 1.4, 1.5)."
+            summary="Este cambio desactualiza 3 celdas aguas abajo (Concepto TCS, Solución, Márgenes)."
             changes={[{ field: "radiator_area_m2", from: "0.42", to: "0.48" }]}
             onConfirm={() => undefined}
           />
