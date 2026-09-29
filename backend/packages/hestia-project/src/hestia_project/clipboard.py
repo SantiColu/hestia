@@ -165,9 +165,11 @@ def paste(
     mapping: dict[str, str] = {}
     created: list[str] = []
     new_systems: list[System] = []
+    into_target = 0
     for source in sources:
         if target is not None and not source.whole:
             system = target
+            into_target += len(source.cells)
         else:
             # A single loose cell becomes a system named after it, as when dropping a stage.
             name = (
@@ -202,7 +204,10 @@ def paste(
             ) from exc
         created.append(new.id)
 
-    return Outcome(summary=_summary(new_systems, len(mapping), target), created_ids=created)
+    return Outcome(
+        summary=_summary(new_systems, len(mapping) - into_target, target, into_target),
+        created_ids=created,
+    )
 
 
 def _paste_position(
@@ -231,12 +236,20 @@ def _unique_cell_name(project: Project, system: System, name: str) -> str:
     return f"{name} ({n})"
 
 
-def _summary(new_systems: list[System], n_cells: int, target: System | None) -> str:
-    if len(new_systems) == 1 and target is None:
-        return f"Pegó el sistema «{new_systems[0].name}»."
-    if not new_systems and target is not None:
-        noun = "la celda" if n_cells == 1 else f"{n_cells} celdas"
-        return f"Pegó {noun} en el sistema «{target.name}»."
-    systems = "1 sistema" if len(new_systems) == 1 else f"{len(new_systems)} sistemas"
-    cells = "1 celda" if n_cells == 1 else f"{n_cells} celdas"
-    return f"Pegó {systems} con {cells}."
+def _count(n: int, one: str, many: str) -> str:
+    return f"1 {one}" if n == 1 else f"{n} {many}"
+
+
+def _summary(
+    new_systems: list[System], n_new_cells: int, target: System | None, into_target: int
+) -> str:
+    parts: list[str] = []
+    if len(new_systems) == 1:
+        parts.append(f"el sistema «{new_systems[0].name}»")
+    elif new_systems:
+        cells = _count(n_new_cells, "celda", "celdas")
+        parts.append(f"{len(new_systems)} sistemas con {cells}")
+    if target is not None and into_target:
+        cells = "la celda" if into_target == 1 else f"{into_target} celdas"
+        parts.append(f"{cells} en el sistema «{target.name}»")
+    return f"Pegó {' y '.join(parts)}."

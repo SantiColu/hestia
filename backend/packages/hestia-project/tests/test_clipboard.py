@@ -278,3 +278,14 @@ def test_paste_survives_save_and_open(tmp_path: Path) -> None:
     project, history = read_project(path)
     assert project == doc.project
     assert history[-1].change.operation is Operation.PASTE
+
+
+def test_summary_of_mixed_paste(phase0: Project) -> None:
+    system = phase0.systems[0]
+    create_system(phase0, Blueprint(stage=S.MISSION), name="M")
+    other = _system(phase0, "M")
+    fragment = copy(phase0, [system.id], [other.cell_ids[0]])
+    outcome = paste(phase0, fragment, target_system_id=other.id)
+    assert outcome.summary == "Pegó el sistema «F0 (2)» y la celda en el sistema «M»."
+    outcome = paste(phase0, copy(phase0, [system.id, other.id], []))
+    assert outcome.summary == "Pegó 2 sistemas con 6 celdas."
