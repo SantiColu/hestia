@@ -2,10 +2,13 @@
 
 from pydantic import BaseModel, Field
 
+from hestia_core.mission import MissionArtifact
+from hestia_project.artifacts import CellArtifact
 from hestia_project.base import Schema
 from hestia_project.catalog import StageType
 from hestia_project.clipboard import Fragment
 from hestia_project.document import ProjectView
+from hestia_project.history import Change
 from hestia_project.model import Position
 from hestia_project.schematic import Blueprint
 
@@ -109,3 +112,22 @@ class PasteRequest(WriteRequest):
         default=None,
         description="System that receives loose cells. When omitted they get a new system.",
     )
+
+
+class ArtifactDraft(BaseModel):
+    """A draft of a form artifact, possibly incomplete. Its stage must match the cell's."""
+
+    artifact: MissionArtifact
+
+
+class ApplyArtifactRequest(WriteRequest):
+    """Replace the cell's artifact with the draft. The justification is required."""
+
+    artifact: MissionArtifact
+
+
+class ApplyArtifactResult(Schema):
+    change: Change | None
+    """Null when the content did not change (nothing is recorded)."""
+    view: ProjectView
+    cell: CellArtifact

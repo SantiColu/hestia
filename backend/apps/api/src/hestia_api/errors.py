@@ -19,6 +19,7 @@ from hestia_project.errors import (
     ProjectError,
     ProjectFileError,
     ProjectLockedError,
+    StageNotImplementedError,
     UnsavedChangesError,
 )
 
@@ -37,6 +38,7 @@ STATUS: dict[type[ProjectError], int] = {
     InvalidFragmentError: 422,
     JustificationRequiredError: 422,
     ProjectFileError: 422,
+    StageNotImplementedError: 422,
     NothingToUndoError: 409,
     NothingToRedoError: 409,
     NoProjectOpenError: 409,

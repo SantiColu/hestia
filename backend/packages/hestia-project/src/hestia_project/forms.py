@@ -55,6 +55,12 @@ def form_spec(stage: StageType) -> FormSpec:
     return spec
 
 
+def artifact_schema(stage: StageType) -> dict[str, Any]:
+    """JSON Schema of a form stage's artifact, with the ``x-`` extensions the UI builds the
+    form from (units, labels, conditional fields)."""
+    return form_spec(stage).model.model_json_schema()
+
+
 def status_for(problems: list[Problem]) -> CellStatus:
     return CellStatus.FAILED if problems else CellStatus.UP_TO_DATE
 
