@@ -152,6 +152,16 @@ CASES: list[tuple[str, dict[str, Any], str, str, dict[str, Any] | None]] = [
         "/project/cells/c1/artifact",
         {"artifact": ARTIFACT, **J},
     ),
+    ("update_cell", {"cell_id": "c1"}, "POST", "/project/cells/c1/update", {"justification": ""}),
+    ("update_cell", {"cell_id": "c1", **J}, "POST", "/project/cells/c1/update", J),
+    ("get_cell_result", {"cell_id": "c1"}, "GET", "/project/cells/c1/result", None),
+    (
+        "get_orbit_profile",
+        {"cell_id": "c1", "condition_id": "max_eclipse", "mode_id": "m1"},
+        "GET",
+        "/project/cells/c1/result/orbit-profile",
+        None,
+    ),
     (
         "copy_to_clipboard",
         {"system_ids": ["s1"]},
@@ -193,6 +203,12 @@ def test_tool_request(
         assert request.content == b""
     else:
         assert json.loads(request.content) == body
+
+
+def test_orbit_profile_query(captured: Captured) -> None:
+    args = {"cell_id": "c1", "condition_id": "max_eclipse", "mode_id": "m1"}
+    asyncio.run(server.call_tool("get_orbit_profile", args))
+    assert dict(captured[0].url.params) == {"condition_id": "max_eclipse", "mode_id": "m1"}
 
 
 def test_branch_targets_query(captured: Captured) -> None:

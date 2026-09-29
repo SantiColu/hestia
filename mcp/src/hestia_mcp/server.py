@@ -21,7 +21,9 @@ server = MCPServer(
         "A project is a schematic of systems (groups of cells), cells (instances of a workflow "
         "stage) and links. A link passes the source cell and everything upstream of it (its "
         "context) to the target; each stage type requires some types in its context "
-        "(get_cell_context shows what is missing). Start with get_session and get_catalog. "
+        "(get_cell_context shows what is missing). Form stages (mission) are edited with "
+        "apply_cell_artifact; computation stages (environment) take parameters the same way "
+        "and run with update_cell, then get_cell_result. Start with get_session and get_catalog. "
         "Every write needs a justification. "
         "All numbers come from the Hestia API; never compute physical results yourself."
     ),
@@ -83,8 +85,9 @@ async def get_catalog() -> Json:
 
 @_tool("get_artifact_schema")
 async def get_artifact_schema(stage: StageType) -> Json:
-    """JSON Schema of the artifact of a form stage (today only `mission`): fields, enums, SI
-    unit (`x-unit`) of each physical field and which fields apply to each orbit type
+    """JSON Schema of the artifact of a form stage (`mission`) or of the parameters of a
+    computation stage (`environment`): fields, enums, SI unit (`x-unit`) of each physical field,
+    library defaults (`x-default`, `x-default-source`) and which fields apply to each orbit type
     (`x-show-if`). Values are always in SI units and kelvin."""
     return await call("get_artifact_schema", path={"stage": stage})
 
@@ -332,9 +335,10 @@ async def unlink_cells(link_id: str, justification: str) -> Json:
 
 @_tool("get_cell_artifact")
 async def get_cell_artifact(cell_id: str) -> Json:
-    """The applied artifact of a form cell (mission): values in SI units, validation problems
-    ({path, code, message}), per-field provenance ({source, change_id}), status and context.
-    Start from this artifact to build a draft."""
+    """The applied artifact of a form cell (mission) or the applied parameters of a computation
+    cell (environment: design values, dispersion, sampling, custom conditions): values in SI
+    units, validation problems ({path, code, message}), per-field provenance ({source,
+    change_id}), status and context. Start from this artifact to build a draft."""
     return await call("get_cell_artifact", path={"cell_id": cell_id})
 
 
@@ -349,14 +353,55 @@ async def validate_cell_artifact(cell_id: str, artifact: Json) -> Json:
 
 @_tool("apply_cell_artifact")
 async def apply_cell_artifact(cell_id: str, artifact: Json, justification: str) -> Json:
-    """Replace a form cell's artifact with the draft, in one undoable change. The
-    justification is required. Problems are allowed (the cell is then failed); everything
-    downstream becomes outdated if the content changed; `change` is null if nothing changed.
-    Keep the ids of existing list items (attitude_modes[].id); new items get ids."""
+    """Replace a form cell's artifact (or a computation cell's parameters) with the draft, in
+    one undoable change. The justification is required. Problems are allowed (a form cell is
+    then failed); everything downstream (and a computation cell itself) becomes outdated if the
+    content changed; `change` is null if nothing changed. Keep the ids of existing list items
+    (attitude_modes[].id, custom_conditions[].id); new items get ids."""
     return await call(
         "apply_cell_artifact",
         path={"cell_id": cell_id},
         json={"artifact": artifact, "justification": justification},
+    )
+
+
+# ---------------------------------------------------------------- computation stages
+
+
+@_tool("update_cell")
+async def update_cell(cell_id: str, justification: str = "") -> Json:
+    """Update (run) a computation cell (environment) with its applied parameters and its
+    context, in one undoable change; the justification is optional. Returns the change (null if
+    it was already up to date or fails the same way), the project view and the cell's result:
+    `up_to_date` with the new result, or `failed` with problems (`missing`, `context_invalid`,
+    invalid parameters, `eccentricity_out_of_range`). Edit the parameters first with
+    get_cell_artifact / apply_cell_artifact. Never compute environment numbers yourself."""
+    return await call(
+        "update_cell", path={"cell_id": cell_id}, json={"justification": justification}
+    )
+
+
+@_tool("get_cell_result")
+async def get_cell_result(cell_id: str) -> Json:
+    """Status, problems, provenance and last result of a computation cell (possibly outdated:
+    check `status`). Environment: β and eclipse along the mission, ranges (irradiance, β,
+    altitude, albedo, IR), extreme and custom conditions, and incident fluxes per condition,
+    attitude mode and face (orbit average and peak, at the minimum and maximum design values,
+    W/m²). SI units, angles in rad. Orbit profiles are listed; read one with
+    get_orbit_profile."""
+    return await call("get_cell_result", path={"cell_id": cell_id})
+
+
+@_tool("get_orbit_profile")
+async def get_orbit_profile(cell_id: str, condition_id: str, mode_id: str) -> Json:
+    """One orbit of an environment condition in an attitude mode (ids from get_cell_result):
+    time (s), inertial position (m) and velocity (m/s), Sun unit vector, sunlit fraction, body
+    quaternion (body → inertial, [w, x, y, z]), Earth rotation angle and incident fluxes per
+    face along the orbit (W/m²)."""
+    return await call(
+        "get_orbit_profile",
+        path={"cell_id": cell_id},
+        params={"condition_id": condition_id, "mode_id": mode_id},
     )
 
 

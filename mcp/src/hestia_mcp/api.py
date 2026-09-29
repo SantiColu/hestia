@@ -45,6 +45,9 @@ OPERATIONS: dict[str, tuple[str, str]] = {
     "get_cell_artifact": ("GET", "/project/cells/{cell_id}/artifact"),
     "validate_cell_artifact": ("POST", "/project/cells/{cell_id}/artifact/validate"),
     "apply_cell_artifact": ("PUT", "/project/cells/{cell_id}/artifact"),
+    "update_cell": ("POST", "/project/cells/{cell_id}/update"),
+    "get_cell_result": ("GET", "/project/cells/{cell_id}/result"),
+    "get_orbit_profile": ("GET", "/project/cells/{cell_id}/result/orbit-profile"),
     "link_cells": ("POST", "/project/links"),
     "unlink_cells": ("DELETE", "/project/links/{link_id}"),
     "copy_to_clipboard": ("POST", "/project/clipboard/copy"),
@@ -53,10 +56,6 @@ OPERATIONS: dict[str, tuple[str, str]] = {
 
 NOT_TOOLS: dict[str, str] = {
     "stream_events": "Server-Sent Events for live UIs; agents read state and history instead.",
-    # Temporary: the tools come with the next commit (MCP step of the environment stage).
-    "update_cell": "Tool added in the next commit.",
-    "get_cell_result": "Tool added in the next commit.",
-    "get_orbit_profile": "Tool added in the next commit.",
 }
 """API operations deliberately without a tool, with the reason."""
 
