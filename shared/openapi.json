@@ -169,6 +169,7 @@
               }
             ],
             "title": "Dirección primaria",
+            "x-column-title": "Dirección",
             "x-enum-labels": {
               "anti_orbit_normal": "Antinormal a la órbita",
               "anti_velocity": "Antivelocidad",
@@ -200,6 +201,7 @@
               }
             ],
             "title": "Dirección secundaria",
+            "x-column-title": "Dirección",
             "x-enum-labels": {
               "anti_orbit_normal": "Antinormal a la órbita",
               "anti_velocity": "Antivelocidad",
@@ -436,6 +438,13 @@
           "context": {
             "$ref": "#/components/schemas/CellContext"
           },
+          "outdates": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Outdates",
+            "type": "array"
+          },
           "problems": {
             "items": {
               "$ref": "#/components/schemas/Problem"
@@ -465,7 +474,8 @@
           "artifact",
           "problems",
           "provenance",
-          "context"
+          "context",
+          "outdates"
         ],
         "title": "CellArtifact",
         "type": "object"
@@ -733,6 +743,7 @@
             "description": "ΔT.",
             "title": "Margen de aceptación",
             "x-default": 5.0,
+            "x-default-source": "ECSS-E-ST-31C",
             "x-display-unit": "K",
             "x-unit": "K"
           },
@@ -763,6 +774,7 @@
             "description": "Sobre el de aceptación (ΔT).",
             "title": "Margen de calificación",
             "x-default": 5.0,
+            "x-default-source": "ECSS-E-ST-31C",
             "x-display-unit": "K",
             "x-unit": "K"
           },
@@ -771,7 +783,7 @@
             "items": {
               "$ref": "#/components/schemas/Face"
             },
-            "title": "Caras de radiador",
+            "title": "Caras permitidas para radiador",
             "type": "array"
           },
           "tcs_mass_budget": {
@@ -800,6 +812,7 @@
             "description": "Incertidumbre de las predicciones (ΔT).",
             "title": "Margen de incertidumbre",
             "x-default": 10.0,
+            "x-default-source": "ECSS-E-ST-31C",
             "x-display-unit": "K",
             "x-unit": "K"
           }
@@ -1372,8 +1385,7 @@
               }
             ],
             "description": "Objetivo y notas generales.",
-            "title": "Descripción",
-            "x-input": "textarea"
+            "title": "Descripción"
           },
           "design_life": {
             "anyOf": [
@@ -1385,7 +1397,7 @@
               }
             ],
             "description": "Define el fin de vida (degradación de recubrimientos, EOL).",
-            "title": "Vida útil de diseño",
+            "title": "Vida útil",
             "x-display-unit": "años",
             "x-unit": "s"
           },
@@ -1462,7 +1474,8 @@
               "$ref": "#/components/schemas/AttitudeMode"
             },
             "title": "Modos de actitud",
-            "type": "array"
+            "type": "array",
+            "x-add-label": "Agregar modo de actitud"
           },
           "criteria": {
             "$ref": "#/components/schemas/Criteria",
@@ -1624,6 +1637,7 @@
             "description": "Vacío: órbita circular (igual al perigeo).",
             "title": "Altitud del apogeo",
             "x-display-unit": "km",
+            "x-placeholder": "vacío = circular",
             "x-show-if": {
               "type": [
                 "keplerian"
@@ -1659,7 +1673,7 @@
               }
             ],
             "description": "Hora local (solar media) del nodo ascendente, HH:MM.",
-            "title": "LTAN",
+            "title": "Hora local del nodo ascendente",
             "x-input": "time",
             "x-show-if": {
               "type": [
@@ -1704,7 +1718,7 @@
             },
             "x-notes": {
               "geo": "Altitud 35 786 km, circular y ecuatorial.",
-              "sso": "La inclinación la fija la altitud y se calcula en Entorno."
+              "sso": "En una SSO la inclinación la fija la altitud: se calcula en Entorno."
             }
           }
         },

@@ -809,6 +809,8 @@ export interface components {
       /** Cell Id */
       cell_id: string;
       context: components["schemas"]["CellContext"];
+      /** Outdates */
+      outdates: string[];
       /** Problems */
       problems: components["schemas"]["Problem"][];
       /** Provenance */
@@ -936,7 +938,7 @@ export interface components {
        */
       qualification_margin: number | null;
       /**
-       * Caras de radiador
+       * Caras permitidas para radiador
        * @description Caras donde se permite ubicar radiadores. Vacío: sin restricción.
        */
       radiator_faces?: components["schemas"]["Face"][];
@@ -1179,7 +1181,7 @@ export interface components {
        */
       description?: string | null;
       /**
-       * Vida útil de diseño
+       * Vida útil
        * @description Define el fin de vida (degradación de recubrimientos, EOL).
        */
       design_life?: number | null;
@@ -1313,7 +1315,7 @@ export interface components {
       /** Inclinación */
       inclination?: number | null;
       /**
-       * LTAN
+       * Hora local del nodo ascendente
        * @description Hora local (solar media) del nodo ascendente, HH:MM.
        */
       ltan?: string | null;

@@ -12,7 +12,11 @@ JSON Schema extensions read by the UI to build the form (presentation only):
 - ``x-show-if``: ``{sibling field: [values]}``; the field only applies for those values.
 - ``x-notes``: ``{enum value: note}`` shown when that value is selected.
 - ``x-input``: ``textarea`` or ``time`` for text fields.
+- ``x-placeholder``: text shown while the field is empty.
 - ``x-default``: library default of the field (its provenance is ``default`` until changed).
+- ``x-default-source``: where the library default comes from (e.g. a standard).
+- ``x-column-title``: short title of a field shown as a table column.
+- ``x-add-label``: label of the action that adds an item to a list.
 """
 
 import math
@@ -32,6 +36,8 @@ MISSION_SCHEMA_VERSION = 1
 MIN_ALTITUDE_M = 100_000.0
 """Lowest altitude accepted for an orbit (Kármán line)."""
 
+MARGINS_SOURCE = "ECSS-E-ST-31C"
+"""Standard the default margins come from."""
 DEFAULT_UNCERTAINTY_MARGIN_K = 10.0
 """ECSS-E-ST-31C, uncorrelated model. To be verified against the standard."""
 DEFAULT_ACCEPTANCE_MARGIN_K = 5.0
@@ -102,7 +108,6 @@ class General(BaseModel):
         default=None,
         title="Descripción",
         description="Objetivo y notas generales.",
-        json_schema_extra={"x-input": "textarea"},
     )
     launch_date: date | None = Field(
         default=None,
@@ -111,7 +116,7 @@ class General(BaseModel):
     )
     design_life: float | None = Field(
         default=None,
-        title="Vida útil de diseño",
+        title="Vida útil",
         description="Define el fin de vida (degradación de recubrimientos, EOL).",
         json_schema_extra=_unit("s", "años"),
     )
@@ -129,7 +134,7 @@ class Orbit(BaseModel):
             "x-enum-labels": ORBIT_TYPE_LABELS,
             "x-default": OrbitType.SSO.value,
             "x-notes": {
-                "sso": "La inclinación la fija la altitud y se calcula en Entorno.",
+                "sso": "En una SSO la inclinación la fija la altitud: se calcula en Entorno.",
                 "geo": "Altitud 35 786 km, circular y ecuatorial.",
             },
         },
@@ -142,7 +147,7 @@ class Orbit(BaseModel):
     )
     ltan: str | None = Field(
         default=None,
-        title="LTAN",
+        title="Hora local del nodo ascendente",
         description="Hora local (solar media) del nodo ascendente, HH:MM.",
         json_schema_extra={"x-input": "time", **_SSO_ONLY},
     )
@@ -155,7 +160,9 @@ class Orbit(BaseModel):
         default=None,
         title="Altitud del apogeo",
         description="Vacío: órbita circular (igual al perigeo).",
-        json_schema_extra=_unit("m", "km", _KEPLERIAN_ONLY),
+        json_schema_extra=_unit(
+            "m", "km", {**_KEPLERIAN_ONLY, "x-placeholder": "vacío = circular"}
+        ),
     )
     inclination: float | None = Field(
         default=None,
@@ -176,6 +183,9 @@ class Envelope(BaseModel):
     )
 
 
+_TARGET_EXTRA: JsonDict = {"x-enum-labels": TARGET_LABELS, "x-column-title": "Dirección"}
+
+
 class AttitudeMode(BaseModel):
     """Attitude from two body axis → direction pairs: the primary holds exactly, the secondary
     sets the rotation about the primary."""
@@ -186,14 +196,18 @@ class AttitudeMode(BaseModel):
     name: str | None = Field(default=None, title="Nombre")
     primary_axis: Axis | None = Field(default=None, title="Eje primario")
     primary_target: Target | None = Field(
-        default=None, title="Dirección primaria", json_schema_extra={"x-enum-labels": TARGET_LABELS}
+        default=None, title="Dirección primaria", json_schema_extra=_TARGET_EXTRA
     )
     secondary_axis: Axis | None = Field(default=None, title="Eje secundario")
     secondary_target: Target | None = Field(
         default=None,
         title="Dirección secundaria",
-        json_schema_extra={"x-enum-labels": TARGET_LABELS},
+        json_schema_extra=_TARGET_EXTRA,
     )
+
+
+def _margin_default(value: float) -> JsonDict:
+    return {"x-default": value, "x-default-source": MARGINS_SOURCE}
 
 
 class Criteria(BaseModel):
@@ -201,19 +215,19 @@ class Criteria(BaseModel):
         default=DEFAULT_UNCERTAINTY_MARGIN_K,
         title="Margen de incertidumbre",
         description="Incertidumbre de las predicciones (ΔT).",
-        json_schema_extra=_unit("K", extra={"x-default": DEFAULT_UNCERTAINTY_MARGIN_K}),
+        json_schema_extra=_unit("K", extra=_margin_default(DEFAULT_UNCERTAINTY_MARGIN_K)),
     )
     acceptance_margin: float | None = Field(
         default=DEFAULT_ACCEPTANCE_MARGIN_K,
         title="Margen de aceptación",
         description="ΔT.",
-        json_schema_extra=_unit("K", extra={"x-default": DEFAULT_ACCEPTANCE_MARGIN_K}),
+        json_schema_extra=_unit("K", extra=_margin_default(DEFAULT_ACCEPTANCE_MARGIN_K)),
     )
     qualification_margin: float | None = Field(
         default=DEFAULT_QUALIFICATION_MARGIN_K,
         title="Margen de calificación",
         description="Sobre el de aceptación (ΔT).",
-        json_schema_extra=_unit("K", extra={"x-default": DEFAULT_QUALIFICATION_MARGIN_K}),
+        json_schema_extra=_unit("K", extra=_margin_default(DEFAULT_QUALIFICATION_MARGIN_K)),
     )
     heater_power_budget: float | None = Field(
         default=None,
@@ -226,7 +240,7 @@ class Criteria(BaseModel):
     )
     radiator_faces: list[Face] = Field(
         default_factory=list[Face],
-        title="Caras de radiador",
+        title="Caras permitidas para radiador",
         description="Caras donde se permite ubicar radiadores. Vacío: sin restricción.",
     )
 
@@ -239,7 +253,9 @@ class MissionArtifact(BaseModel):
     orbit: Orbit = Field(default_factory=Orbit, title="Órbita")
     envelope: Envelope = Field(default_factory=Envelope, title="Envolvente")
     attitude_modes: list[AttitudeMode] = Field(
-        default_factory=list[AttitudeMode], title="Modos de actitud"
+        default_factory=list[AttitudeMode],
+        title="Modos de actitud",
+        json_schema_extra={"x-add-label": "Agregar modo de actitud"},
     )
     criteria: Criteria = Field(default_factory=Criteria, title="Criterios y restricciones")
 
@@ -301,7 +317,7 @@ def validate_mission(artifact: MissionArtifact) -> list[Problem]:
 
 def _validate_general(p: _Problems, general: General) -> None:
     p.required("general.launch_date", general.launch_date, "la fecha de lanzamiento")
-    if p.required("general.design_life", general.design_life, "la vida útil de diseño"):
+    if p.required("general.design_life", general.design_life, "la vida útil"):
         p.positive("general.design_life", general.design_life, "La vida útil")
 
 
@@ -312,7 +328,7 @@ _ORBIT_FIELDS: dict[OrbitType, tuple[str, ...]] = {
 }
 _ORBIT_LABELS = {
     "altitude": "la altitud",
-    "ltan": "el LTAN",
+    "ltan": "la hora local del nodo ascendente",
     "perigee_altitude": "la altitud del perigeo",
     "apogee_altitude": "la altitud del apogeo",
     "inclination": "la inclinación",
@@ -344,8 +360,11 @@ def _validate_orbit(p: _Problems, orbit: Orbit) -> None:
                     ProblemCode.SSO_ALTITUDE,
                     f"No hay órbitas heliosincrónicas por encima de {_km(max_altitude)}.",
                 )
-        if p.required("orbit.ltan", orbit.ltan, "el LTAN") and not _TIME.match(orbit.ltan or ""):
-            p.add("orbit.ltan", ProblemCode.FORMAT, "El LTAN tiene que ser una hora HH:MM.")
+        ltan = orbit.ltan
+        if p.required("orbit.ltan", ltan, _ORBIT_LABELS["ltan"]) and not _TIME.match(ltan or ""):
+            p.add(
+                "orbit.ltan", ProblemCode.FORMAT, "La hora local tiene que tener el formato HH:MM."
+            )
     elif orbit.type is OrbitType.KEPLERIAN:
         perigee = orbit.perigee_altitude
         if p.required("orbit.perigee_altitude", perigee, "la altitud del perigeo"):
