@@ -60,10 +60,11 @@ def test_copy_system_snapshots_cells_and_internal_links(phase0: Project) -> None
     assert [c.stage for c in system.cells] == [
         S.MISSION,
         S.ENVIRONMENT,
+        S.EQUIPMENT,
         S.GLOBAL_BALANCE,
         S.TCS_CONCEPT,
     ]
-    assert len(fragment.links) == 3
+    assert len(fragment.links) == 4
 
 
 def test_copy_cell_keeps_only_links_inside_the_fragment(phase0: Project) -> None:
@@ -101,7 +102,7 @@ def test_paste_system_creates_new_ids_and_internal_links(phase0: Project) -> Non
     assert _stages(phase0, "F0 (2)") == _stages(phase0, "F0")
     assert _pairs(phase0, {"F0 (2)"}) == _pairs(phase0, {"F0"})
     assert outcome.created_ids[0] == pasted.id
-    assert len(outcome.created_ids) == 1 + 4 + 3
+    assert len(outcome.created_ids) == 1 + 5 + 4
     assert outcome.summary == "Pegó el sistema «F0 (2)»."
 
 
@@ -141,7 +142,7 @@ def test_paste_cell_into_target_system(phase0: Project) -> None:
     mission = phase0.cells[0]
     outcome = paste(phase0, copy(phase0, [], [mission.id]), target_system_id=system.id)
     assert len(phase0.systems) == 1
-    assert len(system.cell_ids) == 5
+    assert len(system.cell_ids) == 6
     names = [c.name for c in phase0.cells if c.system_id == system.id]
     assert names[-1] == f"{mission.name} (2)"
     assert outcome.summary == "Pegó la celda en el sistema «F0»."
@@ -177,7 +178,7 @@ def test_paste_into_another_project(phase0: Project) -> None:
     other = Project(id="other", name="other")
     paste(other, copy(phase0, [phase0.systems[0].id], []))
     assert [s.name for s in other.systems] == ["F0"]
-    assert len(other.cells) == 4 and len(other.links) == 3
+    assert len(other.cells) == 5 and len(other.links) == 4
 
 
 # ---------------------------------------------------------------- invalid fragments
@@ -265,7 +266,7 @@ def test_paste_is_one_undoable_change_with_author() -> None:
     after = doc.project.model_copy(deep=True)
     doc.undo(AGENT)
     assert [s.name for s in doc.project.systems] == ["F0"]
-    assert len(doc.project.cells) == 4
+    assert len(doc.project.cells) == 5
     assert doc.state().redo_label == "pegar"
     doc.redo(AGENT)
     assert doc.project == after
@@ -288,4 +289,4 @@ def test_summary_of_mixed_paste(phase0: Project) -> None:
     outcome = paste(phase0, fragment, target_system_id=other.id)
     assert outcome.summary == "Pegó el sistema «F0 (2)» y la celda en el sistema «M»."
     outcome = paste(phase0, copy(phase0, [system.id, other.id], []))
-    assert outcome.summary == "Pegó 2 sistemas con 6 celdas."
+    assert outcome.summary == "Pegó 2 sistemas con 7 celdas."

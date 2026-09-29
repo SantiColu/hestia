@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from hestia_project.base import Schema
+from hestia_project.catalog import StageType
 from hestia_project.errors import (
     JustificationRequiredError,
     NothingToRedoError,
@@ -20,7 +21,7 @@ from hestia_project.history import (
     Operation,
 )
 from hestia_project.model import Project
-from hestia_project.schematic import Outcome
+from hestia_project.schematic import Outcome, missing_requirements
 
 DEFAULT_PROJECT_NAME = "Sin título"
 
@@ -46,6 +47,9 @@ class DocumentState(Schema):
 class ProjectView(Schema):
     project: Project
     document: DocumentState
+    missing: dict[str, list[StageType]]
+    """Cells whose context lacks required stage types (cell id → missing types, ADR 0016).
+    Cells with everything they need are not listed."""
 
 
 class ProjectDocument:
@@ -97,7 +101,9 @@ class ProjectDocument:
         )
 
     def view(self) -> ProjectView:
-        return ProjectView(project=self.project.model_copy(deep=True), document=self.state())
+        project = self.project.model_copy(deep=True)
+        missing = {c.id: m for c in project.cells if (m := missing_requirements(project, c.id))}
+        return ProjectView(project=project, document=self.state(), missing=missing)
 
     def changes(self) -> list[Change]:
         return [record.change for record in self.history]

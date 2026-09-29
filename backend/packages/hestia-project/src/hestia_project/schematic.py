@@ -1,15 +1,16 @@
-"""Schematic operations (ADR 0009).
+"""Schematic operations (ADR 0009, 0016).
 
 Every operation mutates the given ``Project`` in place and returns an ``Outcome``. Callers
 (``ProjectDocument``) run operations on a copy and commit only on success, so a failed
 operation never leaves a half-applied change.
 
-Rules enforced here:
+Rules enforced here (``docs/workflow-fases-0-1.md``):
 
-- A link is valid only if the source stage type feeds an input of the target stage type
-  (``catalog.STAGES``), the target input has no other source and the link graph stays acyclic.
-- Changing the inputs of a cell (link, unlink, deleting its source) marks it and everything
-  downstream as ``outdated``, across systems. Cells that never ran stay ``never_run``.
+- The context of a cell is every cell upstream of it, by stage type. A link passes the whole
+  context of its source. ``check_link`` holds the five link rules.
+- Linking, unlinking or losing a source marks the target and everything downstream as
+  ``outdated``, across systems. Cells that never ran stay ``never_run`` and form stages are not
+  outdated by upstream changes (ADR 0017).
 """
 
 import uuid
@@ -18,7 +19,15 @@ from collections.abc import Iterable
 from pydantic import Field, model_validator
 
 from hestia_project.base import Schema
-from hestia_project.catalog import STAGES, TEMPLATES, StageType, TemplateId, accepts
+from hestia_project.catalog import (
+    ORDER,
+    STAGES,
+    TEMPLATES,
+    StageKind,
+    StageType,
+    TemplateId,
+    before,
+)
 from hestia_project.errors import InvalidOperationError, NotFoundError
 from hestia_project.model import Cell, CellStatus, Link, Position, Project, System
 
@@ -110,13 +119,16 @@ def invalidate(project: Project, cell_ids: Iterable[str]) -> list[str]:
     """Mark ``cell_ids`` and everything downstream as outdated.
 
     Only cells with results to invalidate change: ``never_run`` and ``outdated`` stay as they
-    are. Returns the ids that changed, in project order.
+    are, and form stages keep their status (their artifact is entered, not computed from the
+    context). Returns the ids that changed, in project order.
     """
     targets = set(cell_ids)
     affected = targets | downstream(project, targets)
     changed: list[str] = []
     for cell in project.cells:
-        if cell.id in affected and cell.status in (CellStatus.UP_TO_DATE, CellStatus.FAILED):
+        if cell.id not in affected or STAGES[cell.stage].kind is StageKind.FORM:
+            continue
+        if cell.status in (CellStatus.UP_TO_DATE, CellStatus.FAILED):
             cell.status = CellStatus.OUTDATED
             changed.append(cell.id)
     return changed
@@ -143,48 +155,202 @@ def unique_system_name(project: Project, name: str) -> str:
     return f"{name} ({n})"
 
 
+# ---------------------------------------------------------------- context (ADR 0016)
+
+
+class ContextEntry(Schema):
+    """A stage type in the context of a cell and the cell that provides it."""
+
+    stage: StageType
+    cell_id: str
+    cell_name: str
+    system_id: str
+
+
+class CellContext(Schema):
+    """Resolved context of a cell: every cell upstream of it, by stage type."""
+
+    cell_id: str
+    stage: StageType
+    entries: list[ContextEntry]
+    """In catalog order. A collector may list several cells of the same type."""
+    missing: list[StageType]
+    """Required stage types absent from the context, in catalog order. Empty: can run."""
+
+
+def _stage_name(stage: StageType) -> str:
+    return STAGES[stage].default_name
+
+
+def _names(stages: Iterable[StageType]) -> str:
+    return ", ".join(f"«{_stage_name(s)}»" for s in sorted(set(stages), key=ORDER.__getitem__))
+
+
+def _passes_context(cell: Cell) -> bool:
+    """Collectors are terminal: they pass no context downstream."""
+    return STAGES[cell.stage].kind is not StageKind.COLLECTOR
+
+
+def context_cells(project: Project, cell_id: str) -> dict[StageType, list[str]]:
+    """Cells upstream of ``cell_id``, by stage type (all of them, not only direct parents).
+
+    A link passes the whole context of its source. Collectors pass nothing. Outside collectors
+    each list has one cell when the schematic follows the link rules.
+    """
+    cells = {c.id: c for c in project.cells}
+    parents: dict[str, list[str]] = {}
+    for lk in project.links:
+        parents.setdefault(lk.target_cell_id, []).append(lk.source_cell_id)
+    result: dict[StageType, list[str]] = {}
+    seen: set[str] = set()
+    frontier = [cell_id]
+    while frontier:
+        current = frontier.pop()
+        for source_id in parents.get(current, []):
+            if source_id in seen:
+                continue
+            seen.add(source_id)
+            source = cells[source_id]
+            if not _passes_context(source):
+                continue
+            result.setdefault(source.stage, []).append(source_id)
+            frontier.append(source_id)
+    return result
+
+
+def missing_requirements(project: Project, cell_id: str) -> list[StageType]:
+    cell = get_cell(project, cell_id)
+    present = context_cells(project, cell_id)
+    return [s for s in STAGES[cell.stage].requires if s not in present]
+
+
+def cell_context(project: Project, cell_id: str) -> CellContext:
+    cell = get_cell(project, cell_id)
+    by_type = context_cells(project, cell_id)
+    entries: list[ContextEntry] = []
+    for stage in sorted(by_type, key=ORDER.__getitem__):
+        for cid in by_type[stage]:
+            provider = get_cell(project, cid)
+            entries.append(
+                ContextEntry(
+                    stage=stage,
+                    cell_id=cid,
+                    cell_name=provider.name,
+                    system_id=provider.system_id,
+                )
+            )
+    missing = sorted(
+        (s for s in STAGES[cell.stage].requires if s not in by_type), key=ORDER.__getitem__
+    )
+    return CellContext(cell_id=cell.id, stage=cell.stage, entries=entries, missing=missing)
+
+
 # ---------------------------------------------------------------- link validation
 
 
-def _input_source(project: Project, target_cell_id: str, input_stage: StageType) -> Link | None:
-    for link in project.links:
-        if link.target_cell_id == target_cell_id and link.input is input_stage:
-            return link
-    return None
+def _provides(project: Project, cell: Cell) -> set[StageType]:
+    """Stage types a link from ``cell`` passes on: the cell itself and its context."""
+    return {cell.stage, *context_cells(project, cell.id)}
 
 
 def check_link(project: Project, source_cell_id: str, target_cell_id: str) -> None:
-    """Raise ``InvalidOperationError`` if the link is not valid (see module docstring)."""
+    """Raise ``InvalidOperationError`` if the link A → B breaks a rule (ADR 0016).
+
+    1. The graph stays acyclic.
+    2. B is not a root.
+    3. Parents: B had no parent, or the context of A (including A) shares no stage type with
+       the current context of B (union). Collectors accept several parents of the same type.
+    4. No repeats: the resulting context of B (and of everything downstream of it) repeats no
+       stage type and does not contain B's own type. Collectors may repeat types.
+    5. Order: every type in the resulting context comes before B's type in the catalog.
+
+    Missing requirements never block a link.
+    """
     source = get_cell(project, source_cell_id)
     target = get_cell(project, target_cell_id)
     if source.id == target.id:
-        raise InvalidOperationError("Una celda no puede vincularse consigo misma.")
-    if not accepts(target.stage, source.stage):
+        raise InvalidOperationError("Una celda no puede vincularse consigo misma.", rule="cycle")
+    if any(
+        lk.source_cell_id == source.id and lk.target_cell_id == target.id for lk in project.links
+    ):
         raise InvalidOperationError(
-            f"«{source.name}» no puede alimentar a «{target.name}»: "
-            "ese vínculo no está entre los válidos del workflow.",
-            source_stage=source.stage,
-            target_stage=target.stage,
+            f"«{source.name}» ya alimenta a «{target.name}».", rule="duplicate"
         )
-    existing = _input_source(project, target.id, source.stage)
-    if existing is not None:
+    if STAGES[target.stage].root:
         raise InvalidOperationError(
-            f"La entrada de «{target.name}» ya tiene fuente; desvinculala primero.",
-            link_id=existing.id,
+            f"«{target.name}» es una raíz ({_stage_name(target.stage)}): no admite vínculos "
+            "entrantes.",
+            rule="root",
+        )
+    if not _passes_context(source):
+        raise InvalidOperationError(
+            f"«{source.name}» es un colector: no pasa contexto aguas abajo.", rule="collector"
         )
     if source.id in downstream(project, [target.id]):
-        raise InvalidOperationError("El vínculo crearía un ciclo.")
+        raise InvalidOperationError("El vínculo crearía un ciclo.", rule="cycle")
+
+    target_collects = STAGES[target.stage].kind is StageKind.COLLECTOR
+    has_parent = any(lk.target_cell_id == target.id for lk in project.links)
+    if has_parent and not target_collects:
+        shared = _provides(project, source) & set(context_cells(project, target.id))
+        if shared:
+            raise InvalidOperationError(
+                f"«{target.name}» ya tiene padre y su contexto ya incluye {_names(shared)}: "
+                f"«{source.name}» solo puede sumarse si no comparten ningún tipo (unión).",
+                rule="parents",
+                shared=sorted(shared, key=ORDER.__getitem__),
+            )
+
+    probe = Link(id="__probe__", source_cell_id=source.id, target_cell_id=target.id)
+    project.links.append(probe)
+    try:
+        affected = [target.id, *sorted(downstream(project, [target.id]))]
+        for cid in affected:
+            _check_context(project, get_cell(project, cid), target)
+    finally:
+        project.links.remove(probe)
+
+
+def _check_context(project: Project, cell: Cell, target: Cell) -> None:
+    """Rules 4 and 5 on the (tentative) context of ``cell``."""
+    by_type = context_cells(project, cell.id)
+    where = "" if cell.id == target.id else f" (aguas abajo, en «{cell.name}»)"
+    if STAGES[cell.stage].kind is not StageKind.COLLECTOR:
+        repeated = [s for s, ids in by_type.items() if len(ids) > 1]
+        if repeated:
+            raise InvalidOperationError(
+                f"El contexto de «{cell.name}» repetiría {_names(repeated)}{where}: "
+                "cada tipo tiene que venir de una sola celda.",
+                rule="repeat",
+                repeated=sorted(repeated, key=ORDER.__getitem__),
+            )
+        if cell.stage in by_type:
+            raise InvalidOperationError(
+                f"El contexto de «{cell.name}» incluiría otra celda de su mismo tipo{where}.",
+                rule="repeat",
+                repeated=[cell.stage],
+            )
+    late = [s for s in by_type if not before(s, cell.stage)]
+    if late:
+        raise InvalidOperationError(
+            f"{_names(late)} no puede ir antes de «{_stage_name(cell.stage)}»{where}: "
+            "el contexto sigue el orden del catálogo.",
+            rule="order",
+            late=sorted(late, key=ORDER.__getitem__),
+        )
+
+
+def is_valid_link(project: Project, source_cell_id: str, target_cell_id: str) -> bool:
+    try:
+        check_link(project, source_cell_id, target_cell_id)
+    except InvalidOperationError:
+        return False
+    return True
 
 
 def add_link(project: Project, source_cell_id: str, target_cell_id: str) -> Link:
     check_link(project, source_cell_id, target_cell_id)
-    source = get_cell(project, source_cell_id)
-    link = Link(
-        id=new_id("link"),
-        source_cell_id=source_cell_id,
-        target_cell_id=target_cell_id,
-        input=source.stage,
-    )
+    link = Link(id=new_id("link"), source_cell_id=source_cell_id, target_cell_id=target_cell_id)
     project.links.append(link)
     return link
 
@@ -192,14 +358,7 @@ def add_link(project: Project, source_cell_id: str, target_cell_id: str) -> Link
 def link_targets(project: Project, source_cell_id: str) -> list[str]:
     """Cells that the given cell could feed right now."""
     get_cell(project, source_cell_id)
-    valid: list[str] = []
-    for cell in project.cells:
-        try:
-            check_link(project, source_cell_id, cell.id)
-        except InvalidOperationError:
-            continue
-        valid.append(cell.id)
-    return valid
+    return [cell.id for cell in project.cells if is_valid_link(project, source_cell_id, cell.id)]
 
 
 # ---------------------------------------------------------------- layout
@@ -260,28 +419,31 @@ def _new_cell(project: Project, system: System, stage: StageType, name: str | No
     return cell
 
 
-def _autolink(project: Project, system: System, new_cell_ids: set[str]) -> list[Link]:
-    """Link cells of ``system`` where exactly one cell in the system can feed a free input.
+def _autolink(project: Project, system: System, cell: Cell) -> list[Link]:
+    """Link a new cell to the cells of its system (``add_cell``).
 
-    Only pairs that involve a new cell are considered, so links removed on purpose between
+    1. As target: walk the other cells in reverse catalog order and add each valid link that
+       brings a missing requirement, until the requirements are covered.
+    2. As source: link it to the cells that miss a requirement it brings, if valid.
+
+    Only links that involve the new cell are created, so links removed on purpose between
     existing cells are not recreated.
     """
     created: list[Link] = []
-    cells = [get_cell(project, cid) for cid in system.cell_ids]
-    for target in cells:
-        for input_stage in STAGES[target.stage].inputs:
-            if _input_source(project, target.id, input_stage) is not None:
-                continue
-            candidates = [c for c in cells if c.stage is input_stage and c.id != target.id]
-            if len(candidates) != 1:
-                continue
-            source = candidates[0]
-            if source.id not in new_cell_ids and target.id not in new_cell_ids:
-                continue
-            try:
-                created.append(add_link(project, source.id, target.id))
-            except InvalidOperationError:
-                continue
+    position = {cid: i for i, cid in enumerate(system.cell_ids)}
+    others = [get_cell(project, cid) for cid in system.cell_ids if cid != cell.id]
+    for candidate in sorted(others, key=lambda c: (ORDER[c.stage], position[c.id]), reverse=True):
+        missing = set(missing_requirements(project, cell.id))
+        if not missing:
+            break
+        if _provides(project, candidate) & missing and is_valid_link(
+            project, candidate.id, cell.id
+        ):
+            created.append(add_link(project, candidate.id, cell.id))
+    for target in others:
+        missing = set(missing_requirements(project, target.id))
+        if _provides(project, cell) & missing and is_valid_link(project, cell.id, target.id):
+            created.append(add_link(project, cell.id, target.id))
     return created
 
 
@@ -295,39 +457,42 @@ def _create_system(
         position=position or _default_position(project, len(stages)),
     )
     project.systems.append(system)
-    new_ids = {_new_cell(project, system, stage, None).id for stage in stages}
-    _autolink(project, system, new_ids)
+    by_stage = {stage: _new_cell(project, system, stage, None) for stage in stages}
+    if blueprint.template is not None:
+        for source, target in TEMPLATES[blueprint.template].links:
+            add_link(project, by_stage[source].id, by_stage[target].id)
     return system
 
 
-def _free_inputs(project: Project, system: System) -> list[tuple[Cell, StageType]]:
-    free: list[tuple[Cell, StageType]] = []
-    for cid in system.cell_ids:
-        cell = get_cell(project, cid)
-        for input_stage in STAGES[cell.stage].inputs:
-            if _input_source(project, cell.id, input_stage) is None:
-                free.append((cell, input_stage))
-    return free
+def _link_branch(project: Project, source: Cell, system: System) -> Link | None:
+    """Link ``source`` to the first cell of ``system`` (catalog order) that accepts it."""
+    cells = sorted(
+        (get_cell(project, cid) for cid in system.cell_ids), key=lambda c: ORDER[c.stage]
+    )
+    for cell in cells:
+        if is_valid_link(project, source.id, cell.id):
+            return add_link(project, source.id, cell.id)
+    return None
 
 
-def blueprint_open_inputs(blueprint: Blueprint) -> set[StageType]:
-    """Stage types that could feed a system created from ``blueprint`` when branching."""
-    scratch = Project(id="scratch", name="scratch")
+def can_branch(project: Project, cell_id: str, blueprint: Blueprint) -> bool:
+    """Whether ``blueprint`` can be branched from ``cell_id``. Does not change the project."""
+    scratch = project.model_copy(deep=True)
+    source = get_cell(scratch, cell_id)
     system = _create_system(scratch, blueprint, None, Position(x=0, y=0))
-    return {input_stage for _, input_stage in _free_inputs(scratch, system)}
+    return _link_branch(scratch, source, system) is not None
 
 
 def branch_targets(project: Project, blueprint: Blueprint) -> list[str]:
     """Cells onto which ``blueprint`` can be dropped to branch (see ``branch``)."""
-    open_inputs = blueprint_open_inputs(blueprint)
-    return [cell.id for cell in project.cells if cell.stage in open_inputs]
+    return [cell.id for cell in project.cells if can_branch(project, cell.id, blueprint)]
 
 
 def branch_options(project: Project, cell_id: str) -> list[Blueprint]:
     """Templates and stages that can be branched from ``cell_id`` (see ``branch``)."""
-    cell = get_cell(project, cell_id)
+    get_cell(project, cell_id)
     candidates = [Blueprint(template=t) for t in TEMPLATES] + [Blueprint(stage=s) for s in STAGES]
-    return [b for b in candidates if cell.stage in blueprint_open_inputs(b)]
+    return [b for b in candidates if can_branch(project, cell_id, b)]
 
 
 # ---------------------------------------------------------------- operations
@@ -350,10 +515,10 @@ def create_system(
 def add_cell(
     project: Project, system_id: str, stage: StageType, name: str | None = None
 ) -> Outcome:
-    """Add a cell to a system, linking it to cells of the same system when unambiguous."""
+    """Add a cell to a system and link it to the cells of that system (see ``_autolink``)."""
     system = get_system(project, system_id)
     cell = _new_cell(project, system, stage, name)
-    links = _autolink(project, system, {cell.id})
+    links = _autolink(project, system, cell)
     outdated = invalidate(
         project, [link.target_cell_id for link in links if link.target_cell_id != cell.id]
     )
@@ -393,18 +558,13 @@ def branch(
     name: str | None = None,
     position: Position | None = None,
 ) -> Outcome:
-    """Create a new system from ``blueprint`` fed by ``cell_id``.
+    """Create a new system from ``blueprint`` and link ``cell_id`` to its first cell (catalog
+    order) that accepts it with a valid link.
 
-    The new cells whose free inputs accept the source stage type get linked from the source.
-    Fails if none does (e.g. dropping «Fase 0» onto a mission cell).
+    Fails if none does (e.g. «Fase 0» from any cell: its cells are roots or already have their
+    parent inside the system).
     """
     source = get_cell(project, cell_id)
-    if source.stage not in blueprint_open_inputs(blueprint):
-        raise InvalidOperationError(
-            f"No se puede ramificar «{blueprint.default_name()}» desde «{source.name}»: "
-            "ninguna de sus entradas acepta esa celda.",
-            cell_id=cell_id,
-        )
     source_system = get_system(project, source.system_id)
     n_cells = len(blueprint.stages())
     system = _create_system(
@@ -413,14 +573,16 @@ def branch(
         name,
         position or _position_right_of(project, source_system, n_cells),
     )
-    links = [
-        add_link(project, source.id, cell.id)
-        for cell, input_stage in _free_inputs(project, system)
-        if input_stage is source.stage
-    ]
+    new_link = _link_branch(project, source, system)
+    if new_link is None:
+        raise InvalidOperationError(
+            f"No se puede ramificar «{blueprint.default_name()}» desde «{source.name}»: "
+            "ninguna de sus celdas la acepta con un vínculo válido.",
+            cell_id=cell_id,
+        )
     return Outcome(
         summary=f"Ramificó «{system.name}» desde «{source.name}».",
-        created_ids=[system.id, *system.cell_ids, *(lk.id for lk in links)],
+        created_ids=[system.id, *system.cell_ids, new_link.id],
     )
 
 
@@ -445,7 +607,7 @@ def move_system(project: Project, system_id: str, position: Position) -> Outcome
 def duplicate_system(project: Project, system_id: str, position: Position | None = None) -> Outcome:
     """Copy a system with its cells, internal links and incoming links from other systems.
 
-    Outgoing links to other systems are not copied: each input has a single source.
+    Cells keep their status and artifact. Outgoing links to other systems are not copied.
     """
     original = get_system(project, system_id)
     copy = System(
@@ -470,7 +632,6 @@ def duplicate_system(project: Project, system_id: str, position: Position | None
             id=new_id("link"),
             source_cell_id=mapping.get(lk.source_cell_id, lk.source_cell_id),
             target_cell_id=mapping[lk.target_cell_id],
-            input=lk.input,
         )
         project.links.append(clone_link)
         created.append(clone_link.id)

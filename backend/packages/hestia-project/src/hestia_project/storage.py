@@ -10,6 +10,7 @@ import json
 import os
 import sqlite3
 import tempfile
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -17,6 +18,7 @@ from pydantic import ValidationError
 from hestia_project import __version__
 from hestia_project.errors import ProjectFileError
 from hestia_project.history import Change, ChangeRecord
+from hestia_project.migration import relink
 from hestia_project.model import SCHEMA_VERSION, Cell, Link, Position, Project, System
 
 FILE_EXTENSION = ".hestia"
@@ -45,10 +47,10 @@ CREATE TABLE cells (
 );
 CREATE TABLE links (
     id             TEXT PRIMARY KEY,
+    ord            INTEGER NOT NULL,
     source_cell_id TEXT NOT NULL REFERENCES cells(id),
     target_cell_id TEXT NOT NULL REFERENCES cells(id),
-    input          TEXT NOT NULL,
-    UNIQUE (target_cell_id, input)
+    UNIQUE (source_cell_id, target_cell_id)
 );
 CREATE TABLE changes (
     seq         INTEGER PRIMARY KEY,
@@ -94,9 +96,10 @@ def _build(conn: sqlite3.Connection, project: Project, history: list[ChangeRecor
             for i, c in enumerate(project.cells)
         ],
     )
+    # Links keep creation order: migrations re-evaluate them in that order.
     conn.executemany(
         "INSERT INTO links VALUES (?, ?, ?, ?)",
-        [(lk.id, lk.source_cell_id, lk.target_cell_id, lk.input.value) for lk in project.links],
+        [(lk.id, i, lk.source_cell_id, lk.target_cell_id) for i, lk in enumerate(project.links)],
     )
     conn.executemany(
         "INSERT INTO changes VALUES (?, ?, ?, ?, ?)",
@@ -138,8 +141,25 @@ def write_project(path: Path, project: Project, history: list[ChangeRecord]) -> 
         raise
 
 
+@dataclass
+class ProjectFile:
+    """A project read from disk."""
+
+    project: Project
+    history: list[ChangeRecord]
+    warnings: list[str] = field(default_factory=list[str])
+    """What an upgrade from an older schema version dropped (e.g. links that are no longer
+    valid). Not part of the history."""
+
+
 def read_project(path: Path) -> tuple[Project, list[ChangeRecord]]:
     """Read a ``.hestia`` file. Raises ``ProjectFileError`` if it is not a valid project."""
+    loaded = read_project_file(path)
+    return loaded.project, loaded.history
+
+
+def read_project_file(path: Path) -> ProjectFile:
+    """Read a ``.hestia`` file, upgrading older schema versions, with the upgrade warnings."""
     if not path.is_file():
         raise ProjectFileError(f"No existe el archivo {str(path)!r}.", path=str(path))
     try:
@@ -159,7 +179,7 @@ def read_project(path: Path) -> tuple[Project, list[ChangeRecord]]:
             conn.close()
 
 
-def _read(conn: sqlite3.Connection, path: Path) -> tuple[Project, list[ChangeRecord]]:
+def _read(conn: sqlite3.Connection, path: Path) -> ProjectFile:
     (app_id,) = conn.execute("PRAGMA application_id").fetchone()
     if app_id != APPLICATION_ID:
         raise ProjectFileError(f"{path.name} no es un proyecto de Hestia.", path=str(path))
@@ -197,10 +217,12 @@ def _read(conn: sqlite3.Connection, path: Path) -> tuple[Project, list[ChangeRec
             )
         )
         by_id[system_id].cell_ids.append(cid)
+    # Version 1 has no ``ord``: rows were inserted in creation order.
+    order = "rowid" if version < 2 else "ord"
     links = [
-        Link.model_validate({"id": lid, "source_cell_id": src, "target_cell_id": dst, "input": inp})
-        for lid, src, dst, inp in conn.execute(
-            "SELECT id, source_cell_id, target_cell_id, input FROM links ORDER BY rowid"
+        Link(id=lid, source_cell_id=src, target_cell_id=dst)
+        for lid, src, dst in conn.execute(
+            f"SELECT id, source_cell_id, target_cell_id FROM links ORDER BY {order}"
         )
     ]
     project = Project(
@@ -209,8 +231,12 @@ def _read(conn: sqlite3.Connection, path: Path) -> tuple[Project, list[ChangeRec
         name=meta["name"],
         systems=systems,
         cells=cells,
-        links=links,
+        links=[] if version < 2 else links,
     )
+    warnings: list[str] = []
+    if version < 2:
+        # Context through the chain (ADR 0016): re-evaluate the links with the new rules.
+        warnings = relink(project, links)
     history = [
         ChangeRecord(
             change=Change.model_validate_json(change),
@@ -221,4 +247,4 @@ def _read(conn: sqlite3.Connection, path: Path) -> tuple[Project, list[ChangeRec
             "SELECT change, before, after FROM changes ORDER BY seq"
         )
     ]
-    return project, history
+    return ProjectFile(project=project, history=history, warnings=warnings)

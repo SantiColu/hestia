@@ -27,7 +27,7 @@ def test_copy_returns_a_fragment_and_changes_nothing(opened: TestClient) -> None
     fragment = _copy(opened, system_ids=[view["project"]["systems"][0]["id"]])
     assert fragment["kind"] == "hestia.fragment"
     assert fragment["schema_version"] == 1
-    assert len(fragment["systems"][0]["cells"]) == 4 and len(fragment["links"]) == 3
+    assert len(fragment["systems"][0]["cells"]) == 5 and len(fragment["links"]) == 4
     session = opened.get("/session").json()["project"]
     assert session["document"]["revision"] == view["document"]["revision"]
     assert len(opened.get("/project/history").json()) == 1
@@ -49,7 +49,7 @@ def test_paste_is_one_change_with_author_and_undo_label(opened: TestClient) -> N
     project = body["view"]["project"]
     assert [s["name"] for s in project["systems"]] == ["F0", "F0 (2)"]
     assert project["systems"][1]["position"] == {"x": 900, "y": 0}
-    assert len(project["links"]) == 6
+    assert len(project["links"]) == 8
     document = body["view"]["document"]
     assert document["undo_label"] == "pegar"
 
@@ -67,7 +67,7 @@ def test_paste_into_a_system(opened: TestClient) -> None:
         "/project/clipboard/paste",
         json={"fragment": fragment, "target_system_id": system["id"], "justification": ""},
     ).json()
-    assert len(body["view"]["project"]["systems"][0]["cell_ids"]) == 5
+    assert len(body["view"]["project"]["systems"][0]["cell_ids"]) == 6
 
 
 def test_paste_in_another_project_and_reopen(opened: TestClient, tmp_path: Path) -> None:

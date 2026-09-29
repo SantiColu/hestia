@@ -26,7 +26,7 @@ from hestia_project.lock import ProjectLock, acquire_lock
 from hestia_project.model import Project
 from hestia_project.recents import RecentProject, RecentProjects
 from hestia_project.schematic import Outcome
-from hestia_project.storage import FILE_EXTENSION, read_project, write_project
+from hestia_project.storage import FILE_EXTENSION, read_project_file, write_project
 
 T = TypeVar("T")
 
@@ -50,6 +50,8 @@ class ProjectEvent(Schema):
     revision: int | None = None
     path: str | None = None
     change: Change | None = None
+    warnings: list[str] = Field(default_factory=list[str])
+    """For ``project_opened``: what upgrading an older file dropped (not in the history)."""
 
 
 class MutationResult(Schema):
@@ -147,18 +149,19 @@ class Workspace:
             if self._doc is not None and self._doc.path == path:
                 return self._doc.view()
             self._check_can_replace(discard_unsaved)
-            project, history = read_project(path)
+            loaded = read_project_file(path)
             lock = acquire_lock(path, self.instance_id, force=force)
             self._release()
             self._lock = lock
-            self._doc = ProjectDocument(project, path=path, history=history)
-            self.recents.touch(path, project.name)
+            self._doc = ProjectDocument(loaded.project, path=path, history=loaded.history)
+            self.recents.touch(path, loaded.project.name)
             self._emit(
                 ProjectEvent(
                     type=EventType.PROJECT_OPENED,
                     message=f"Abrió {path.name}.",
                     revision=0,
                     path=str(path),
+                    warnings=loaded.warnings,
                 )
             )
             return self._doc.view()

@@ -35,7 +35,7 @@ def test_create_from_template_records_author(opened: TestClient) -> None:
     assert change["justification"] == "baseline"
     assert change["operation"] == "create_system"
     project = body["view"]["project"]
-    assert len(project["cells"]) == 4 and len(project["links"]) == 3
+    assert len(project["cells"]) == 5 and len(project["links"]) == 4
     assert all(c["status"] == "never_run" for c in project["cells"])
     assert body["view"]["document"]["dirty"] is True
     assert body["view"]["document"]["can_undo"] is True
@@ -59,7 +59,8 @@ def test_link_validation_and_targets(opened: TestClient) -> None:
     f0, f1 = _cells(view, "F0"), _cells(view, "F1")
 
     targets = opened.get(f"/project/cells/{f0['mission']['id']}/link-targets").json()
-    assert set(targets["cell_ids"]) == {f1["discretization"]["id"], f1["margins"]["id"]}
+    # Discretization has no parent; the rest of phase 1 accepts mission by union.
+    assert set(targets["cell_ids"]) == {c["id"] for c in f1.values()}
 
     bad = opened.post(
         "/project/links",
@@ -111,13 +112,23 @@ def test_branch_and_targets(opened: TestClient) -> None:
     options = opened.get(f"/project/cells/{f0['global_balance']['id']}/branch-options").json()
     assert options == [
         {"template": "phase_1", "stage": None},
-        {"template": None, "stage": "tcs_concept"},
-        {"template": None, "stage": "solution"},
+        *(
+            {"template": None, "stage": s}
+            for s in (
+                "tcs_concept",
+                "discretization",
+                "couplings",
+                "load_cases",
+                "solution",
+                "margins",
+                "sensitivity",
+            )
+        ),
     ]
 
     invalid = opened.post(
         f"/project/cells/{f0['tcs_concept']['id']}/branch",
-        json={"template": "phase_1", "justification": ""},
+        json={"template": "phase_0", "justification": ""},
     )
     assert invalid.status_code == 422
 

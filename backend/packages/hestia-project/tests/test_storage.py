@@ -56,7 +56,7 @@ def test_file_is_sqlite_with_hestia_ids(tmp_path: Path) -> None:
     write_project(path, _document().project, [])
     conn = sqlite3.connect(path)
     assert conn.execute("PRAGMA application_id").fetchone() == (APPLICATION_ID,)
-    assert conn.execute("SELECT count(*) FROM cells").fetchone() == (10,)
+    assert conn.execute("SELECT count(*) FROM cells").fetchone() == (11,)
     conn.close()
     assert [p.name for p in tmp_path.iterdir()] == ["sat.hestia"]  # no temp leftovers
 

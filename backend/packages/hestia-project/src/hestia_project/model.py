@@ -8,8 +8,12 @@ from pydantic import Field
 from hestia_project.base import Schema
 from hestia_project.catalog import StageType
 
-SCHEMA_VERSION = 1
-"""Version of the project schema. Bump on any incompatible change to these models."""
+SCHEMA_VERSION = 2
+"""Version of the project schema. Bump on any incompatible change to these models.
+
+- 1: links name the input they feed (one source per input, ADR 0009).
+- 2: links carry the whole context of their source (ADR 0016); ``Link.input`` is gone.
+"""
 
 
 class CellStatus(StrEnum):
@@ -55,15 +59,12 @@ class System(Schema):
 
 
 class Link(Schema):
-    """Feeds the output of ``source_cell_id`` into the ``input`` of ``target_cell_id``.
-
-    Each stage type has one output, so the input is named after the source stage type.
-    """
+    """Passes the context of ``source_cell_id`` (the cell and everything upstream of it) on to
+    ``target_cell_id`` (ADR 0016)."""
 
     id: str
     source_cell_id: str
     target_cell_id: str
-    input: StageType
 
 
 class Project(Schema):
