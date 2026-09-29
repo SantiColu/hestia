@@ -38,6 +38,12 @@ def captured(monkeypatch: pytest.MonkeyPatch) -> Iterator[Captured]:
 
 
 J = {"justification": "because"}
+FRAGMENT: dict[str, Any] = {
+    "kind": "hestia.fragment",
+    "schema_version": 1,
+    "systems": [],
+    "links": [],
+}
 
 CASES: list[tuple[str, dict[str, Any], str, str, dict[str, Any] | None]] = [
     ("ping", {}, "GET", "/health", None),
@@ -121,6 +127,20 @@ CASES: list[tuple[str, dict[str, Any], str, str, dict[str, Any] | None]] = [
         {"source_cell_id": "a", "target_cell_id": "b", **J},
     ),
     ("unlink_cells", {"link_id": "l1", **J}, "DELETE", "/project/links/l1", J),
+    (
+        "copy_to_clipboard",
+        {"system_ids": ["s1"]},
+        "POST",
+        "/project/clipboard/copy",
+        {"system_ids": ["s1"], "cell_ids": []},
+    ),
+    (
+        "paste_from_clipboard",
+        {"fragment": FRAGMENT, "x": 5, "y": 6, **J},
+        "POST",
+        "/project/clipboard/paste",
+        {"fragment": FRAGMENT, "position": {"x": 5, "y": 6}, "target_system_id": None, **J},
+    ),
 ]
 
 

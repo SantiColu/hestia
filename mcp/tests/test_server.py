@@ -26,6 +26,7 @@ PROJECT_CHANGES = {
     "branch_cell",
     "link_cells",
     "unlink_cells",
+    "paste_from_clipboard",
 }
 
 

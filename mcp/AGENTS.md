@@ -30,5 +30,6 @@ Una por operación de la API (ver `api.OPERATIONS`):
 - Archivo: `get_session`, `new_project`, `open_project`, `save_project`, `save_project_as`, `close_project`, `list_recent_projects`, `remove_recent_project`.
 - Historial: `get_history`, `undo`, `redo`.
 - Esquemático: `create_system`, `rename_system`, `move_system`, `duplicate_system`, `delete_system`, `add_cell`, `rename_cell`, `delete_cell`, `branch_cell`, `list_branch_options`, `list_branch_targets`, `list_link_targets`, `link_cells`, `unlink_cells`.
+- Portapapeles (ADR 0014): `copy_to_clipboard` (devuelve el fragmento) y `paste_from_clipboard` (lo recibe; sirve para otro proyecto). Cortar = copiar + `delete_system`/`delete_cell`.
 
 Sin tool: `stream_events` (SSE para la UI; los agentes leen `get_session` y `get_history`).

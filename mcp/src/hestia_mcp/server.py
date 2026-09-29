@@ -304,6 +304,43 @@ async def unlink_cells(link_id: str, justification: str) -> Json:
     )
 
 
+# ---------------------------------------------------------------- clipboard
+
+
+@_tool("copy_to_clipboard")
+async def copy_to_clipboard(
+    system_ids: list[str] | None = None, cell_ids: list[str] | None = None
+) -> Json:
+    """Copy whole systems and/or loose cells as a versioned fragment (changes nothing).
+    Keep the returned fragment and pass it to paste_from_clipboard, in this or another project.
+    To cut, copy and then delete_system / delete_cell."""
+    return await call(
+        "copy_to_clipboard", json={"system_ids": system_ids or [], "cell_ids": cell_ids or []}
+    )
+
+
+@_tool("paste_from_clipboard")
+async def paste_from_clipboard(
+    fragment: Json,
+    justification: str,
+    x: float | None = None,
+    y: float | None = None,
+    target_system_id: str | None = None,
+) -> Json:
+    """Paste a fragment from copy_to_clipboard: new ids, internal links kept, links to cells
+    outside the fragment dropped, cells never run. One undoable change. (x, y) places the
+    top-left system; loose cells go into `target_system_id` or into a new system."""
+    return await call(
+        "paste_from_clipboard",
+        json={
+            "fragment": fragment,
+            "position": _position(x, y),
+            "target_system_id": target_system_id,
+            "justification": justification,
+        },
+    )
+
+
 def main() -> None:
     server.run(transport="stdio")
 

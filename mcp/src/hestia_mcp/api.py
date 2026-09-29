@@ -42,6 +42,8 @@ OPERATIONS: dict[str, tuple[str, str]] = {
     "list_branch_targets": ("GET", "/project/branch-targets"),
     "link_cells": ("POST", "/project/links"),
     "unlink_cells": ("DELETE", "/project/links/{link_id}"),
+    "copy_to_clipboard": ("POST", "/project/clipboard/copy"),
+    "paste_from_clipboard": ("POST", "/project/clipboard/paste"),
 }
 
 NOT_TOOLS: dict[str, str] = {
