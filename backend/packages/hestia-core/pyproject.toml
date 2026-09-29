@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Pure thermal physics for Hestia. No I/O, no other Hestia imports."
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "numpy>=2.0",
     "pydantic>=2.9",
 ]
 

@@ -1,0 +1,720 @@
+"""Analytic environment provider (ADR 0020): closed-form geometry, no propagation.
+
+Envelope: geocentric circular (or near-circular, e <= ``MAX_ECCENTRICITY``) orbits without
+thrust. Outside it, ``InputRejectedError`` with ``eccentricity_out_of_range``.
+
+Model (``docs/etapas/environment.md``, «Qué calcula»):
+
+- Sun: low-precision Astronomical Almanac position and distance (``hestia_core.sun``); the
+  irradiance of each date is ``S / r²``.
+- Orbital plane: SSO follows the mean Sun from its LTAN, drifting with the J2 nodal rate
+  (``orbits.nodal_precession_rate``, equal to the mean motion of the Sun); the LTAN dispersion
+  widens the node to ``±Δ``. LEO/MEO (``keplerian``): the mission fixes no node, so β is the
+  envelope over every node. GEO: equatorial (nominal β = solar declination), up to
+  ``geo_max_inclination`` with any node.
+- β: ``sin β = ĥ · ŝ``; over an interval of nodes it is ``A sin(Ω - alpha☉) + C`` with
+  ``A = sin i cos δ☉`` and ``C = cos i sin δ☉``, so its extremes are closed-form.
+- Eclipse: cylindrical or conical shadow (``hestia_core.eclipse``) on the circular orbit.
+- Attitude: body frame from the two axis → direction pairs (``hestia_core.attitude``).
+- Fluxes on each face: direct solar ``S nu max(0, n·ŝ)`` (nu the visible part of the Sun),
+  albedo ``S a F max(0, r̂·ŝ)`` (F the plate-to-Earth view factor, the cosine the solar zenith
+  angle at the subsatellite point, zero on the night side) and Earth IR ``OLR F``.
+
+Conditions, not cases: the extreme conditions are the β of largest and of smallest eclipse
+at the nominal and end-of-life altitudes; each flux is given at its minimum and maximum
+design values. The Sun is fixed during one orbit.
+"""
+
+import math
+from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+
+import numpy as np
+from numpy.typing import NDArray
+
+from hestia_core.attitude import AXIS_VECTORS, quaternion_from_matrix, target_directions, triad
+from hestia_core.eclipse import eclipse_fraction, visible_sun_fraction
+from hestia_core.environment.parameters import (
+    EclipseModel,
+    EnvironmentParameters,
+    ResolvedDesignValue,
+    ResolvedDesignValues,
+    nominal_altitude_m,
+    nominal_inclination_rad,
+    resolve_design_values,
+)
+from hestia_core.environment.result import (
+    AttitudeModeRef,
+    Condition,
+    ConditionOrigin,
+    DesignValue,
+    DesignValuesUsed,
+    EnvironmentResult,
+    FaceFluxes,
+    FaceProfile,
+    FluxStats,
+    MissionSeries,
+    OrbitProfile,
+    OrbitSummary,
+    ProviderInfo,
+    RangeEntry,
+    RangeQuantity,
+)
+from hestia_core.forms import InputRejectedError, Problem, ProblemCode
+from hestia_core.mission import AttitudeMode, Axis, Face, MissionArtifact, OrbitType, Target
+from hestia_core.orbits import (
+    EARTH_MU_M3_PER_S2,
+    EARTH_RADIUS_M,
+    eccentricity,
+    nodal_precession_rate,
+    orbital_period_s,
+)
+from hestia_core.sun import (
+    SECONDS_PER_DAY,
+    FloatArray,
+    earth_rotation_angle,
+    julian_date,
+    mean_sun_right_ascension,
+    solar_irradiance,
+    sun_position,
+)
+from hestia_core.view_factors import plate_to_earth_view_factor
+
+PROVIDER_NAME = "analytic"
+PROVIDER_VERSION = "1"
+"""Bump whenever the same inputs would give a different result."""
+
+MAX_ECCENTRICITY = 0.01
+"""*(propuesta)* Envelope of the circular model (ADR 0020). Pending a definitive threshold."""
+MAX_SERIES_POINTS = 200_000
+"""Guard against a mission step so small the series would not fit in the project file."""
+
+_TWO_PI = 2.0 * math.pi
+
+
+# ---------------------------------------------------------------- orbital plane
+
+
+def orbit_normal(raan_rad: float | FloatArray, inclination_rad: float) -> FloatArray:
+    """Unit orbit normal ``(sin i sin Ω, -sin i cos Ω, cos i)`` for node(s) Ω."""
+    raan = np.asarray(raan_rad, dtype=np.float64)
+    s = math.sin(inclination_rad)
+    return np.stack(
+        [s * np.sin(raan), -s * np.cos(raan), np.full_like(raan, math.cos(inclination_rad))],
+        axis=-1,
+    )
+
+
+def beta_angle(normal: FloatArray, sun_unit: FloatArray) -> FloatArray:
+    """β = asin(ĥ · ŝ), rad; positive with the Sun on the side of the orbit normal."""
+    return np.arcsin(np.clip(np.sum(normal * sun_unit, axis=-1), -1.0, 1.0))
+
+
+def _sun_angles(sun_unit: FloatArray) -> tuple[FloatArray, FloatArray]:
+    """Right ascension and declination of the Sun (rad)."""
+    return np.arctan2(sun_unit[..., 1], sun_unit[..., 0]), np.arcsin(
+        np.clip(sun_unit[..., 2], -1.0, 1.0)
+    )
+
+
+def beta_envelope(
+    sun_unit: FloatArray,
+    inclination_rad: float,
+    raan_low: FloatArray | None = None,
+    raan_high: FloatArray | None = None,
+) -> tuple[FloatArray, FloatArray]:
+    """Minimum and maximum β over nodes in ``[raan_low, raan_high]`` (every node if None).
+
+    ``sin β(Ω) = A sin(Ω - alpha) + C`` with ``A = sin i cos δ`` and ``C = cos i sin δ``
+    (alpha, δ the Sun's right ascension and declination): the extremes are at the ends of
+    the interval or at ``Ω = alpha ± π/2`` when inside it. Over every node,
+    ``β ∈ [asin(C - A), asin(C + A)]``.
+    """
+    alpha, delta = _sun_angles(sun_unit)
+    a = math.sin(inclination_rad) * np.cos(delta)
+    c = math.cos(inclination_rad) * np.sin(delta)
+    if raan_low is None or raan_high is None:
+        low, high = c - a, c + a
+    else:
+        width = raan_high - raan_low
+        ends = [a * np.sin(raan_low - alpha) + c, a * np.sin(raan_high - alpha) + c]
+        low = np.minimum(ends[0], ends[1])
+        high = np.maximum(ends[0], ends[1])
+        crest = np.mod(alpha + math.pi / 2 - raan_low, _TWO_PI) <= width
+        trough = np.mod(alpha - math.pi / 2 - raan_low, _TWO_PI) <= width
+        high = np.where(crest, c + a, high)
+        low = np.where(trough, c - a, low)
+    return np.arcsin(np.clip(low, -1.0, 1.0)), np.arcsin(np.clip(high, -1.0, 1.0))
+
+
+def normal_for_beta(
+    sun_unit: FloatArray,
+    beta_rad: float,
+    inclination_rad: float,
+    raan_ref: float | None,
+) -> FloatArray:
+    """An orbit normal with inclination ``inclination_rad`` whose β is ``beta_rad``.
+
+    Solves ``sin(Ω - alpha) = (sin β - cos i sin δ) / (sin i cos δ)`` and keeps the node nearest
+    ``raan_ref``. If no node of that inclination gives β (e.g. equatorial orbit, custom β), the
+    normal closest to that of ``raan_ref`` is tilted to β about the Sun direction.
+    """
+    alpha, delta = (float(x) for x in _sun_angles(sun_unit))
+    sin_i = math.sin(inclination_rad)
+    denominator = sin_i * math.cos(delta)
+    if abs(denominator) > 1e-9:
+        k = (math.sin(beta_rad) - math.cos(inclination_rad) * math.sin(delta)) / denominator
+        if abs(k) <= 1.0 + 1e-9:
+            k = max(-1.0, min(1.0, k))
+            candidates = [alpha + math.asin(k), alpha + math.pi - math.asin(k)]
+            if raan_ref is not None:
+                candidates.sort(key=lambda raan: abs(math.remainder(raan - raan_ref, _TWO_PI)))
+            return orbit_normal(candidates[0], inclination_rad)
+    reference = orbit_normal(raan_ref if raan_ref is not None else alpha, inclination_rad)
+    across = reference - float(np.dot(reference, sun_unit)) * sun_unit
+    norm = float(np.linalg.norm(across))
+    if norm < 1e-9:  # reference along the Sun: any perpendicular direction
+        helper = np.array([0.0, 0.0, 1.0]) if abs(sun_unit[2]) < 0.9 else np.array([1.0, 0, 0])
+        across = np.cross(sun_unit, helper)
+        norm = float(np.linalg.norm(across))
+    return math.sin(beta_rad) * sun_unit + math.cos(beta_rad) * across / norm
+
+
+# ---------------------------------------------------------------- provider
+
+
+@dataclass(frozen=True)
+class _Orbit:
+    type: OrbitType
+    epoch: datetime
+    """Launch, 00:00 UTC: start of the mission window."""
+    inclination: float
+    """Nominal inclination (rad)."""
+    solve_inclination: float
+    """Inclination used to place the orbit of a condition (GEO: the maximum)."""
+    altitude: float
+    eol_altitude: float | None
+    eccentricity: float
+    raan0: float | None
+    """SSO: node at the launch epoch."""
+    raan_rate: float
+    raan_dispersion: float
+    """SSO: ± node spread from the LTAN dispersion (rad)."""
+    geo_max_inclination: float
+
+
+@dataclass(frozen=True)
+class _Extreme:
+    beta: float
+    date_index: int
+
+
+class AnalyticEnvironmentProvider:
+    """Environment provider with closed-form geometry (ADR 0020)."""
+
+    name = PROVIDER_NAME
+    version = PROVIDER_VERSION
+
+    def compute(
+        self, mission: MissionArtifact, parameters: EnvironmentParameters
+    ) -> EnvironmentResult:
+        orbit = _orbit(mission, parameters)
+        values = resolve_design_values(parameters.design_values, orbit.inclination)
+        conical = parameters.sampling.eclipse_model is EclipseModel.CONICAL
+        assert mission.general.design_life is not None
+        assert parameters.sampling.mission_step is not None
+        epoch = orbit.epoch
+        seconds = _mission_times(mission.general.design_life, parameters.sampling.mission_step)
+        dates = [epoch + timedelta(seconds=float(s)) for s in seconds]
+        jd = julian_date(epoch) + seconds / SECONDS_PER_DAY
+        sun, distance = sun_position(jd)
+        irradiance = solar_irradiance(values.solar_constant.value, distance)
+
+        # β along the mission: nominal and envelope.
+        beta_nominal: FloatArray | None = None
+        if orbit.type is OrbitType.SSO:
+            assert orbit.raan0 is not None
+            raan = orbit.raan0 + orbit.raan_rate * seconds
+            beta_nominal = beta_angle(orbit_normal(raan, orbit.inclination), sun)
+            beta_min, beta_max = beta_envelope(
+                sun,
+                orbit.inclination,
+                raan - orbit.raan_dispersion,
+                raan + orbit.raan_dispersion,
+            )
+        elif orbit.type is OrbitType.GEO:
+            beta_nominal = beta_angle(np.array([0.0, 0.0, 1.0]), sun)
+            beta_min, beta_max = beta_envelope(sun, orbit.geo_max_inclination)
+        else:
+            beta_min, beta_max = beta_envelope(sun, orbit.inclination)
+
+        # Eclipse along the mission: over the |β| extremes of the envelope and the altitudes.
+        crosses = (beta_min <= 0) & (beta_max >= 0)
+        abs_low = np.where(crosses, 0.0, np.minimum(np.abs(beta_min), np.abs(beta_max)))
+        abs_high = np.maximum(np.abs(beta_min), np.abs(beta_max))
+        altitudes = _altitudes(orbit)
+        fractions: list[FloatArray] = []
+        durations: list[FloatArray] = []
+        for altitude in altitudes:
+            radius = EARTH_RADIUS_M + altitude
+            period = orbital_period_s(radius)
+            for beta in (abs_low, abs_high):
+                fraction = eclipse_fraction(beta, radius, conical, distance)
+                fractions.append(fraction)
+                durations.append(fraction * period)
+        series = MissionSeries(
+            dates=dates,
+            beta_nominal=_optional_list(beta_nominal, len(dates)),
+            beta_min=_round(beta_min, 7),
+            beta_max=_round(beta_max, 7),
+            eclipse_fraction_min=_round(np.min(fractions, axis=0), 6),
+            eclipse_fraction_max=_round(np.max(fractions, axis=0), 6),
+            eclipse_duration_min=_round(np.min(durations, axis=0), 2),
+            eclipse_duration_max=_round(np.max(durations, axis=0), 2),
+            irradiance=_round(irradiance, 3),
+        )
+
+        largest_eclipse, smallest_eclipse = _beta_extremes(beta_min, beta_max, crosses)
+        irradiance_min = float(np.min(irradiance))
+        irradiance_max = float(np.max(irradiance))
+        ranges = _ranges(orbit, values, dates, irradiance, beta_min, beta_max)
+        conditions = _conditions(
+            orbit, parameters, dates, distance, conical, largest_eclipse, smallest_eclipse
+        )
+        modes = [
+            (mode, mode.id or f"mode_{i + 1}", mode.name or f"Modo {i + 1}")
+            for i, mode in enumerate(mission.attitude_modes)
+        ]
+        fluxes: list[FaceFluxes] = []
+        profiles: list[OrbitProfile] = []
+        for condition in conditions:
+            for mode, mode_id, _ in modes:
+                profile = _profile(
+                    orbit,
+                    condition,
+                    mode,
+                    mode_id,
+                    parameters.sampling.orbit_samples or 120,
+                    conical,
+                    values,
+                    irradiance_min,
+                    irradiance_max,
+                )
+                profiles.append(profile)
+                fluxes.extend(_face_fluxes(profile))
+
+        return EnvironmentResult(
+            provider=ProviderInfo(name=self.name, version=self.version),
+            design_values=DesignValuesUsed(
+                solar_constant=_used(values.solar_constant),
+                albedo_min=_used(values.albedo_min),
+                albedo_max=_used(values.albedo_max),
+                olr_min=_used(values.olr_min),
+                olr_max=_used(values.olr_max),
+            ),
+            orbit=OrbitSummary(
+                type=orbit.type,
+                inclination=orbit.inclination,
+                altitude=orbit.altitude,
+                eol_altitude=orbit.eol_altitude,
+                eccentricity=orbit.eccentricity,
+                period=orbital_period_s(EARTH_RADIUS_M + orbit.altitude),
+                raan_swept=orbit.type is not OrbitType.SSO
+                and not (orbit.type is OrbitType.GEO and orbit.geo_max_inclination == 0),
+                eclipse_model=EclipseModel.CONICAL if conical else EclipseModel.CYLINDRICAL,
+            ),
+            mission_series=series,
+            ranges=ranges,
+            conditions=conditions,
+            attitude_modes=[AttitudeModeRef(id=mode_id, name=name) for _, mode_id, name in modes],
+            fluxes=fluxes,
+            orbit_profiles=profiles,
+        )
+
+
+# ---------------------------------------------------------------- inputs
+
+
+def _orbit(mission: MissionArtifact, parameters: EnvironmentParameters) -> _Orbit:
+    orbit = mission.orbit
+    assert orbit.type is not None and mission.general.launch_date is not None
+    epoch = datetime.combine(mission.general.launch_date, datetime.min.time(), tzinfo=UTC)
+    altitude = nominal_altitude_m(mission)
+    inclination = nominal_inclination_rad(mission)
+    assert altitude is not None and inclination is not None
+    e = 0.0
+    if orbit.type is OrbitType.KEPLERIAN and orbit.apogee_altitude is not None:
+        e = eccentricity(altitude, orbit.apogee_altitude)
+    if e > MAX_ECCENTRICITY:
+        raise InputRejectedError(
+            [
+                Problem(
+                    path="context",
+                    code=ProblemCode.ECCENTRICITY_OUT_OF_RANGE,
+                    message=f"La órbita de Misión tiene excentricidad {e:.4f}: el proveedor "
+                    f"analítico solo admite órbitas casi circulares (e ≤ {MAX_ECCENTRICITY}).",
+                )
+            ]
+        )
+    dispersion = parameters.dispersion
+    raan0: float | None = None
+    raan_rate = 0.0
+    raan_dispersion = 0.0
+    if orbit.type is OrbitType.SSO:
+        assert orbit.ltan is not None
+        hours, minutes = (int(part) for part in orbit.ltan.split(":"))
+        ltan_h = hours + minutes / 60
+        jd0 = julian_date(epoch)
+        # Local mean time of the node = 12 h + (Ω - alpha_mean☉) / 15°/h.
+        raan0 = float(mean_sun_right_ascension(jd0)) + (ltan_h - 12.0) * math.pi / 12.0
+        raan_rate = nodal_precession_rate(EARTH_RADIUS_M + altitude, inclination)
+        raan_dispersion = (dispersion.ltan_dispersion or 0.0) * _TWO_PI / SECONDS_PER_DAY
+    geo_max = 0.0
+    if orbit.type is OrbitType.GEO and dispersion.geo_max_inclination is not None:
+        geo_max = dispersion.geo_max_inclination
+    return _Orbit(
+        type=orbit.type,
+        epoch=epoch,
+        inclination=inclination,
+        solve_inclination=geo_max if orbit.type is OrbitType.GEO else inclination,
+        altitude=altitude,
+        eol_altitude=dispersion.eol_altitude if orbit.type is not OrbitType.GEO else None,
+        eccentricity=e,
+        raan0=raan0,
+        raan_rate=raan_rate,
+        raan_dispersion=raan_dispersion,
+        geo_max_inclination=geo_max,
+    )
+
+
+def _mission_times(design_life_s: float, step_s: float) -> FloatArray:
+    """Seconds from launch: every ``step_s`` and the end of life."""
+    count = math.floor(design_life_s / step_s + 1e-9) + 1
+    if count > MAX_SERIES_POINTS:
+        raise InputRejectedError(
+            [
+                Problem(
+                    path="sampling.mission_step",
+                    code=ProblemCode.MAX,
+                    message=f"Con este paso la serie tendría {count} puntos; el máximo es "
+                    f"{MAX_SERIES_POINTS}. Usá un paso más grande.",
+                )
+            ]
+        )
+    times = np.arange(count, dtype=np.float64) * step_s
+    if design_life_s - times[-1] > 1e-6:
+        times = np.append(times, design_life_s)
+    return times
+
+
+def _altitudes(orbit: _Orbit) -> list[float]:
+    if orbit.eol_altitude is None or orbit.eol_altitude == orbit.altitude:
+        return [orbit.altitude]
+    return [orbit.altitude, orbit.eol_altitude]
+
+
+# ---------------------------------------------------------------- extremes and ranges
+
+
+def _beta_extremes(
+    beta_min: FloatArray, beta_max: FloatArray, crosses: NDArray[np.bool_]
+) -> tuple[_Extreme, _Extreme]:
+    """β of the largest eclipse (smallest |β|) and of the smallest eclipse (largest |β|).
+
+    The envelope is continuous in time, so if its overall range holds 0, β = 0 happens.
+    """
+    low, high = float(np.min(beta_min)), float(np.max(beta_max))
+    if low <= 0 <= high:
+        nearest = np.where(crosses, 0.0, np.minimum(np.abs(beta_min), np.abs(beta_max)))
+        largest = _Extreme(0.0, int(np.argmin(nearest)))
+    elif low > 0:
+        largest = _Extreme(low, int(np.argmin(beta_min)))
+    else:
+        largest = _Extreme(high, int(np.argmax(beta_max)))
+    if abs(high) >= abs(low):
+        smallest = _Extreme(high, int(np.argmax(beta_max)))
+    else:
+        smallest = _Extreme(low, int(np.argmin(beta_min)))
+    return largest, smallest
+
+
+def _ranges(
+    orbit: _Orbit,
+    values: ResolvedDesignValues,
+    dates: list[datetime],
+    irradiance: FloatArray,
+    beta_min: FloatArray,
+    beta_max: FloatArray,
+) -> list[RangeEntry]:
+    last = len(dates) - 1
+
+    def when(index: int, inner: str) -> str:
+        return inner if 0 < index < last else "Borde de la ventana de la misión"
+
+    i_min, i_max = int(np.argmin(irradiance)), int(np.argmax(irradiance))
+    b_min, b_max = int(np.argmin(beta_min)), int(np.argmax(beta_max))
+    beta_note = {
+        OrbitType.SSO: "Nodo nominal con la deriva de la hora del nodo",
+        OrbitType.KEPLERIAN: "Barrido completo del nodo",
+        OrbitType.GEO: "Ecuatorial, o inclinada hasta la inclinación máxima",
+    }[orbit.type]
+    eol = orbit.eol_altitude
+    return [
+        RangeEntry(
+            quantity=RangeQuantity.IRRADIANCE,
+            unit="W/m²",
+            min=round(float(irradiance[i_min]), 3),
+            max=round(float(irradiance[i_max]), 3),
+            min_at=dates[i_min],
+            max_at=dates[i_max],
+            min_note=when(i_min, "Afelio"),
+            max_note=when(i_max, "Perihelio"),
+        ),
+        RangeEntry(
+            quantity=RangeQuantity.BETA,
+            unit="rad",
+            min=float(beta_min[b_min]),
+            max=float(beta_max[b_max]),
+            min_at=dates[b_min],
+            max_at=dates[b_max],
+            min_note=beta_note,
+            max_note=beta_note,
+        ),
+        RangeEntry(
+            quantity=RangeQuantity.ALTITUDE,
+            unit="m",
+            min=eol if eol is not None else orbit.altitude,
+            max=orbit.altitude,
+            min_note="Fin de vida (decaimiento)" if eol is not None else "Nominal, sin decaimiento",
+            max_note="Nominal",
+        ),
+        _design_range(RangeQuantity.ALBEDO, "", values.albedo_min, values.albedo_max),
+        _design_range(RangeQuantity.OLR, "W/m²", values.olr_min, values.olr_max),
+    ]
+
+
+def _note(value: ResolvedDesignValue) -> str:
+    return value.reference or "Valor de diseño ingresado"
+
+
+def _design_range(
+    quantity: RangeQuantity, unit: str, low: ResolvedDesignValue, high: ResolvedDesignValue
+) -> RangeEntry:
+    return RangeEntry(
+        quantity=quantity,
+        unit=unit,
+        min=low.value,
+        max=high.value,
+        min_note=_note(low),
+        max_note=_note(high),
+    )
+
+
+def _deg(beta: float) -> str:
+    return f"{math.degrees(beta):.1f}".replace(".", ",") + "°"
+
+
+def _conditions(
+    orbit: _Orbit,
+    parameters: EnvironmentParameters,
+    dates: list[datetime],
+    distance: FloatArray,
+    conical: bool,
+    largest: _Extreme,
+    smallest: _Extreme,
+) -> list[Condition]:
+    """Extreme conditions (β of largest and smallest eclipse x nominal and end-of-life
+    altitude, without repeats) and then the custom ones."""
+    altitudes = [(orbit.altitude, "", "altitud nominal")]
+    if orbit.eol_altitude is not None and orbit.eol_altitude != orbit.altitude:
+        altitudes.append((orbit.eol_altitude, "_eol", "fin de vida"))
+    geometries = [(largest, "max_eclipse", "Eclipse máximo")]
+    if smallest.beta != largest.beta:
+        geometries.append((smallest, "min_eclipse", "Eclipse mínimo"))
+
+    def condition(
+        cid: str, name: str, origin: ConditionOrigin, beta: float, altitude: float, index: int
+    ) -> Condition:
+        radius = EARTH_RADIUS_M + altitude
+        period = orbital_period_s(radius)
+        fraction = float(eclipse_fraction(beta, radius, conical, float(distance[index])))
+        return Condition(
+            id=cid,
+            name=name,
+            origin=origin,
+            beta=beta,
+            altitude=altitude,
+            date=dates[index],
+            period=round(period, 3),
+            eclipse_fraction=round(fraction, 6),
+            eclipse_duration=round(fraction * period, 2),
+        )
+
+    result: list[Condition] = []
+    for extreme, cid, label in geometries:
+        for altitude, suffix, altitude_label in altitudes:
+            result.append(
+                condition(
+                    f"{cid}{suffix}",
+                    f"{label} · β {_deg(extreme.beta)} · {altitude_label}",
+                    ConditionOrigin.EXTREME,
+                    extreme.beta,
+                    altitude,
+                    extreme.date_index,
+                )
+            )
+    for i, custom in enumerate(parameters.custom_conditions):
+        assert custom.beta is not None
+        result.append(
+            condition(
+                custom.id or f"custom_{i + 1}",
+                custom.name or f"Condición {i + 1}",
+                ConditionOrigin.CUSTOM,
+                custom.beta,
+                custom.altitude if custom.altitude is not None else orbit.altitude,
+                0,
+            )
+        )
+    return result
+
+
+# ---------------------------------------------------------------- orbit profiles and fluxes
+
+
+def _profile(
+    orbit: _Orbit,
+    condition: Condition,
+    mode: AttitudeMode,
+    mode_id: str,
+    samples: int,
+    conical: bool,
+    values: ResolvedDesignValues,
+    irradiance_min: float,
+    irradiance_max: float,
+) -> OrbitProfile:
+    jd = julian_date(condition.date)
+    sun, distance_au = sun_position(jd)
+    raan_ref = None
+    if orbit.raan0 is not None:
+        seconds = (condition.date - orbit.epoch).total_seconds()
+        raan_ref = orbit.raan0 + orbit.raan_rate * seconds
+    normal = normal_for_beta(sun, condition.beta, orbit.solve_inclination, raan_ref)
+    node = np.cross(np.array([0.0, 0.0, 1.0]), normal)
+    if np.linalg.norm(node) < 1e-9:
+        node = np.array([1.0, 0.0, 0.0])
+    x_axis = node / np.linalg.norm(node)
+    y_axis = np.cross(normal, x_axis)
+
+    radius = EARTH_RADIUS_M + condition.altitude
+    mean_motion = math.sqrt(EARTH_MU_M3_PER_S2 / radius**3)
+    u = np.arange(samples, dtype=np.float64) * _TWO_PI / samples
+    time = u / mean_motion
+    cos_u, sin_u = np.cos(u)[:, None], np.sin(u)[:, None]
+    position = radius * (cos_u * x_axis + sin_u * y_axis)
+    velocity = radius * mean_motion * (-sin_u * x_axis + cos_u * y_axis)
+    sun_b = np.broadcast_to(sun, position.shape).copy()
+    sunlit = visible_sun_fraction(position, sun_b, float(distance_au), conical)
+
+    directions = target_directions(position, velocity, sun_b)
+    primary, secondary = (
+        directions[_target(mode.primary_target)],
+        directions[_target(mode.secondary_target)],
+    )
+    candidates = np.stack(
+        [directions[Target.ORBIT_NORMAL], directions[Target.VELOCITY], directions[Target.ZENITH]]
+    )
+    least_parallel = np.argmin(np.abs(np.sum(candidates * primary, axis=-1)), axis=0)
+    fallback = candidates[least_parallel, np.arange(samples)]
+    assert mode.primary_axis is not None and mode.secondary_axis is not None
+    matrix = triad(
+        np.array(AXIS_VECTORS[mode.primary_axis]),
+        primary,
+        np.array(AXIS_VECTORS[mode.secondary_axis]),
+        secondary,
+        fallback,
+    )
+    quaternion = quaternion_from_matrix(matrix)
+
+    r_hat = position / radius
+    cos_zenith = np.maximum(np.sum(r_hat * sun_b, axis=-1), 0.0)
+    faces: list[FaceProfile] = []
+    for face in Face:
+        normal_i: FloatArray = matrix @ np.array(AXIS_VECTORS[Axis(face.value)])
+        solar = sunlit * np.maximum(np.sum(normal_i * sun_b, axis=-1), 0.0)
+        view = plate_to_earth_view_factor(np.sum(normal_i * -r_hat, axis=-1), radius)
+        albedo = view * cos_zenith
+        faces.append(
+            FaceProfile(
+                face=face,
+                solar_min=_round(irradiance_min * solar, 3),
+                solar_max=_round(irradiance_max * solar, 3),
+                albedo_min=_round(irradiance_min * values.albedo_min.value * albedo, 3),
+                albedo_max=_round(irradiance_max * values.albedo_max.value * albedo, 3),
+                ir_min=_round(values.olr_min.value * view, 3),
+                ir_max=_round(values.olr_max.value * view, 3),
+            )
+        )
+    return OrbitProfile(
+        condition_id=condition.id,
+        mode_id=mode_id,
+        epoch=condition.date,
+        time=_round(time, 3),
+        position=np.round(position, 1).tolist(),
+        velocity=np.round(velocity, 4).tolist(),
+        sun=np.round(sun_b, 7).tolist(),
+        sunlit=_round(sunlit, 6),
+        quaternion=np.round(quaternion, 7).tolist(),
+        earth_rotation_angle=_round(earth_rotation_angle(jd + time / SECONDS_PER_DAY), 7),
+        faces=faces,
+    )
+
+
+def _target(target: Target | None) -> Target:
+    assert target is not None
+    return target
+
+
+def _stats(low: list[float], high: list[float]) -> FluxStats:
+    lo, hi = np.asarray(low), np.asarray(high)
+    return FluxStats(
+        average_min=round(float(np.mean(lo)), 3),
+        average_max=round(float(np.mean(hi)), 3),
+        peak_min=round(float(np.max(lo)), 3),
+        peak_max=round(float(np.max(hi)), 3),
+    )
+
+
+def _face_fluxes(profile: OrbitProfile) -> list[FaceFluxes]:
+    result: list[FaceFluxes] = []
+    for face in profile.faces:
+        total_min = np.add(np.add(face.solar_min, face.albedo_min), face.ir_min)
+        total_max = np.add(np.add(face.solar_max, face.albedo_max), face.ir_max)
+        result.append(
+            FaceFluxes(
+                condition_id=profile.condition_id,
+                mode_id=profile.mode_id,
+                face=face.face,
+                solar=_stats(face.solar_min, face.solar_max),
+                albedo=_stats(face.albedo_min, face.albedo_max),
+                ir=_stats(face.ir_min, face.ir_max),
+                total=_stats(total_min.tolist(), total_max.tolist()),
+            )
+        )
+    return result
+
+
+# ---------------------------------------------------------------- helpers
+
+
+def _used(value: ResolvedDesignValue) -> DesignValue:
+    return DesignValue(value=value.value, source=value.source, reference=value.reference)
+
+
+def _round(values: FloatArray, decimals: int) -> list[float]:
+    return np.round(np.asarray(values, dtype=np.float64), decimals).tolist()
+
+
+def _optional_list(values: FloatArray | None, count: int) -> list[float | None]:
+    if values is None:
+        return [None] * count
+    return list(_round(values, 7))

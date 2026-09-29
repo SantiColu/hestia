@@ -1,4 +1,4 @@
-"""Closed-form orbit relations used to validate mission inputs. Pure functions, SI units.
+"""Closed-form orbit relations of the mission and the environment. Pure functions, SI units.
 
 Earth model: WGS-84 equatorial radius and GM, J2 from EGM2008. Only the secular J2 nodal
 precession is modelled (circular orbits).
@@ -41,6 +41,29 @@ def sso_inclination_rad(altitude_m: float) -> float:
     if cos_i < -1.0:
         raise ValueError(f"no sun-synchronous orbit at {altitude_m} m")
     return math.acos(cos_i)
+
+
+def nodal_precession_rate(semi_major_axis_m: float, inclination_rad: float) -> float:
+    """Secular J2 drift of the ascending node, rad/s (circular orbit).
+
+    Vallado, eq. 9-41 with e = 0: ``dΩ/dt = -3/2 · n · J2 · (R/a)² · cos i``. Negative
+    (westward) for prograde orbits.
+    """
+    a = semi_major_axis_m
+    n = math.sqrt(EARTH_MU_M3_PER_S2 / a**3)
+    return -1.5 * n * EARTH_J2 * (EARTH_RADIUS_M / a) ** 2 * math.cos(inclination_rad)
+
+
+def orbital_period_s(semi_major_axis_m: float) -> float:
+    """Keplerian period ``T = 2π √(a³/μ)``."""
+    return 2.0 * math.pi * math.sqrt(semi_major_axis_m**3 / EARTH_MU_M3_PER_S2)
+
+
+def eccentricity(perigee_altitude_m: float, apogee_altitude_m: float) -> float:
+    """``e = (r_a - r_p) / (r_a + r_p)`` from the altitudes of perigee and apogee."""
+    rp = EARTH_RADIUS_M + perigee_altitude_m
+    ra = EARTH_RADIUS_M + apogee_altitude_m
+    return (ra - rp) / (ra + rp)
 
 
 def sso_max_altitude_m() -> float:
