@@ -1,5 +1,6 @@
 import {
   ChartNoAxesColumn,
+  Cpu,
   Grid3x3,
   Lightbulb,
   Link2,
@@ -17,6 +18,7 @@ import type { StageType } from "@/api/client";
 export const STAGE_ICONS: Record<StageType, LucideIcon> = {
   mission: Satellite,
   environment: Sun,
+  equipment: Cpu,
   global_balance: Scale,
   tcs_concept: Lightbulb,
   discretization: Grid3x3,

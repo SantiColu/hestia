@@ -197,3 +197,17 @@ def test_undo_redo_and_history(opened: TestClient) -> None:
     assert [c["operation"] for c in history] == ["create_system", "undo", "redo"]
     assert history[1]["author"]["kind"] == "agent"
     assert history[1]["reverts"] == history[0]["id"]
+
+
+def test_cell_context_and_missing(opened: TestClient) -> None:
+    view = _create(opened, template="phase_1", name="F1")["view"]
+    f1 = _cells(view, "F1")
+    disc = f1["discretization"]["id"]
+    assert view["missing"][disc] == ["mission", "equipment", "tcs_concept"]
+    assert f1["couplings"]["id"] not in view["missing"]
+
+    context = opened.get(f"/project/cells/{f1['load_cases']['id']}/context").json()
+    assert [e["stage"] for e in context["entries"]] == ["discretization", "couplings"]
+    assert context["entries"][0]["cell_id"] == disc
+    assert context["missing"] == ["mission", "environment", "equipment"]
+    assert opened.get("/project/cells/nope/context").status_code == 404

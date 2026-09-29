@@ -21,7 +21,7 @@ from hestia_project import schematic as ops
 from hestia_project.catalog import StageType, TemplateId
 from hestia_project.errors import InvalidOperationError
 from hestia_project.history import Operation
-from hestia_project.schematic import Blueprint
+from hestia_project.schematic import Blueprint, CellContext
 from hestia_project.workspace import MutationResult
 
 router = APIRouter(prefix="/project", tags=["schematic"], responses=ERROR_RESPONSES)
@@ -100,7 +100,8 @@ def delete_system(
 def add_cell(
     system_id: str, body: AddCellRequest, workspace: WorkspaceDep, author: AuthorDep
 ) -> MutationResult:
-    """Add a cell to a system; it is linked to cells of that system when unambiguous."""
+    """Add a cell to a system; it is linked to the cells of that system that complete its
+    context (as target) or whose context it completes (as source)."""
     return workspace.apply(
         Operation.ADD_CELL,
         author,
@@ -138,7 +139,8 @@ def delete_cell(
 def branch_cell(
     cell_id: str, body: BranchRequest, workspace: WorkspaceDep, author: AuthorDep
 ) -> MutationResult:
-    """Create a new system (template or stage) fed by this cell."""
+    """Create a new system (template or stage) and link this cell to its first cell that
+    accepts it."""
     blueprint = _blueprint(body)
     return workspace.apply(
         Operation.BRANCH,
@@ -152,6 +154,13 @@ def branch_cell(
 def list_link_targets(cell_id: str, workspace: WorkspaceDep) -> CellIds:
     """Cells this cell could feed with a new link right now."""
     return CellIds(cell_ids=workspace.query(lambda p: ops.link_targets(p, cell_id)))
+
+
+@router.get("/cells/{cell_id}/context", operation_id="get_cell_context")
+def get_cell_context(cell_id: str, workspace: WorkspaceDep) -> CellContext:
+    """Resolved context of a cell: the cell that provides each upstream stage type, and the
+    required types that are missing (the cell cannot run until they are linked)."""
+    return workspace.query(lambda p: ops.cell_context(p, cell_id))
 
 
 @router.get("/cells/{cell_id}/branch-options", operation_id="list_branch_options")
@@ -175,7 +184,8 @@ def list_branch_targets(
 
 @router.post("/links", operation_id="link_cells")
 def link_cells(body: LinkRequest, workspace: WorkspaceDep, author: AuthorDep) -> MutationResult:
-    """Feed the output of one cell into an input of another (validated by the workflow)."""
+    """Link two cells: the target gets the source's whole context (ADR 0016). A second parent
+    is only valid if the contexts share no stage type (union)."""
     return workspace.apply(
         Operation.LINK,
         author,

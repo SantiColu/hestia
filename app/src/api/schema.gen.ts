@@ -119,7 +119,8 @@ export interface paths {
     put?: never;
     /**
      * Branch Cell
-     * @description Create a new system (template or stage) fed by this cell.
+     * @description Create a new system (template or stage) and link this cell to its first cell that
+     *     accepts it.
      */
     post: operations["branch_cell"];
     delete?: never;
@@ -140,6 +141,27 @@ export interface paths {
      * @description Templates and stages that can be branched from this cell.
      */
     get: operations["list_branch_options"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/project/cells/{cell_id}/context": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Cell Context
+     * @description Resolved context of a cell: the cell that provides each upstream stage type, and the
+     *     required types that are missing (the cell cannot run until they are linked).
+     */
+    get: operations["get_cell_context"];
     put?: never;
     post?: never;
     delete?: never;
@@ -262,7 +284,8 @@ export interface paths {
     put?: never;
     /**
      * Link Cells
-     * @description Feed the output of one cell into an input of another (validated by the workflow).
+     * @description Link two cells: the target gets the source's whole context (ADR 0016). A second parent
+     *     is only valid if the contexts share no stage type (union).
      */
     post: operations["link_cells"];
     delete?: never;
@@ -443,7 +466,8 @@ export interface paths {
     put?: never;
     /**
      * Add Cell
-     * @description Add a cell to a system; it is linked to cells of that system when unambiguous.
+     * @description Add a cell to a system; it is linked to the cells of that system that complete its
+     *     context (as target) or whose context it completes (as source).
      */
     post: operations["add_cell"];
     delete?: never;
@@ -649,6 +673,19 @@ export interface components {
       /** System Id */
       system_id: string;
     };
+    /**
+     * CellContext
+     * @description Resolved context of a cell: every cell upstream of it, by stage type.
+     */
+    CellContext: {
+      /** Cell Id */
+      cell_id: string;
+      /** Entries */
+      entries: components["schemas"]["ContextEntry"][];
+      /** Missing */
+      missing: components["schemas"]["StageType"][];
+      stage: components["schemas"]["StageType"];
+    };
     /** CellIds */
     CellIds: {
       /** Cell Ids */
@@ -693,6 +730,19 @@ export interface components {
        * @default false
        */
       discard_unsaved: boolean;
+    };
+    /**
+     * ContextEntry
+     * @description A stage type in the context of a cell and the cell that provides it.
+     */
+    ContextEntry: {
+      /** Cell Id */
+      cell_id: string;
+      /** Cell Name */
+      cell_name: string;
+      stage: components["schemas"]["StageType"];
+      /** System Id */
+      system_id: string;
     };
     /**
      * CopyRequest
@@ -840,14 +890,12 @@ export interface components {
     };
     /**
      * Link
-     * @description Feeds the output of ``source_cell_id`` into the ``input`` of ``target_cell_id``.
-     *
-     *     Each stage type has one output, so the input is named after the source stage type.
+     * @description Passes the context of ``source_cell_id`` (the cell and everything upstream of it) on to
+     *     ``target_cell_id`` (ADR 0016).
      */
     Link: {
       /** Id */
       id: string;
-      input: components["schemas"]["StageType"];
       /** Source Cell Id */
       source_cell_id: string;
       /** Target Cell Id */
@@ -979,7 +1027,7 @@ export interface components {
       name: string;
       /**
        * Schema Version
-       * @default 1
+       * @default 2
        */
       schema_version: number;
       /** Systems */
@@ -1003,10 +1051,16 @@ export interface components {
        */
       timestamp: string;
       type: components["schemas"]["EventType"];
+      /** Warnings */
+      warnings: string[];
     };
     /** ProjectView */
     ProjectView: {
       document: components["schemas"]["DocumentState"];
+      /** Missing */
+      missing: {
+        [key: string]: components["schemas"]["StageType"][];
+      };
       project: components["schemas"]["Project"];
     };
     /**
@@ -1070,22 +1124,37 @@ export interface components {
     };
     /** StageInfo */
     StageInfo: {
-      /** Inputs */
-      inputs: components["schemas"]["StageType"][];
+      /** Implemented */
+      implemented: boolean;
+      kind: components["schemas"]["StageKind"];
       /** Name */
       name: string;
       /** Number */
       number: string;
+      /** Order */
+      order: number;
       phase: components["schemas"]["Phase"];
+      /** Requires */
+      requires: components["schemas"]["StageType"][];
+      /** Root */
+      root: boolean;
       stage: components["schemas"]["StageType"];
     };
     /**
+     * StageKind
+     * @description How a stage produces its artifact.
+     * @enum {string}
+     */
+    StageKind: "form" | "computation" | "collector";
+    /**
      * StageType
+     * @description Stage types in catalog order (0.1 < 0.2 < … < 0.5 < 1.1 < … < 1.6).
      * @enum {string}
      */
     StageType:
       | "mission"
       | "environment"
+      | "equipment"
       | "global_balance"
       | "tcs_concept"
       | "discretization"
@@ -1117,11 +1186,18 @@ export interface components {
       /** Description */
       description: string;
       id: components["schemas"]["TemplateId"];
+      /** Links */
+      links: components["schemas"]["TemplateLink"][];
       /** Name */
       name: string;
       phase: components["schemas"]["Phase"];
       /** Stages */
       stages: components["schemas"]["StageType"][];
+    };
+    /** TemplateLink */
+    TemplateLink: {
+      source: components["schemas"]["StageType"];
+      target: components["schemas"]["StageType"];
     };
     /** WriteRequest */
     WriteRequest: {
@@ -1480,6 +1556,64 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["Blueprint"][];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Locked */
+      423: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  get_cell_context: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cell_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CellContext"];
         };
       };
       /** @description Not Found */
