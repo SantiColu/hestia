@@ -38,14 +38,20 @@ Sin proyectos recientes (primer uso): solo Nuevo proyecto y Abrir. La marca en g
 - **Barra superior:** marca · menús (**Archivo**: nuevo, abrir, recientes, guardar, guardar como, cerrar, con atajos; **Editar**: deshacer/rehacer, cortar, copiar, pegar, duplicar, renombrar, deseleccionar y eliminar; Ver, Proyecto y Ayuda deshabilitados por ahora) · nombre del archivo con el indicador de cambios sin guardar (●) y el botón guardar (solo con cambios pendientes) · herramientas futuras deshabilitadas (paleta de comandos Ctrl+K, comparar, informe, exportar a NX, Stefan) · resumen de celdas desactualizadas y Actualizar todo. Deshacer no está en la barra: vive en Editar y en Ctrl+Z.
 - **Toolbox (izquierda):** árbol por fase. El encabezado de la fase (Fase 0 · Viabilidad, Fase 1 · Modelo nodal) se arrastra entero y crea el sistema con todas sus celdas vinculadas; cada etapa se arrastra sola. Sin números de etapa: son internos. Abajo, post-proceso (Comparación).
 - **Esquemático (centro):** sistemas como bloques con nombre editable (✎) y filas de celdas; cada celda muestra nombre y estado (el número de etapa es interno). Vínculos como conectores ortogonales entre celdas (una salida puede ir a muchas celdas).
-- **Dock derecho:** dos pestañas.
-  - **Propiedades:** información de la celda o sistema seleccionado. Contenido pendiente.
-  - **Agentes:** actividad de agentes y de Stefan (cambios con autor y justificación, corridas lanzadas). Un agente activo se indica en la pestaña.
+- **Dock derecho: Agente.** Chat con el agente conectado (Stefan u otro vía MCP), con sus cambios (autor y justificación) y corridas lanzadas. Los mensajes pasan por la API (ADR 0015).
 - **Panel inferior:** mensajes y corridas en curso.
 
 ### Editor de celda
 
-Doble clic en una celda: abre el editor a pantalla completa en lugar del lienzo, con breadcrumb en la barra superior (`SAT-M1 › Fase 0 · base › Balance global`) para volver al esquemático. Muestra entradas y resultados completos de esa etapa. Diseño detallado por etapa: pendiente.
+Pestañas tipo IDE bajo la barra superior (frames «Workspace · pestañas» y «Workspace · Misión (…)» en `workspace.pen`):
+
+- **Workflow** (el esquemático) es la primera pestaña y no se cierra. Doble clic en una celda abre su pestaña (o la trae al frente). Título: celda · sistema, con el ícono de estado y un punto si hay borrador sin aplicar.
+- El Toolbox solo aparece en Workflow. En una celda, el formulario ocupa el centro en una columna con scroll, sin índice de secciones. El valor aplicado se ve bajo cada campo cambiado; procedencia e historial del campo, en un popover (por diseñar).
+- El dock derecho es solo el **Agente**: un chat con el agente conectado (Stefan u otro vía MCP) y sus cambios con autor y justificación. Los mensajes pasan por la API (se guardan y el agente los lee por MCP); la web no habla con ningún modelo (ADR 0015).
+- Si la celda se elimina (deshacer, un agente), su pestaña se cierra con un aviso en Mensajes. Las pestañas abiertas son estado de la UI (se recuerdan por proyecto en local, no van al `.hestia`).
+- Ctrl+W cierra la pestaña; Cerrar proyecto pasa a Ctrl+Shift+W.
+
+**Edición: borrador + Aplicar.** Lo editado en la pestaña es un borrador: el backend lo valida en seco mientras se escribe (errores por campo; la UI no decide) y los campos cambiados muestran el valor aplicado. **Aplicar…** abre el diálogo con el diff, las celdas que se desactualizan y la justificación; entra como un solo cambio en el historial (un deshacer, una desactualización). Se puede aplicar con errores: en una etapa formulario la celda queda Fallida hasta corregirlos. Los agentes hacen lo mismo con una tool MCP (sección o artefacto + justificación). Dos niveles de «sin guardar»: el punto de la pestaña (borrador sin aplicar) y el de la barra superior (proyecto sin guardar en el archivo).
 
 ### Diálogos
 
@@ -55,7 +61,7 @@ Confirmar cambio (diff + justificación) · Abrir/Guardar nativos · Proyecto bl
 
 - Arrastrar del Toolbox al lienzo: crea un sistema (plantilla o celda suelta).
 - Soltar del Toolbox **sobre una celda**: ramifica, crea lo soltado vinculado desde esa celda. Al arrastrar se resaltan solo las celdas donde el vínculo es válido.
-- Clic: selecciona y muestra propiedades. Doble clic: abre el editor de celda.
+- Clic: selecciona. Doble clic: abre la celda en su pestaña.
 - Clic derecho en sistema: renombrar, agregar etapa, actualizar, cortar, copiar, pegar, duplicar, eliminar. En celda: renombrar, actualizar, ramificar, desvincular, cortar, copiar, pegar, duplicar, eliminar. El clic derecho selecciona el sistema o la celda.
 - Las celdas no se mueven entre sistemas.
 
@@ -83,8 +89,8 @@ Detalle en [ADR 0014](adr/0014-portapapeles-de-esquematico.md). El fragmento es 
 
 ## Decisiones cerradas
 
-- **Actividad de agentes / Stefan:** pestaña «Agentes» del dock derecho, alternable con Propiedades (2026-09-28).
-- **Editor de celda:** pantalla completa con breadcrumb (2026-09-28).
+- **Actividad de agentes / Stefan:** el dock derecho es solo el chat del Agente (2026-09-29; reemplaza las pestañas Propiedades/Agentes del 2026-09-28).
+- **Editor de celda:** pestañas tipo IDE con Workflow fijo; edición por borrador + Aplicar con justificación; dock derecho solo Agente (2026-09-29; reemplaza «pantalla completa con breadcrumb» y la pestaña Propiedades del 2026-09-28).
 
 ## Estado de la implementación (2026-09-29)
 
@@ -107,10 +113,9 @@ TODO:
 - Selección múltiple (clic con Ctrl/Shift o rectángulo) y, con ella, «Seleccionar todo» (Ctrl+A) y copiar/cortar/eliminar varios a la vez. La API de copiar ya acepta listas de sistemas y celdas.
 - Menú contextual del fondo del lienzo con «Pegar aquí» (hoy se pega en el cursor con Ctrl+V).
 - Portapapeles en Tauri: el plugin compila (clippy) pero solo se probó en el navegador (Chromium); probar copiar entre dos ventanas en `make desktop`.
-- Editor de celda (doble clic) y breadcrumb.
-- Contenido de Propiedades y Agentes; indicador de agente activo.
+- Pestañas y editor de celda (doble clic), borrador + Aplicar, chat del agente. Diseño en `workspace.pen`; formulario de Misión en `docs/etapas/mission.md`.
+- Chat del Agente (canal de mensajes por la API) e indicador de agente conectado.
 - Cantidad de sistemas en cada reciente (el diseño la muestra; `RecentProject` de la API no la trae).
-- Contador de agentes activos en la pestaña Agentes («Agentes · 1» en el diseño).
 - Encuadrar la vista cuando un agente crea un sistema fuera de la zona visible (hoy hay que usar «ajustar vista»).
 - Comparación, Actualizar, Exportar a NX, informe, paleta Ctrl+K y Stefan (dependen de cálculo o de funciones futuras).
 - Diálogos nativos y cierre de ventana en Tauri: compilan (clippy) pero solo se probaron en el navegador, donde el respaldo pide la ruta con `window.prompt`. Probarlos en `make desktop`.
@@ -118,5 +123,5 @@ TODO:
 
 ## Decisiones abiertas
 
-- Contenido del panel Propiedades (candidatos: entradas con su fuente, últimos resultados, historial, procedencia).
+- Popover de procedencia e historial de un campo (reemplaza al panel Propiedades).
 - Formato del sistema de Comparación.
