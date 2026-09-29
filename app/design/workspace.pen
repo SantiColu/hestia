@@ -10617,6 +10617,1722 @@
           }
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "i1G7O",
+      "x": 0,
+      "y": 3000,
+      "name": "Workspace · Misión (LEO/MEO, actitud y criterios)",
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$lib:bg",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "D1Akkp",
+          "name": "TopBar",
+          "width": "fill_container",
+          "height": 44,
+          "fill": "$lib:surface",
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 10,
+          "padding": [
+            0,
+            10,
+            0,
+            14
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "CzlGB",
+              "type": "ref",
+              "ref": "lib:FKqyv",
+              "name": "Mark",
+              "width": 21.12,
+              "height": 24,
+              "descendants": {
+                "lib:bTJGf": {
+                  "width": 21.12,
+                  "height": 24
+                },
+                "lib:i7fk8e": {
+                  "width": 21.12,
+                  "height": 24
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "mjVjl",
+              "name": "Menubar",
+              "height": 28,
+              "padding": [
+                0,
+                6
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "EHy1q",
+                  "name": "Archivo",
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "lnGdk",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Archivo",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DwhZF",
+                  "name": "Editar",
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "W8d9R6",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Editar",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "fZOxZ",
+                  "name": "Ver",
+                  "opacity": 0.4,
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "i7mQSl",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Ver",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "eQH7y",
+                  "name": "Proyecto",
+                  "opacity": 0.4,
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "EzJ3X",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Proyecto",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "q2zcyq",
+                  "name": "Ayuda",
+                  "opacity": 0.4,
+                  "height": 28,
+                  "cornerRadius": "$lib:radius",
+                  "padding": [
+                    0,
+                    8
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "NqAi1",
+                      "name": "Label",
+                      "fill": "$lib:text-muted",
+                      "content": "Ayuda",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "TEnsG",
+              "name": "Divider",
+              "fill": "$lib:border",
+              "width": 1,
+              "height": 16
+            },
+            {
+              "type": "frame",
+              "id": "vXnWp",
+              "name": "File",
+              "gap": 6,
+              "padding": [
+                0,
+                0,
+                0,
+                8
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "JQ7hG",
+                  "name": "File",
+                  "fill": "$lib:text",
+                  "content": "SAT-M1.hestia",
+                  "fontFamily": "$lib:font-sans",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "ellipse",
+                  "id": "Y9t8i",
+                  "name": "Unsaved",
+                  "fill": "$lib:text-muted",
+                  "width": 6,
+                  "height": 6
+                },
+                {
+                  "id": "yHr1P",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Save (Ctrl+S)",
+                  "strokeWidth": 0,
+                  "opacity": 1,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "save",
+                      "fill": "$lib:text-muted"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "UoUWT",
+              "name": "Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "R0gyH",
+              "name": "Tools",
+              "gap": 2,
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "tHzmF",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Paleta de comandos (Ctrl+K)",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "search",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "QJBMT",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Comparar",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "columns-2",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "fbCVt",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Informe",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "file-text",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "COLXf",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Exportar a NX",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "file-output",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                },
+                {
+                  "id": "w2D8W",
+                  "type": "ref",
+                  "ref": "lib:boXaE",
+                  "name": "Stefan",
+                  "strokeWidth": 0,
+                  "opacity": 0.4,
+                  "descendants": {
+                    "lib:PLCMX": {
+                      "icon": "bot",
+                      "fill": "$lib:text-subtle"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "u2ekz",
+              "name": "Divider tools",
+              "fill": "$lib:border",
+              "width": 1,
+              "height": 16
+            },
+            {
+              "id": "yrJKP",
+              "type": "ref",
+              "ref": "lib:X50Xt9",
+              "name": "OutdatedSummary",
+              "descendants": {
+                "lib:XSPu2": {
+                  "content": "3 desactualizadas"
+                }
+              }
+            },
+            {
+              "id": "xyR1s",
+              "type": "ref",
+              "ref": "lib:Q65sw",
+              "name": "UpdateAll",
+              "descendants": {
+                "lib:mK0VC": {
+                  "icon": "refresh-cw"
+                },
+                "lib:X1JEg": {
+                  "content": "Actualizar todo"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "rElCr",
+          "name": "DocTabs",
+          "width": "fill_container",
+          "height": 37,
+          "fill": "$lib:surface",
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "alignItems": "end",
+          "children": [
+            {
+              "id": "B3HAmZ",
+              "type": "ref",
+              "ref": "lib:M4VCf",
+              "name": "Workflow",
+              "descendants": {
+                "lib:VTX4a": {
+                  "icon": "workflow",
+                  "fill": "$lib:text-subtle"
+                },
+                "lib:sain2": {
+                  "content": "Workflow"
+                },
+                "lib:eQOlx": {
+                  "enabled": false
+                },
+                "lib:xoXt0": {
+                  "enabled": false
+                }
+              }
+            },
+            {
+              "id": "S47r5",
+              "type": "ref",
+              "ref": "lib:ucL6q",
+              "name": "Misión",
+              "descendants": {
+                "lib:dECWv": {
+                  "enabled": false
+                }
+              }
+            },
+            {
+              "id": "H4GVYf",
+              "type": "ref",
+              "ref": "lib:M4VCf",
+              "name": "Entorno",
+              "descendants": {
+                "lib:VTX4a": {
+                  "icon": "circle-dashed",
+                  "fill": "$lib:idle"
+                },
+                "lib:sain2": {
+                  "content": "Entorno"
+                },
+                "lib:eQOlx": {
+                  "content": "SSO 800"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "k8BWDJ",
+          "name": "Main",
+          "width": "fill_container",
+          "height": "fill_container",
+          "children": [
+            {
+              "type": "frame",
+              "id": "QgQEo",
+              "name": "Editor",
+              "width": "fill_container",
+              "height": "fill_container",
+              "fill": "$lib:bg",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "T4hjy",
+                  "name": "Form",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "gap": 28,
+                  "padding": [
+                    24,
+                    170
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "dsaPW",
+                      "name": "Header",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bNT15",
+                          "name": "Title",
+                          "fill": "$lib:text",
+                          "content": "Misión",
+                          "fontFamily": "$lib:font-sans",
+                          "fontSize": 18,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "HX8R1",
+                          "name": "Context",
+                          "fill": "$lib:text-subtle",
+                          "content": "Fase 0 · base",
+                          "fontFamily": "$lib:font-sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "XDdPK",
+                          "name": "Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "id": "jxFo1",
+                          "type": "ref",
+                          "ref": "lib:L3NWs",
+                          "name": "Status"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GoFzq",
+                      "name": "Órbita",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 14,
+                      "children": [
+                        {
+                          "id": "HgkNB",
+                          "type": "ref",
+                          "ref": "lib:z5nZlX",
+                          "name": "SectionLabel",
+                          "descendants": {
+                            "lib:LcI6R": {
+                              "content": "ÓRBITA"
+                            }
+                          }
+                        },
+                        {
+                          "type": "frame",
+                          "id": "qAyZv",
+                          "name": "Tipo",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "MuQhL",
+                              "name": "Label",
+                              "fill": "$lib:text-muted",
+                              "content": "Tipo de órbita",
+                              "fontFamily": "$lib:font-sans",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Olr7n",
+                              "name": "Segmented",
+                              "fill": "$lib:bg",
+                              "cornerRadius": "$lib:radius",
+                              "stroke": "$lib:border",
+                              "strokeWidth": 1,
+                              "gap": 2,
+                              "padding": 2,
+                              "children": [
+                                {
+                                  "id": "h69iI",
+                                  "type": "ref",
+                                  "ref": "lib:y5cLBj",
+                                  "name": "SSO",
+                                  "descendants": {
+                                    "lib:DD0U5": {
+                                      "content": "SSO"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "UOvEP",
+                                  "type": "ref",
+                                  "ref": "lib:y867xw",
+                                  "name": "LEO/MEO",
+                                  "descendants": {
+                                    "lib:P4rkK": {
+                                      "content": "LEO/MEO"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "S0sKY",
+                                  "type": "ref",
+                                  "ref": "lib:y5cLBj",
+                                  "name": "GEO",
+                                  "descendants": {
+                                    "lib:DD0U5": {
+                                      "content": "GEO"
+                                    }
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "qFDuc",
+                          "name": "R1",
+                          "width": "fill_container",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "id": "gRyt1",
+                              "type": "ref",
+                              "ref": "lib:C0spw",
+                              "name": "Altitud del perigeo",
+                              "width": "fill_container",
+                              "descendants": {
+                                "lib:W90NKy": {
+                                  "content": "Altitud del perigeo"
+                                },
+                                "lib:TFXUi": {
+                                  "content": "420"
+                                },
+                                "lib:j3SUbj": {
+                                  "content": "km"
+                                }
+                              }
+                            },
+                            {
+                              "id": "v4ZmTy",
+                              "type": "ref",
+                              "ref": "lib:C0spw",
+                              "name": "Altitud del apogeo",
+                              "width": "fill_container",
+                              "descendants": {
+                                "lib:W90NKy": {
+                                  "content": "Altitud del apogeo"
+                                },
+                                "lib:TFXUi": {
+                                  "content": "vacío = circular",
+                                  "fontFamily": "$lib:font-sans",
+                                  "fill": "$lib:text-subtle"
+                                },
+                                "lib:j3SUbj": {
+                                  "content": "km"
+                                }
+                              }
+                            },
+                            {
+                              "id": "WgUhL",
+                              "type": "ref",
+                              "ref": "lib:C0spw",
+                              "name": "Inclinación",
+                              "width": "fill_container",
+                              "descendants": {
+                                "lib:W90NKy": {
+                                  "content": "Inclinación"
+                                },
+                                "lib:TFXUi": {
+                                  "content": "51.6"
+                                },
+                                "lib:j3SUbj": {
+                                  "content": "°"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "xO6JF",
+                      "name": "Modos de actitud",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 14,
+                      "children": [
+                        {
+                          "id": "U869G7",
+                          "type": "ref",
+                          "ref": "lib:z5nZlX",
+                          "name": "SectionLabel",
+                          "descendants": {
+                            "lib:LcI6R": {
+                              "content": "MODOS DE ACTITUD"
+                            }
+                          }
+                        },
+                        {
+                          "type": "frame",
+                          "id": "W5eP3",
+                          "name": "Table",
+                          "clip": true,
+                          "width": "fill_container",
+                          "cornerRadius": "$lib:radius",
+                          "stroke": "$lib:border",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "M2qHZQ",
+                              "name": "Header",
+                              "width": "fill_container",
+                              "children": [
+                                {
+                                  "id": "mGVVi",
+                                  "type": "ref",
+                                  "ref": "lib:hOqEJ",
+                                  "name": "Nombre",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:XJ4NV": {
+                                      "content": "Nombre"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "N6g0C",
+                                  "type": "ref",
+                                  "ref": "lib:hOqEJ",
+                                  "name": "Eje primario",
+                                  "width": 104,
+                                  "descendants": {
+                                    "lib:XJ4NV": {
+                                      "content": "Eje primario"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "U7Jsv",
+                                  "type": "ref",
+                                  "ref": "lib:hOqEJ",
+                                  "name": "Dirección",
+                                  "width": 120,
+                                  "descendants": {
+                                    "lib:XJ4NV": {
+                                      "content": "Dirección"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "Z8FQNu",
+                                  "type": "ref",
+                                  "ref": "lib:hOqEJ",
+                                  "name": "Eje secundario",
+                                  "width": 112,
+                                  "descendants": {
+                                    "lib:XJ4NV": {
+                                      "content": "Eje secundario"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "C13wc",
+                                  "type": "ref",
+                                  "ref": "lib:hOqEJ",
+                                  "name": "Dirección",
+                                  "width": 120,
+                                  "descendants": {
+                                    "lib:XJ4NV": {
+                                      "content": "Dirección"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "iXDIa",
+                                  "type": "ref",
+                                  "ref": "lib:hOqEJ",
+                                  "name": "Actions",
+                                  "width": 44,
+                                  "descendants": {
+                                    "lib:XJ4NV": {
+                                      "content": ""
+                                    }
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "goftm",
+                              "name": "Apuntado nadir",
+                              "width": "fill_container",
+                              "children": [
+                                {
+                                  "id": "PWVgX",
+                                  "type": "ref",
+                                  "ref": "lib:bNYzR",
+                                  "name": "Nombre",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:no27i": {
+                                      "content": "Apuntado nadir",
+                                      "fontFamily": "$lib:font-sans"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "YEygX",
+                                  "type": "ref",
+                                  "ref": "lib:bNYzR",
+                                  "name": "Eje primario",
+                                  "width": 104,
+                                  "descendants": {
+                                    "lib:no27i": {
+                                      "content": "+Z",
+                                      "fontFamily": "$lib:font-mono"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "RHVHT",
+                                  "type": "ref",
+                                  "ref": "lib:bNYzR",
+                                  "name": "Dirección",
+                                  "width": 120,
+                                  "descendants": {
+                                    "lib:no27i": {
+                                      "content": "Nadir",
+                                      "fontFamily": "$lib:font-mono"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "L857ls",
+                                  "type": "ref",
+                                  "ref": "lib:bNYzR",
+                                  "name": "Eje secundario",
+                                  "width": 112,
+                                  "descendants": {
+                                    "lib:no27i": {
+                                      "content": "+X",
+                                      "fontFamily": "$lib:font-mono"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "mDzCV",
+                                  "type": "ref",
+                                  "ref": "lib:bNYzR",
+                                  "name": "Dirección",
+                                  "width": 120,
+                                  "descendants": {
+                                    "lib:no27i": {
+                                      "content": "Velocidad",
+                                      "fontFamily": "$lib:font-mono"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "FMqQj",
+                                  "name": "Actions",
+                                  "width": 44,
+                                  "height": 32,
+                                  "stroke": "$lib:border",
+                                  "strokeWidth": {
+                                    "bottom": 1
+                                  },
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "id": "chAHh",
+                                      "type": "ref",
+                                      "ref": "lib:boXaE",
+                                      "name": "Delete",
+                                      "strokeWidth": 0,
+                                      "descendants": {
+                                        "lib:PLCMX": {
+                                          "icon": "trash-2",
+                                          "fill": "$lib:text-subtle"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "MC5UD",
+                              "name": "Apuntado al Sol",
+                              "width": "fill_container",
+                              "children": [
+                                {
+                                  "id": "D8cb83",
+                                  "type": "ref",
+                                  "ref": "lib:bNYzR",
+                                  "name": "Nombre",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:no27i": {
+                                      "content": "Apuntado al Sol",
+                                      "fontFamily": "$lib:font-sans"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "Wh0fW",
+                                  "type": "ref",
+                                  "ref": "lib:bNYzR",
+                                  "name": "Eje primario",
+                                  "width": 104,
+                                  "descendants": {
+                                    "lib:no27i": {
+                                      "content": "−Y",
+                                      "fontFamily": "$lib:font-mono"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "b7Rdk",
+                                  "type": "ref",
+                                  "ref": "lib:bNYzR",
+                                  "name": "Dirección",
+                                  "width": 120,
+                                  "descendants": {
+                                    "lib:no27i": {
+                                      "content": "Sol",
+                                      "fontFamily": "$lib:font-mono"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "LS5wm",
+                                  "type": "ref",
+                                  "ref": "lib:bNYzR",
+                                  "name": "Eje secundario",
+                                  "width": 112,
+                                  "descendants": {
+                                    "lib:no27i": {
+                                      "content": "+Z",
+                                      "fontFamily": "$lib:font-mono"
+                                    }
+                                  }
+                                },
+                                {
+                                  "id": "rIfyB",
+                                  "type": "ref",
+                                  "ref": "lib:bNYzR",
+                                  "name": "Dirección",
+                                  "width": 120,
+                                  "descendants": {
+                                    "lib:no27i": {
+                                      "content": "Nadir",
+                                      "fontFamily": "$lib:font-mono"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "OMcUs",
+                                  "name": "Actions",
+                                  "width": 44,
+                                  "height": 32,
+                                  "stroke": "$lib:border",
+                                  "strokeWidth": {
+                                    "bottom": 1
+                                  },
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "id": "u9QXx",
+                                      "type": "ref",
+                                      "ref": "lib:boXaE",
+                                      "name": "Delete",
+                                      "strokeWidth": 0,
+                                      "descendants": {
+                                        "lib:PLCMX": {
+                                          "icon": "trash-2",
+                                          "fill": "$lib:text-subtle"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "id": "Mq7w5",
+                          "type": "ref",
+                          "ref": "lib:KVObA",
+                          "name": "Agregar modo",
+                          "descendants": {
+                            "lib:deDM1": {
+                              "icon": "plus"
+                            },
+                            "lib:t5tCf": {
+                              "content": "Agregar modo de actitud"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "atPS5",
+                      "name": "Criterios",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 14,
+                      "children": [
+                        {
+                          "id": "T9wTUh",
+                          "type": "ref",
+                          "ref": "lib:z5nZlX",
+                          "name": "SectionLabel",
+                          "descendants": {
+                            "lib:LcI6R": {
+                              "content": "CRITERIOS Y RESTRICCIONES"
+                            }
+                          }
+                        },
+                        {
+                          "type": "frame",
+                          "id": "tst7n",
+                          "name": "Margins",
+                          "width": "fill_container",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "vemYK",
+                              "name": "Margen de incertidumbre",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "id": "JbyPn",
+                                  "type": "ref",
+                                  "ref": "lib:C0spw",
+                                  "name": "Margen de incertidumbre",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:W90NKy": {
+                                      "content": "Margen de incertidumbre"
+                                    },
+                                    "lib:TFXUi": {
+                                      "content": "10"
+                                    },
+                                    "lib:j3SUbj": {
+                                      "content": "K"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "x2WZMb",
+                                  "name": "Default",
+                                  "fill": "$lib:text-subtle",
+                                  "content": "default · ECSS-E-ST-31C",
+                                  "fontFamily": "$lib:font-mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "yFSQG",
+                              "name": "Margen de aceptación",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "id": "YHsep",
+                                  "type": "ref",
+                                  "ref": "lib:C0spw",
+                                  "name": "Margen de aceptación",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:W90NKy": {
+                                      "content": "Margen de aceptación"
+                                    },
+                                    "lib:TFXUi": {
+                                      "content": "5"
+                                    },
+                                    "lib:j3SUbj": {
+                                      "content": "K"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "R9wjD",
+                                  "name": "Default",
+                                  "fill": "$lib:text-subtle",
+                                  "content": "default · ECSS-E-ST-31C",
+                                  "fontFamily": "$lib:font-mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "EQrbB",
+                              "name": "Margen de calificación",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "id": "I4A83",
+                                  "type": "ref",
+                                  "ref": "lib:C0spw",
+                                  "name": "Margen de calificación",
+                                  "width": "fill_container",
+                                  "descendants": {
+                                    "lib:W90NKy": {
+                                      "content": "Margen de calificación"
+                                    },
+                                    "lib:TFXUi": {
+                                      "content": "5"
+                                    },
+                                    "lib:j3SUbj": {
+                                      "content": "K"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Dz0bs",
+                                  "name": "Default",
+                                  "fill": "$lib:text-subtle",
+                                  "content": "default · ECSS-E-ST-31C",
+                                  "fontFamily": "$lib:font-mono",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "xd0A8",
+                          "name": "Budgets",
+                          "width": "fill_container",
+                          "gap": 16,
+                          "children": [
+                            {
+                              "id": "AIN55",
+                              "type": "ref",
+                              "ref": "lib:C0spw",
+                              "name": "Potencia para heaters",
+                              "width": "fill_container",
+                              "descendants": {
+                                "lib:W90NKy": {
+                                  "content": "Potencia para heaters"
+                                },
+                                "lib:TFXUi": {
+                                  "content": "40"
+                                },
+                                "lib:j3SUbj": {
+                                  "content": "W"
+                                }
+                              }
+                            },
+                            {
+                              "id": "UVoYE",
+                              "type": "ref",
+                              "ref": "lib:C0spw",
+                              "name": "Masa para el TCS",
+                              "width": "fill_container",
+                              "descendants": {
+                                "lib:W90NKy": {
+                                  "content": "Masa para el TCS"
+                                },
+                                "lib:TFXUi": {
+                                  "content": "—",
+                                  "fill": "$lib:text-subtle"
+                                },
+                                "lib:j3SUbj": {
+                                  "content": "kg"
+                                }
+                              }
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Deqw2",
+                              "name": "Caras de radiador",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 6,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "eZV53",
+                                  "name": "Label",
+                                  "fill": "$lib:text-muted",
+                                  "content": "Caras permitidas para radiador",
+                                  "fontFamily": "$lib:font-sans",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "AjH8J",
+                                  "name": "Faces",
+                                  "width": "fill_container",
+                                  "height": 32,
+                                  "fill": "$lib:bg",
+                                  "cornerRadius": "$lib:radius",
+                                  "stroke": "$lib:border-strong",
+                                  "strokeWidth": 1,
+                                  "gap": 6,
+                                  "padding": [
+                                    0,
+                                    8
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "id": "iGt7e",
+                                      "type": "ref",
+                                      "ref": "lib:UhXY4",
+                                      "name": "+Y",
+                                      "descendants": {
+                                        "lib:xtUYd": {
+                                          "content": "+Y"
+                                        }
+                                      }
+                                    },
+                                    {
+                                      "id": "U1wXi8",
+                                      "type": "ref",
+                                      "ref": "lib:UhXY4",
+                                      "name": "−Y",
+                                      "descendants": {
+                                        "lib:xtUYd": {
+                                          "content": "−Y"
+                                        }
+                                      }
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ovUsV",
+              "name": "Dock",
+              "clip": true,
+              "width": 340,
+              "height": "fill_container",
+              "fill": "$lib:surface",
+              "stroke": "$lib:border",
+              "strokeWidth": {
+                "left": 1
+              },
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "MdvEF",
+                  "name": "Header",
+                  "width": "fill_container",
+                  "height": 36,
+                  "stroke": "$lib:border",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "LMHil",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "bot",
+                      "library": "lucide",
+                      "fill": "$lib:text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "j7vzB7",
+                      "name": "Title",
+                      "fill": "$lib:text",
+                      "content": "Agente",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Q2S0DO",
+                      "name": "Spacer",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "yf6My",
+                      "name": "Dot",
+                      "fill": "$lib:ok",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "text",
+                      "id": "cNvyR",
+                      "name": "Agent",
+                      "fill": "$lib:text-subtle",
+                      "content": "Stefan · conectado",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VBKYi",
+                  "name": "Thread",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "gap": 14,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "id": "oLo4u",
+                      "type": "ref",
+                      "ref": "lib:PE4sG",
+                      "name": "Change",
+                      "width": "fill_container",
+                      "descendants": {
+                        "lib:mGhAZ": {
+                          "content": "ST"
+                        }
+                      }
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fBgIq",
+                      "name": "Human",
+                      "width": "fill_container",
+                      "justifyContent": "end",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "eo2ig",
+                          "name": "Bubble",
+                          "width": 240,
+                          "fill": "$lib:surface-2",
+                          "cornerRadius": "$lib:radius",
+                          "layout": "vertical",
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "xDq79",
+                              "name": "Text",
+                              "fill": "$lib:text",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "¿Por qué ampliaste el radiador?",
+                              "lineHeight": 1.45,
+                              "fontFamily": "$lib:font-sans",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PkLbG",
+                      "name": "Agent",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "rN4np",
+                          "name": "Author",
+                          "fill": "$lib:text-muted",
+                          "content": "Stefan",
+                          "fontFamily": "$lib:font-sans",
+                          "fontSize": 12,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "text",
+                          "id": "FfCeP",
+                          "name": "Text",
+                          "fill": "$lib:text",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "El margen cold del modo seguro quedaba por debajo de 5 K. Con 0.48 m² vuelve a 7 K según la última corrida de Balance global.",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$lib:font-sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pgLbX",
+                  "name": "Composer",
+                  "width": "fill_container",
+                  "stroke": "$lib:border",
+                  "strokeWidth": {
+                    "top": 1
+                  },
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "EGqw5",
+                      "name": "Input",
+                      "width": "fill_container",
+                      "height": 64,
+                      "fill": "$lib:bg",
+                      "cornerRadius": "$lib:radius",
+                      "stroke": "$lib:border-strong",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": [
+                        8,
+                        8,
+                        8,
+                        10
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "EzN3E",
+                          "name": "Placeholder",
+                          "fill": "$lib:text-subtle",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Escribile al agente…",
+                          "fontFamily": "$lib:font-sans",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "aNZ6G",
+                          "name": "Actions",
+                          "width": "fill_container",
+                          "justifyContent": "end",
+                          "children": [
+                            {
+                              "id": "liUHE",
+                              "type": "ref",
+                              "ref": "lib:boXaE",
+                              "name": "Send",
+                              "descendants": {
+                                "lib:PLCMX": {
+                                  "icon": "send-horizontal"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "sDGa8",
+          "name": "BottomPanel",
+          "clip": true,
+          "width": "fill_container",
+          "height": 168,
+          "fill": "$lib:surface",
+          "stroke": "$lib:border",
+          "strokeWidth": {
+            "top": 1
+          },
+          "layout": "vertical",
+          "children": [
+            {
+              "type": "frame",
+              "id": "uXxMj",
+              "name": "Tabs",
+              "width": "fill_container",
+              "height": 36,
+              "stroke": "$lib:border",
+              "strokeWidth": {
+                "bottom": 1
+              },
+              "gap": 4,
+              "padding": [
+                0,
+                8
+              ],
+              "alignItems": "end",
+              "children": [
+                {
+                  "id": "tklIB",
+                  "type": "ref",
+                  "ref": "lib:WzxnJ",
+                  "name": "Mensajes",
+                  "descendants": {
+                    "lib:V8oaaB": {
+                      "content": "Mensajes"
+                    }
+                  }
+                },
+                {
+                  "id": "I6OXxo",
+                  "type": "ref",
+                  "ref": "lib:nk9rJ",
+                  "name": "Corridas",
+                  "descendants": {
+                    "lib:KqxRR": {
+                      "content": "Corridas · 0"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "DA0Cd",
+              "name": "Messages",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 2,
+              "padding": [
+                8,
+                16
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "c7Ndz",
+                  "name": "Msg 14:32",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "L9gmH",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:32",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "gpR0f",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "info",
+                      "library": "lucide",
+                      "fill": "$lib:text-subtle"
+                    },
+                    {
+                      "type": "text",
+                      "id": "IvrKS",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Stefan modificó Balance global (radiator_area_m2 0.42 → 0.48 m²). Desactualizadas: Balance global, Solución, Márgenes.",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VWlRP",
+                  "name": "Msg 14:21",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jMDmd",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:21",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "JIf8l",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "git-branch-plus",
+                      "library": "lucide",
+                      "fill": "$lib:text-subtle"
+                    },
+                    {
+                      "type": "text",
+                      "id": "tTjbK",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Sistema «Entorno · SSO 800» creado desde Misión.",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "skOg8",
+                  "name": "Msg 14:05",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ms2ce",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:05",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "FKFJR",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "circle-check",
+                      "library": "lucide",
+                      "fill": "$lib:ok"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Itifp",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Balance global actualizada en 0.8 s.",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "xXreG",
+                  "name": "Msg 14:04",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "NyRer",
+                      "name": "Time",
+                      "fill": "$lib:text-subtle",
+                      "content": "14:04",
+                      "fontFamily": "$lib:font-mono",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "t8RyX",
+                      "name": "Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "triangle-alert",
+                      "library": "lucide",
+                      "fill": "$lib:warn"
+                    },
+                    {
+                      "type": "text",
+                      "id": "wniLz",
+                      "name": "Text",
+                      "fill": "$lib:text-muted",
+                      "content": "Entorno LEO 600: β máx. 72.0° cerca del límite de la tabla de flujos (75°).",
+                      "fontFamily": "$lib:font-sans",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "imports": {
