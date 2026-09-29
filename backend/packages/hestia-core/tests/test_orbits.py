@@ -4,7 +4,15 @@ import math
 
 import pytest
 
-from hestia_core.orbits import sso_inclination_rad, sso_max_altitude_m
+from hestia_core.orbits import (
+    EARTH_RADIUS_M,
+    SUN_MEAN_MOTION_RAD_PER_S,
+    eccentricity,
+    nodal_precession_rate,
+    orbital_period_s,
+    sso_inclination_rad,
+    sso_max_altitude_m,
+)
 
 
 def test_sso_inclination_at_800_km() -> None:
@@ -30,3 +38,28 @@ def test_sso_max_altitude() -> None:
     )
     with pytest.raises(ValueError):
         sso_inclination_rad(sso_max_altitude_m() + 10e3)
+
+
+def test_nodal_precession_of_a_sso_matches_the_mean_sun() -> None:
+    # By construction of the SSO inclination (same J2 model): dΩ/dt = 360° per tropical year.
+    a = EARTH_RADIUS_M + 700e3
+    rate = nodal_precession_rate(a, sso_inclination_rad(700e3))
+    assert rate == pytest.approx(SUN_MEAN_MOTION_RAD_PER_S, rel=1e-12)
+
+
+def test_nodal_precession_of_the_iss() -> None:
+    # Vallado, 4th ed., eq. 9-41; SMAD 3rd ed., fig. 6-5: a circular orbit at 400 km and
+    # i = 51.6° regresses about 5.0°/day. Tolerance 0.05°/day (reading of the figure).
+    rate = nodal_precession_rate(EARTH_RADIUS_M + 400e3, math.radians(51.6))
+    assert math.degrees(rate) * 86_400 == pytest.approx(-5.0, abs=0.05)
+    assert nodal_precession_rate(EARTH_RADIUS_M + 400e3, math.pi / 2) == pytest.approx(0.0)
+
+
+def test_period_and_eccentricity() -> None:
+    # A geostationary orbit (a = 42 164 km) has the sidereal day as its period, 86 164 s.
+    # Tolerance 1 s (a is rounded to the km).
+    assert orbital_period_s(42_164e3) == pytest.approx(86_164.1, abs=1.0)
+    # Hand calculation: r_p = R + 500 km, r_a = R + 700 km → e = 200 / (2R + 1200 km).
+    expected = 200e3 / (2 * EARTH_RADIUS_M + 1_200e3)
+    assert eccentricity(500e3, 700e3) == pytest.approx(expected, rel=1e-12)
+    assert eccentricity(600e3, 600e3) == 0.0

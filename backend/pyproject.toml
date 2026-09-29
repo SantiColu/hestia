@@ -16,6 +16,7 @@ dev = [
     "ruff>=0.6",
     "pyright>=1.1.380",
     "import-linter>=2.1",
+    "skyfield>=1.55",
 ]
 
 [tool.uv]
