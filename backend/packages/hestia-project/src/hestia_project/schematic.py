@@ -122,7 +122,7 @@ def invalidate(project: Project, cell_ids: Iterable[str]) -> list[str]:
     return changed
 
 
-def _clean_name(name: str) -> str:
+def clean_name(name: str) -> str:
     cleaned = " ".join(name.split())
     if not cleaned:
         raise InvalidOperationError("El nombre no puede estar vacío.")
@@ -133,7 +133,7 @@ def _clean_name(name: str) -> str:
     return cleaned
 
 
-def _unique_system_name(project: Project, name: str) -> str:
+def unique_system_name(project: Project, name: str) -> str:
     taken = {s.name for s in project.systems}
     if name not in taken:
         return name
@@ -176,7 +176,7 @@ def check_link(project: Project, source_cell_id: str, target_cell_id: str) -> No
         raise InvalidOperationError("El vínculo crearía un ciclo.")
 
 
-def _add_link(project: Project, source_cell_id: str, target_cell_id: str) -> Link:
+def add_link(project: Project, source_cell_id: str, target_cell_id: str) -> Link:
     check_link(project, source_cell_id, target_cell_id)
     source = get_cell(project, source_cell_id)
     link = Link(
@@ -209,7 +209,7 @@ def _estimated_height(n_cells: int) -> float:
     return _HEADER_HEIGHT + _ROW_HEIGHT * max(n_cells, 1)
 
 
-def _free_position(
+def free_position(
     project: Project, x: float, y: float, n_cells: int, exclude: str | None = None
 ) -> Position:
     """First position at column ``x``, from ``y`` down, that overlaps no other system."""
@@ -237,12 +237,12 @@ def _default_position(project: Project, n_cells: int) -> Position:
     if not project.systems:
         return Position(x=0, y=0)
     x = max(s.position.x for s in project.systems) + SYSTEM_WIDTH + SYSTEM_GAP
-    return _free_position(project, x, 0, n_cells)
+    return free_position(project, x, 0, n_cells)
 
 
 def _position_right_of(project: Project, system: System, n_cells: int) -> Position:
     x = system.position.x + SYSTEM_WIDTH + SYSTEM_GAP
-    return _free_position(project, x, system.position.y, n_cells)
+    return free_position(project, x, system.position.y, n_cells)
 
 
 # ---------------------------------------------------------------- creation helpers
@@ -253,7 +253,7 @@ def _new_cell(project: Project, system: System, stage: StageType, name: str | No
         id=new_id("cell"),
         system_id=system.id,
         stage=stage,
-        name=_clean_name(name) if name else STAGES[stage].default_name,
+        name=clean_name(name) if name else STAGES[stage].default_name,
     )
     project.cells.append(cell)
     system.cell_ids.append(cell.id)
@@ -279,7 +279,7 @@ def _autolink(project: Project, system: System, new_cell_ids: set[str]) -> list[
             if source.id not in new_cell_ids and target.id not in new_cell_ids:
                 continue
             try:
-                created.append(_add_link(project, source.id, target.id))
+                created.append(add_link(project, source.id, target.id))
             except InvalidOperationError:
                 continue
     return created
@@ -291,7 +291,7 @@ def _create_system(
     stages = blueprint.stages()
     system = System(
         id=new_id("sys"),
-        name=_unique_system_name(project, _clean_name(name) if name else blueprint.default_name()),
+        name=unique_system_name(project, clean_name(name) if name else blueprint.default_name()),
         position=position or _default_position(project, len(stages)),
     )
     project.systems.append(system)
@@ -365,7 +365,7 @@ def add_cell(
 
 
 def link(project: Project, source_cell_id: str, target_cell_id: str) -> Outcome:
-    new = _add_link(project, source_cell_id, target_cell_id)
+    new = add_link(project, source_cell_id, target_cell_id)
     source = get_cell(project, source_cell_id)
     target = get_cell(project, target_cell_id)
     return Outcome(
@@ -414,7 +414,7 @@ def branch(
         position or _position_right_of(project, source_system, n_cells),
     )
     links = [
-        _add_link(project, source.id, cell.id)
+        add_link(project, source.id, cell.id)
         for cell, input_stage in _free_inputs(project, system)
         if input_stage is source.stage
     ]
@@ -426,13 +426,13 @@ def branch(
 
 def rename_system(project: Project, system_id: str, name: str) -> Outcome:
     system = get_system(project, system_id)
-    old, system.name = system.name, _clean_name(name)
+    old, system.name = system.name, clean_name(name)
     return Outcome(summary=f"Renombró el sistema «{old}» a «{system.name}».")
 
 
 def rename_cell(project: Project, cell_id: str, name: str) -> Outcome:
     cell = get_cell(project, cell_id)
-    old, cell.name = cell.name, _clean_name(name)
+    old, cell.name = cell.name, clean_name(name)
     return Outcome(summary=f"Renombró la celda «{old}» a «{cell.name}».")
 
 
@@ -450,11 +450,9 @@ def duplicate_system(project: Project, system_id: str, position: Position | None
     original = get_system(project, system_id)
     copy = System(
         id=new_id("sys"),
-        name=_unique_system_name(project, f"{original.name} (copia)"),
+        name=unique_system_name(project, f"{original.name} (copia)"),
         position=position
-        or _free_position(
-            project, original.position.x, original.position.y, len(original.cell_ids)
-        ),
+        or free_position(project, original.position.x, original.position.y, len(original.cell_ids)),
     )
     project.systems.append(copy)
     mapping: dict[str, str] = {}

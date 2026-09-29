@@ -24,6 +24,12 @@ class InvalidOperationError(ProjectError):
     code = "invalid_operation"
 
 
+class InvalidFragmentError(ProjectError):
+    """Clipboard content that is not a usable fragment (unknown version, broken structure)."""
+
+    code = "invalid_fragment"
+
+
 class JustificationRequiredError(ProjectError):
     code = "justification_required"
 

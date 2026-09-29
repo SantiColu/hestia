@@ -13,6 +13,7 @@ from hestia_project.errors import (
 )
 from hestia_project.history import (
     JUSTIFICATION_REQUIRED,
+    OPERATION_LABELS,
     Author,
     Change,
     ChangeRecord,
@@ -35,7 +36,11 @@ class DocumentState(Schema):
     can_undo: bool
     can_redo: bool
     undo_summary: str | None
+    """Summary of the change that undo would revert."""
     redo_summary: str | None
+    undo_label: str | None
+    """Short name of the operation undo would revert (e.g. «renombrar sistema»)."""
+    redo_label: str | None
 
 
 class ProjectView(Schema):
@@ -87,6 +92,8 @@ class ProjectDocument:
             can_redo=bool(self._redo),
             undo_summary=self._undo[-1].change.summary if self._undo else None,
             redo_summary=self._redo[-1].change.summary if self._redo else None,
+            undo_label=OPERATION_LABELS[self._undo[-1].change.operation] if self._undo else None,
+            redo_label=OPERATION_LABELS[self._redo[-1].change.operation] if self._redo else None,
         )
 
     def view(self) -> ProjectView:

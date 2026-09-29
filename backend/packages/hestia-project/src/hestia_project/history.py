@@ -34,6 +34,7 @@ class Operation(StrEnum):
     DUPLICATE_SYSTEM = "duplicate_system"
     DELETE_SYSTEM = "delete_system"
     DELETE_CELL = "delete_cell"
+    PASTE = "paste"
     UNDO = "undo"
     REDO = "redo"
 
@@ -42,6 +43,24 @@ JUSTIFICATION_REQUIRED: frozenset[Operation] = frozenset(
     {Operation.DELETE_SYSTEM, Operation.DELETE_CELL, Operation.UNLINK}
 )
 """Destructive operations: an empty justification is rejected. Elsewhere it may be empty."""
+
+OPERATION_LABELS: dict[Operation, str] = {
+    Operation.CREATE_SYSTEM: "crear sistema",
+    Operation.ADD_CELL: "agregar celda",
+    Operation.LINK: "vincular",
+    Operation.UNLINK: "desvincular",
+    Operation.BRANCH: "ramificar",
+    Operation.RENAME_SYSTEM: "renombrar sistema",
+    Operation.RENAME_CELL: "renombrar celda",
+    Operation.MOVE_SYSTEM: "mover sistema",
+    Operation.DUPLICATE_SYSTEM: "duplicar sistema",
+    Operation.DELETE_SYSTEM: "eliminar sistema",
+    Operation.DELETE_CELL: "eliminar celda",
+    Operation.PASTE: "pegar",
+    Operation.UNDO: "deshacer",
+    Operation.REDO: "rehacer",
+}
+"""Short name of each operation, as in «Deshacer renombrar sistema» (Edit menu)."""
 
 
 class Change(Schema):
