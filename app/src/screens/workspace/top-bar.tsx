@@ -117,7 +117,7 @@ export function TopBar({ view }: { view: ProjectView }) {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => void file.closeProject()}>
-              <X /> Cerrar proyecto <DropdownMenuShortcut>Ctrl+W</DropdownMenuShortcut>
+              <X /> Cerrar proyecto <DropdownMenuShortcut>Ctrl+Shift+W</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -6,6 +6,7 @@ export type ShortcutAction =
   | "save"
   | "saveAs"
   | "close"
+  | "closeTab"
   | "undo"
   | "redo"
   | "cut"
@@ -62,13 +63,14 @@ function actionFor(event: KeyboardEvent): ShortcutAction | undefined {
     return undefined;
   }
   if (key === "s") return event.shiftKey ? "saveAs" : "save";
+  // Ctrl+W closes the document tab; Ctrl+Shift+W closes the project (docs/ux-workspace.md).
+  if (key === "w") return event.shiftKey ? "close" : "closeTab";
   if (key === "z") return event.shiftKey ? "redo" : "undo";
   if (key === "y" && !event.shiftKey) return "redo";
   if (event.shiftKey) return undefined;
   const plain: Record<string, ShortcutAction> = {
     n: "new",
     o: "open",
-    w: "close",
     x: "cut",
     c: "copy",
     v: "paste",

@@ -25,7 +25,7 @@ export type Message = {
   id: number;
   time: Date;
   text: string;
-  tone: "info" | "error";
+  tone: "info" | "warning" | "error";
   author?: string;
 };
 
@@ -151,6 +151,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     const onEvent = (raw: MessageEvent<string>) => {
       const event = JSON.parse(raw.data) as ProjectEvent;
       push({ text: event.message, tone: "info", author: event.change?.author.name });
+      // What upgrading an older file dropped (e.g. links no longer valid, ADR 0016).
+      for (const warning of event.warnings) push({ text: warning, tone: "warning" });
       void refresh();
       if (event.type !== "project_changed") void refreshRecents();
     };

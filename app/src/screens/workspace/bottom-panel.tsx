@@ -1,4 +1,4 @@
-import { CircleX, Info } from "lucide-react";
+import { CircleX, Info, TriangleAlert } from "lucide-react";
 import { HistoryItem } from "@/components/workflow/history-item";
 import {
   PanelTabs,
@@ -36,7 +36,8 @@ export function BottomPanel() {
           <ul className="flex flex-col-reverse gap-0.5">
             {messages.map((message) => {
               const error = message.tone === "error";
-              const Icon = error ? CircleX : Info;
+              const warning = message.tone === "warning";
+              const Icon = error ? CircleX : warning ? TriangleAlert : Info;
               return (
                 <li key={message.id} className="flex min-h-6 items-center gap-2.5 text-xs">
                   <time className="font-mono text-[11px] text-subtle-foreground tabular-nums">
@@ -45,7 +46,7 @@ export function BottomPanel() {
                   <Icon
                     className={cn(
                       "size-3.5 shrink-0",
-                      error ? "text-error" : "text-subtle-foreground",
+                      error ? "text-error" : warning ? "text-warn" : "text-subtle-foreground",
                     )}
                     aria-hidden
                   />

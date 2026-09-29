@@ -1,9 +1,10 @@
 import { memo, type MouseEvent } from "react";
 import { Handle, Position as HandlePosition, type Node, type NodeProps } from "@xyflow/react";
-import { Ellipsis, GitBranchPlus, Pencil } from "lucide-react";
-import type { Cell, Link, System } from "@/api/client";
+import { Ellipsis, GitBranchPlus, Pencil, TriangleAlert } from "lucide-react";
+import type { Cell, Link, StageType, System } from "@/api/client";
 import { StageStatusIcon } from "@/components/feedback/stage-status";
 import { cn } from "@/lib/utils";
+import { useEditor } from "@/project/editor";
 import { CellMenu, SystemMenu } from "./menus";
 import { useWorkspaceUi } from "./context";
 import type { SchematicActions } from "./actions";
@@ -12,6 +13,8 @@ export type SystemNodeData = {
   system: System;
   cells: Cell[];
   links: Link[];
+  /** Required stage types missing from each cell's context (from the API). */
+  missing: Record<string, StageType[]>;
   actions: SchematicActions;
 };
 
@@ -41,8 +44,9 @@ function openMenuFrom(event: MouseEvent<HTMLButtonElement>) {
 
 /** A system block: header (drag handle, name, rename, menu) and one row per cell. */
 export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNodeType>) {
-  const { system, cells, links, actions } = data;
+  const { system, cells, links, missing, actions } = data;
   const { selection, select, validTargets } = useWorkspaceUi();
+  const editor = useEditor();
   const systemSelected = selection?.kind === "system" && selection.id === system.id;
 
   return (
@@ -86,6 +90,7 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
       {cells.map((cell) => {
         const selected = selection?.kind === "cell" && selection.id === cell.id;
         const target = validTargets?.has(cell.id) ?? false;
+        const cellMissing = missing[cell.id];
         return (
           <CellMenu key={cell.id} cell={cell} links={links} actions={actions}>
             <div
@@ -97,6 +102,7 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
                 target && "outline-1 -outline-offset-1 outline-primary",
               )}
               onClick={() => select({ kind: "cell", id: cell.id })}
+              onDoubleClick={() => editor.open(cell.id)}
             >
               <Handle
                 type="target"
@@ -105,6 +111,16 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
                 className={handleClass}
               />
               <span className="flex-1 truncate text-[13px] font-medium">{cell.name}</span>
+              {cellMissing && !target && (
+                <TriangleAlert
+                  className="size-3.5 shrink-0 text-warn"
+                  aria-label="Contexto incompleto"
+                >
+                  <title>
+                    {`Falta en su contexto: ${cellMissing.map(actions.stageName).join(", ")}`}
+                  </title>
+                </TriangleAlert>
+              )}
               {target ? (
                 <GitBranchPlus
                   className="size-3.5 shrink-0 text-primary"

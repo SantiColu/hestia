@@ -4,6 +4,7 @@ import { api, unwrap } from "@/api/client";
 import { isTauri } from "@/lib/native";
 import { fileLabel, useEditActions, useFileActions } from "@/project/actions";
 import { DialogsProvider, useDialogs } from "@/project/dialogs";
+import { EditorProvider, useEditor } from "@/project/editor";
 import { useShortcuts } from "@/project/shortcuts";
 import { ProjectProvider, useProject } from "@/project/store";
 import { Home } from "./home";
@@ -14,6 +15,7 @@ function Shell() {
   const file = useFileActions();
   const edit = useEditActions();
   const dialogs = useDialogs();
+  const editor = useEditor();
 
   useShortcuts({
     new: () => void file.newProject(),
@@ -21,22 +23,24 @@ function Shell() {
     save: () => void file.save(),
     saveAs: () => void file.saveAs(),
     close: () => void file.closeProject(),
+    closeTab: editor.closeActive,
     undo: edit.undo,
     redo: edit.redo,
   });
 
   // Closing the desktop window: ask about unsaved changes and release the file lock.
-  const latest = useRef({ view, file, dialogs });
+  const latest = useRef({ view, file, dialogs, editor });
   useEffect(() => {
-    latest.current = { view, file, dialogs };
+    latest.current = { view, file, dialogs, editor };
   });
   useEffect(() => {
     if (!isTauri()) return;
     const window = getCurrentWindow();
     const unlisten = window.onCloseRequested(async (event) => {
-      const { view: current, file: actions, dialogs: ask } = latest.current;
+      const { view: current, file: actions, dialogs: ask, editor: tabs } = latest.current;
       if (!current) return;
       event.preventDefault();
+      if (!(await tabs.confirmDiscardDrafts())) return;
       if (current.document.dirty) {
         const choice = await ask.askUnsaved(fileLabel(current));
         if (choice === "cancel") return;
@@ -58,7 +62,9 @@ export function App() {
   return (
     <ProjectProvider>
       <DialogsProvider>
-        <Shell />
+        <EditorProvider>
+          <Shell />
+        </EditorProvider>
       </DialogsProvider>
     </ProjectProvider>
   );

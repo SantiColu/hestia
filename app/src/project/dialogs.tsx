@@ -23,6 +23,7 @@ type ConfirmRequest = {
 };
 
 type RenameRequest = { title: string; current: string };
+type YesNoRequest = { title: string; description: string; confirmLabel: string };
 export type RenameAnswer = { name: string; justification: string };
 
 type DialogsValue = {
@@ -33,13 +34,16 @@ type DialogsValue = {
   askJustification: (request: ConfirmRequest) => Promise<string | null>;
   /** New name plus an optional justification. Null when cancelled. */
   askRename: (request: RenameRequest) => Promise<RenameAnswer | null>;
+  /** A yes/no question (e.g. discard unapplied drafts). Resolves true on confirm. */
+  askConfirm: (request: YesNoRequest) => Promise<boolean>;
 };
 
 type Pending =
   | { kind: "unsaved"; fileLabel: string; resolve: (choice: UnsavedChoice) => void }
   | { kind: "locked"; message: string; resolve: (force: boolean) => void }
   | { kind: "confirm"; request: ConfirmRequest; resolve: (justification: string | null) => void }
-  | { kind: "rename"; request: RenameRequest; resolve: (answer: RenameAnswer | null) => void };
+  | { kind: "rename"; request: RenameRequest; resolve: (answer: RenameAnswer | null) => void }
+  | { kind: "yesno"; request: YesNoRequest; resolve: (confirmed: boolean) => void };
 
 const DialogsContext = createContext<DialogsValue | null>(null);
 
@@ -70,9 +74,15 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const askConfirm = useCallback(
+    (request: YesNoRequest) =>
+      new Promise<boolean>((resolve) => setPending({ kind: "yesno", request, resolve })),
+    [],
+  );
+
   const value = useMemo(
-    () => ({ askUnsaved, askLocked, askJustification, askRename }),
-    [askUnsaved, askLocked, askJustification, askRename],
+    () => ({ askUnsaved, askLocked, askJustification, askRename, askConfirm }),
+    [askUnsaved, askLocked, askJustification, askRename, askConfirm],
   );
 
   const close = () => setPending(null);
@@ -123,6 +133,15 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
           onAnswer={(answer) => {
             close();
             pending.resolve(answer);
+          }}
+        />
+      )}
+      {pending?.kind === "yesno" && (
+        <YesNoDialog
+          request={pending.request}
+          onAnswer={(confirmed) => {
+            close();
+            pending.resolve(confirmed);
           }}
         />
       )}
@@ -246,6 +265,33 @@ function RenameDialog({
             </Button>
           </DialogFooter>
         </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function YesNoDialog({
+  request,
+  onAnswer,
+}: {
+  request: YesNoRequest;
+  onAnswer: (confirmed: boolean) => void;
+}) {
+  return (
+    <Dialog open onOpenChange={(open) => !open && onAnswer(false)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{request.title}</DialogTitle>
+          <DialogDescription>{request.description}</DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onAnswer(false)}>
+            Cancelar
+          </Button>
+          <Button variant="destructive" onClick={() => onAnswer(true)}>
+            {request.confirmLabel}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

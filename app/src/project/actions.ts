@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { ApiError, api, unwrap, type ProjectView } from "@/api/client";
 import { pickProjectToOpen, pickProjectToSave } from "@/lib/native";
 import { useDialogs } from "./dialogs";
+import { useEditor } from "./editor";
 import { useProject } from "./store";
 
 export function fileLabel(view: ProjectView | null): string {
@@ -16,6 +17,7 @@ export function fileLabel(view: ProjectView | null): string {
 export function useFileActions() {
   const { view, setView, fail, refreshRecents } = useProject();
   const dialogs = useDialogs();
+  const { confirmDiscardDrafts } = useEditor();
 
   const saveAs = useCallback(async (): Promise<boolean> => {
     if (!view) return false;
@@ -61,6 +63,7 @@ export function useFileActions() {
   );
 
   const newProject = useCallback(async () => {
+    if (!(await confirmDiscardDrafts())) return;
     try {
       const result = await guardUnsaved((discard) =>
         unwrap(api.POST("/project/new", { body: { discard_unsaved: discard } })),
@@ -69,13 +72,14 @@ export function useFileActions() {
     } catch (error) {
       fail(error);
     }
-  }, [guardUnsaved, setView, fail]);
+  }, [guardUnsaved, setView, fail, confirmDiscardDrafts]);
 
   const openProject = useCallback(
     async (knownPath?: string) => {
       try {
         const path = knownPath ?? (await pickProjectToOpen());
         if (!path) return;
+        if (path !== view?.document.path && !(await confirmDiscardDrafts())) return;
         const open = (discard: boolean, force: boolean) =>
           unwrap(api.POST("/project/open", { body: { path, force, discard_unsaved: discard } }));
         const result = await guardUnsaved(async (discard) => {
@@ -93,10 +97,11 @@ export function useFileActions() {
         void refreshRecents();
       }
     },
-    [guardUnsaved, dialogs, setView, fail, refreshRecents],
+    [guardUnsaved, dialogs, setView, fail, refreshRecents, view, confirmDiscardDrafts],
   );
 
   const closeProject = useCallback(async (): Promise<boolean> => {
+    if (!(await confirmDiscardDrafts())) return false;
     try {
       const result = await guardUnsaved((discard) =>
         unwrap(api.POST("/project/close", { body: { discard_unsaved: discard } })),
@@ -108,7 +113,7 @@ export function useFileActions() {
       fail(error);
       return false;
     }
-  }, [guardUnsaved, setView, fail]);
+  }, [guardUnsaved, setView, fail, confirmDiscardDrafts]);
 
   const removeRecent = useCallback(
     async (path: string) => {

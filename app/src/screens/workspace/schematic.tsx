@@ -15,7 +15,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import { Maximize, Minus, Plus } from "lucide-react";
 import { EmptyState } from "@/components/data/empty-state";
-import type { Project } from "@/api/client";
+import type { Project, StageType } from "@/api/client";
 import { useProject } from "@/project/store";
 import { useSchematicActions } from "./actions";
 import { useWorkspaceUi } from "./context";
@@ -72,7 +72,13 @@ function cellIdFromHandle(handle: string | null | undefined): string | null {
 }
 
 /** The project schematic: systems as nodes, links as orthogonal edges between cell rows. */
-function SchematicCanvas({ project }: { project: Project }) {
+function SchematicCanvas({
+  project,
+  missing,
+}: {
+  project: Project;
+  missing: Record<string, StageType[]>;
+}) {
   const actions = useSchematicActions();
   const { notify } = useProject();
   const { selection, select, dragItem, validTargets, startConnect, endDrag, pointerRef } =
@@ -90,10 +96,11 @@ function SchematicCanvas({ project }: { project: Project }) {
           system,
           cells: system.cell_ids.flatMap((id) => project.cells.find((c) => c.id === id) ?? []),
           links: project.links,
+          missing,
           actions,
         },
       })),
-    [project, actions],
+    [project, missing, actions],
   );
 
   // Local copy so dragging is smooth; the API position wins on every project change.
@@ -238,10 +245,16 @@ function SchematicCanvas({ project }: { project: Project }) {
   );
 }
 
-export function Schematic({ project }: { project: Project }) {
+export function Schematic({
+  project,
+  missing,
+}: {
+  project: Project;
+  missing: Record<string, StageType[]>;
+}) {
   return (
     <ReactFlowProvider>
-      <SchematicCanvas project={project} />
+      <SchematicCanvas project={project} missing={missing} />
     </ReactFlowProvider>
   );
 }
