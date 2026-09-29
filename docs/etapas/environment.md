@@ -1,6 +1,10 @@
 # Etapa 0.2 · Entorno (`environment`): parámetros y resultado
 
-> **Especificación para implementar (2026-09-29).** Sin implementar. Etapa de cálculo ([ADR 0021](../adr/0021-etapas-de-calculo.md)) con proveedor analítico propio ([ADR 0020](../adr/0020-entorno-orbital-analitico.md)). Lo marcado *(propuesta)* se decidió sin revisión y puede cambiar. Convenciones y tipos: los de [mission.md](mission.md#convenciones).
+> **Implementado (2026-09-29).** Etapa de cálculo ([ADR 0021](../adr/0021-etapas-de-calculo.md), contrato en [ADR 0022](../adr/0022-contrato-de-etapas-de-calculo.md)) con proveedor analítico propio ([ADR 0020](../adr/0020-entorno-orbital-analitico.md)): parámetros `hestia_core.environment.parameters.EnvironmentParameters` (v1) con validación `validate_environment_parameters`, proveedor `hestia_core.environment.analytic.AnalyticEnvironmentProvider` (versión 1) detrás del Protocol `EnvironmentProvider`, resultado `EnvironmentResult` (v1), API (`update_cell`, `get_cell_result`, `get_orbit_profile` y los endpoints genéricos del artefacto para los parámetros), tools MCP y pestaña con Parámetros, Resultados y Órbita 3D (sin alinear con `workspace.pen`). Tests contra cálculos a mano y referencias, y Skyfield (SGP4 + DE421) como oráculo de desarrollo de β y eclipse. Lo marcado *(propuesta)* se decidió sin revisión y puede cambiar. Convenciones y tipos: los de [mission.md](mission.md#convenciones).
+>
+> **Provisorio:** la tabla de albedo e IR por inclinación tiene una sola banda (albedo 0,25–0,35, IR 218–258 W/m², «provisorio, a verificar contra NASA TM-2001-211221»); el umbral de excentricidad (0,01) y la constante solar (1361 W/m², ECSS-E-ST-10-04C) están por verificar.
+>
+> **Decisiones de la implementación:** albedo e IR vacíos significan «tabla por inclinación» y se resuelven al actualizar (el resultado informa el valor y su fuente); `ltan_dispersion` y `geo_max_inclination` vacíos valen 0; la altitud nominal es la de la SSO, el perigeo en LEO/MEO o la de GEO, y la órbita se modela circular a esa altitud; el período nominal sale del semieje mayor; el eclipse cónico cuenta la penumbra; la deriva de la hora del nodo se aplica como ±Δ desde el lanzamiento (conservador); cada condición propia va a la primera fecha cuya envolvente tiene su β (si la misión nunca lo tiene, a la fecha de lanzamiento con una nota); los flujos de cada condición usan la irradiancia mínima y máxima de la misión, no la de su fecha; el Sol queda fijo durante una órbita y los perfiles empiezan en el nodo ascendente; el proveedor rechaza un paso que daría más de 200 000 fechas. Detalle en los commits de la etapa.
 
 Traduce la órbita y los modos de actitud de Misión en la geometría (ángulo β, eclipses) y los **flujos incidentes** (W/m²) que recibe cada cara de la envolvente, y entrega las **condiciones extremas** del ambiente. No elige cuál es el caso caliente o frío del satélite: eso depende de sus propiedades ópticas y su disipación, y se decide en `global_balance`.
 
@@ -91,7 +95,7 @@ Los perfiles sirven para los gráficos, la vista 3D y, más adelante, para los t
 ## Validaciones
 
 **Parámetros**
-- `solar_constant` > 0; albedos entre 0 y 1; IR > 0; `albedo_cold` ≤ `albedo_hot` y `olr_cold` ≤ `olr_hot`.
+- `solar_constant` > 0; albedos entre 0 y 1; IR > 0; `albedo_min` ≤ `albedo_max` y `olr_min` ≤ `olr_max` (con los valores de tabla para los vacíos cuando se conoce la órbita).
 - Solo se cargan los campos de dispersión del tipo de órbita (`not_allowed`, como en Misión).
 - `ltan_dispersion` ≥ 0; `geo_max_inclination` ≥ 0; `eol_altitude` ≥ 100 km y ≤ la altitud nominal (el perigeo en `keplerian`).
 - `mission_step` > 0 y ≤ `design_life`; `orbit_samples` entre 36 y 3600.
@@ -141,5 +145,6 @@ La UI no calcula: dibuja `orbit_profiles` tal como llegan y solo interpola entre
 ## Abierto
 
 - Tiempo de promediado de las tablas de albedo e IR (depende de la inercia térmica, que se conoce recién en `global_balance`).
-- Umbral de excentricidad.
+- Umbral de excentricidad (hoy 0,01, provisorio).
+- Tablas de albedo e IR de NASA TM-2001-211221 (hoy una banda provisoria).
 - Recorrer la misión completa en la vista 3D (la fecha mueve el plano orbital), además de una órbita por condición.

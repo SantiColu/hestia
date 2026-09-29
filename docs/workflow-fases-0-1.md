@@ -77,16 +77,17 @@ equipment ───────────────┘
   - Fase 0 sobre cualquier celda no es válido: sus celdas son raíces o ya tienen su padre adentro.
 - **Duplicar sistema:** copia celdas (con estado y artefacto), vínculos internos y vínculos entrantes desde otros sistemas; los salientes no.
 - **Eliminar:** borra la celda o el sistema con sus vínculos. Un sistema que queda sin celdas se elimina.
-- **Desactualización:** vincular, desvincular o perder una fuente, o aplicar un cambio en una celda, marca todo lo aguas abajo, incluso en otros sistemas. Solo cambian las celdas con resultados (`up_to_date`, `failed` → `outdated`); `never_run` se mantiene. Las etapas formulario no se desactualizan por cambios aguas arriba: se revalidan (ADR 0017).
+- **Desactualización:** vincular, desvincular o perder una fuente, o aplicar un cambio en una celda, marca todo lo aguas abajo, incluso en otros sistemas. Solo cambian las celdas con resultados (`up_to_date`, `failed` → `outdated`); `never_run` se mantiene. Las etapas formulario no se desactualizan por cambios aguas arriba: se revalidan (ADR 0017). Aplicar parámetros distintos en una etapa de cálculo también la desactualiza a ella; actualizarla con éxito desactualiza lo aguas abajo. Nada se recalcula solo (ADR 0021).
 - **Dentro de un sistema los vínculos no se dibujan:** el orden de las celdas en el bloque ya los expresa. Entre sistemas se dibujan como conectores ortogonales.
 
 ## Migración de proyectos existentes
 
-Sube `Project.SCHEMA_VERSION` (hoy 3: la 2 es el contexto por cadena, la 3 guarda el artefacto de las etapas formulario; ADR 0019). Al abrir un `.hestia` de la versión 1:
+Sube `Project.SCHEMA_VERSION` (hoy 4: la 2 es el contexto por cadena, la 3 guarda el artefacto de las etapas formulario, ADR 0019; la 4 guarda los resultados de las etapas de cálculo aparte, ADR 0022). Al abrir un `.hestia` de la versión 1:
 - Se renumera el catálogo, que es metadato.
 - Los vínculos se reevalúan en orden de creación con las reglas nuevas; los que ya no son válidos se descartan y quedan en un aviso en Mensajes, sin cambio en el historial.
 - Los sistemas de plantilla Fase 0 existentes no ganan una celda `equipment` automáticamente.
 - Las celdas de Misión de archivos v1 y v2 reciben los defaults de biblioteca y quedan «nunca corrida».
+- Las celdas de Entorno de archivos v1 a v3 reciben los parámetros por defecto y quedan «nunca corrida»; los formularios aplicados de archivos v3 recuperan del historial el cambio que los aplicó (procedencia de los resultados).
 
 ## Pendientes
 
