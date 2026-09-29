@@ -66,14 +66,14 @@ Confirmar cambio (diff + justificación) · Abrir/Guardar nativos · Proyecto bl
 
 ## Estado de la implementación (2026-09-28)
 
-Funcional con estilo mínimo; el pulido contra `workspace.pen` queda para después. Código en `app/src/screens/` y `app/src/project/`.
+Alineado con `app/design/workspace.pen` (frames Workspace, Workspace · menú Archivo, Inicio e Inicio · primer uso) y los componentes de `hestia.lib.pen`. Código en `app/src/screens/` y `app/src/project/`.
 
 Implementado:
 
-- **Inicio:** Nuevo, Abrir y recientes (los que ya no existen se marcan y se pueden quitar). Sin recientes: solo Nuevo y Abrir.
+- **Inicio:** logotipo, Nuevo y Abrir, y recientes (archivo, carpeta, última apertura; los que ya no existen se marcan como «archivo no encontrado»; quitar de recientes aparece al pasar el mouse). Sin recientes: la marca como plano de construcción. Pie con el estado de la API y la versión.
 - **Barra superior:** menú Archivo (Nuevo Ctrl+N, Abrir Ctrl+O, Recientes, Guardar Ctrl+S, Guardar como Ctrl+Shift+S, Cerrar Ctrl+W) y Editar (Deshacer Ctrl+Z, Rehacer Ctrl+Shift+Z o Ctrl+Y); Ver, Proyecto y Ayuda deshabilitados; nombre del archivo, ● de cambios sin guardar y botón guardar solo con cambios; herramientas futuras y Actualizar todo visibles y deshabilitados.
 - **Toolbox:** fases y etapas por nombre. Arrastrar al lienzo crea el sistema (plantilla o celda suelta) donde se suelta; soltar sobre una celda ramifica. Durante el arrastre solo se resaltan las celdas que la API (`branch-targets`) da como válidas.
-- **Esquemático (React Flow):** sistemas con sus celdas, estado de cada celda y vínculos; selección de sistema o celda; mover sistemas; vincular arrastrando de la salida (derecha) a la entrada (izquierda) de otra celda, con destinos válidos según la API (`link-targets`). Menú contextual de sistema (renombrar, agregar etapa, actualizar deshabilitado, duplicar, eliminar) y de celda (renombrar, actualizar deshabilitado, ramificar con opciones de la API, desvincular, eliminar).
+- **Esquemático (React Flow):** sistemas con sus celdas, estado de cada celda como ícono y vínculos ortogonales entre sistemas (los vínculos dentro de un sistema no se dibujan: el bloque ya los expresa); control de zoom abajo a la izquierda; selección de sistema o celda; mover sistemas; vincular arrastrando de la salida (derecha) a la entrada (izquierda) de otra celda, con destinos válidos según la API (`link-targets`). Menú contextual de sistema (renombrar, agregar etapa, actualizar deshabilitado, duplicar, eliminar) y de celda (renombrar, actualizar deshabilitado, ramificar con opciones de la API, desvincular, eliminar).
 - **Justificación:** eliminar y desvincular la exigen (`ConfirmChangeDialog`); renombrar la ofrece opcional; crear, ramificar, mover, vincular, duplicar y deshacer van sin justificación.
 - **Diálogos:** cambios sin guardar (al crear, abrir, cerrar proyecto o cerrar la ventana de escritorio), proyecto bloqueado por otra instancia (cancelar o abrir de todos modos), renombrar, confirmar cambio.
 - **Dock derecho:** pestañas Propiedades y Agentes, vacías.
@@ -83,7 +83,8 @@ TODO:
 
 - Editor de celda (doble clic) y breadcrumb.
 - Contenido de Propiedades y Agentes; indicador de agente activo.
-- Estilo del conector: hoy `smoothstep` de React Flow; los vínculos dentro de un mismo sistema dan una vuelta por fuera del bloque.
+- Cantidad de sistemas en cada reciente (el diseño la muestra; `RecentProject` de la API no la trae).
+- Contador de agentes activos en la pestaña Agentes («Agentes · 1» en el diseño).
 - Encuadrar la vista cuando un agente crea un sistema fuera de la zona visible (hoy hay que usar «ajustar vista»).
 - Comparación, Actualizar, Exportar a NX, informe, paleta Ctrl+K y Stefan (dependen de cálculo o de funciones futuras).
 - Diálogos nativos y cierre de ventana en Tauri: compilan (clippy) pero solo se probaron en el navegador, donde el respaldo pide la ruta con `window.prompt`. Probarlos en `make desktop`.
@@ -93,4 +94,3 @@ TODO:
 
 - Contenido del panel Propiedades (candidatos: entradas con su fuente, últimos resultados, historial, procedencia).
 - Formato del sistema de Comparación.
-- Estilo exacto del conector (ortogonal con flecha, como en el boceto inicial).
