@@ -135,7 +135,7 @@ Validar no es calcular: ninguna de estas reglas produce un valor nuevo. Cada pro
 | Modos operativos y lista de equipos: masa, ubicación, disipación por modo, límites de temperatura | `equipment` ([borrador](equipment.md)) |
 | Qué actitud y qué modo operativo forman cada caso | `global_balance` (hot/cold), `load_cases` |
 | Disipación total por modo, rango común de temperatura | `global_balance` (se calculan ahí) |
-| Constante solar, albedo, OLR, ángulo β, eclipse, casos hot/cold | `environment` |
+| Constante solar, albedo, OLR, ángulo β, eclipse, condiciones extremas de ambiente | `environment` |
 | Propiedades ópticas (α, ε), recubrimientos, degradación BOL/EOL | `global_balance` / `tcs_concept` / `discretization` (Misión aporta `design_life`) |
 | Paneles solares y apéndices desplegables (geometría, sombras) | `discretization` / `couplings` (evaluar si `environment` los necesita) |
 | Montaje, interfaces y conductancias de contacto | `couplings` |

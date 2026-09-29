@@ -6,7 +6,7 @@ Catálogo de **tipos de etapa** y reglas del esquemático. En el proyecto, cada 
 
 > **Estado de la implementación (2026-09-29):** implementado el modelo de este documento (contexto por cadena, [ADR 0016](adr/0016-contexto-de-celda-por-cadena.md)): catálogo con `equipment`, clases, requisitos y orden; las cinco reglas de vínculo (la de colectores queda preparada sin colectores en el catálogo); contexto resuelto y `missing` en la API (`get_cell_context`, `ProjectView.missing`); plantillas, agregar con autovinculación, ramificar, duplicar, eliminar y la migración de archivos v1. La etapa **Misión** está implementada como formulario ([ADR 0017](adr/0017-etapas-formulario.md), [0019](adr/0019-contrato-de-etapas-formulario.md)). **Equipos** está en el catálogo sin formulario. Ninguna etapa calcula todavía.
 >
-> TODO: formulario de Equipos; cálculo de las etapas; colectores (Comparación); revalidar formularios con contexto cuando exista alguno que no sea raíz.
+> TODO: formulario de Equipos; cálculo de las etapas (etapas de cálculo: [ADR 0021](adr/0021-etapas-de-calculo.md); Entorno especificado, [ADR 0020](adr/0020-entorno-orbital-analitico.md)); colectores (Comparación); revalidar formularios con contexto cuando exista alguno que no sea raíz.
 
 ## Tipos de etapa
 
@@ -17,9 +17,9 @@ El número es metadato interno (orden de lectura y documentación): nunca se mue
 | # | id | Clase | Requiere en su contexto | Contenido |
 |---|---|---|---|---|
 | 0.1 | `mission` | raíz, formulario | — | Órbita, actitud, envolvente, criterios ([campos](etapas/mission.md)) |
-| 0.2 | `environment` | cálculo | `mission` | Ángulo β, eclipse, flujos externos, casos hot/cold de ambiente |
+| 0.2 | `environment` | cálculo | `mission` | Ángulo β, eclipse, flujos incidentes por cara, condiciones extremas de ambiente ([especificación](etapas/environment.md)) |
 | 0.3 | `equipment` | raíz, formulario | — | Modos operativos y equipos: masa, ubicación, disipación, límites ([campos](etapas/equipment.md)) |
-| 0.4 | `global_balance` | cálculo | `mission`, `environment`, `equipment` | Nodo único, rango de temperatura, área de radiador, potencia de heaters |
+| 0.4 | `global_balance` | cálculo | `mission`, `environment`, `equipment` | Casos hot/cold (elige extremos de ambiente, actitud y modo operativo), nodo único, rango de temperatura, área de radiador, potencia de heaters |
 | 0.5 | `tcs_concept` | cálculo | `global_balance` (y su contexto) | Alternativas, trade-off, arquitectura. Itera a 0.4 |
 
 ### Fase 1 · dimensionamiento nodal
