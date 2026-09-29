@@ -19,8 +19,10 @@ server = MCPServer(
     instructions=(
         "Hestia: preliminary thermal control system design for medium satellites. "
         "A project is a schematic of systems (groups of cells), cells (instances of a workflow "
-        "stage) and links (a cell's output feeding another cell's input). Start with "
-        "get_session and get_catalog. Every write needs a justification. "
+        "stage) and links. A link passes the source cell and everything upstream of it (its "
+        "context) to the target; each stage type requires some types in its context "
+        "(get_cell_context shows what is missing). Start with get_session and get_catalog. "
+        "Every write needs a justification. "
         "All numbers come from the Hestia API; never compute physical results yourself."
     ),
 )
@@ -31,6 +33,7 @@ TOOL_OPERATIONS: dict[str, str] = {}
 StageType = Literal[
     "mission",
     "environment",
+    "equipment",
     "global_balance",
     "tcs_concept",
     "discretization",
@@ -73,7 +76,8 @@ async def ping() -> Json:
 
 @_tool("get_catalog")
 async def get_catalog() -> Json:
-    """Stage types (with the stage types each one accepts as input), phases and templates."""
+    """Stage types in catalog order (class: root, form or computation; the stage types each one
+    requires in its context; whether it is implemented), phases and templates."""
     return await call("get_catalog")
 
 
@@ -218,7 +222,8 @@ async def delete_system(system_id: str, justification: str) -> Json:
 async def add_cell(
     system_id: str, stage: StageType, justification: str, name: str | None = None
 ) -> Json:
-    """Add a cell of type `stage` to a system; it is linked inside the system when unambiguous."""
+    """Add a cell of type `stage` to a system. It is linked to the cells of the system that
+    complete its context, and to those whose context it completes."""
     return await call(
         "add_cell",
         path={"system_id": system_id},
@@ -252,8 +257,9 @@ async def branch_cell(
     stage: StageType | None = None,
     name: str | None = None,
 ) -> Json:
-    """Branch: create a new system (a `template` or a single `stage`) fed by `cell_id`,
-    e.g. a second environment from the same mission. Use list_branch_targets first."""
+    """Branch: create a new system (a `template` or a single `stage`) and link `cell_id` to its
+    first cell that accepts it, e.g. a second environment from the same mission, or phase 1
+    from a TCS concept. Use list_branch_targets or list_branch_options first."""
     return await call(
         "branch_cell",
         path={"cell_id": cell_id},
@@ -282,10 +288,19 @@ async def list_link_targets(cell_id: str) -> Json:
     return await call("list_link_targets", path={"cell_id": cell_id})
 
 
+@_tool("get_cell_context")
+async def get_cell_context(cell_id: str) -> Json:
+    """Resolved context of a cell: which cell provides each upstream stage type, and the
+    required stage types that are still missing (the cell cannot run until they are linked)."""
+    return await call("get_cell_context", path={"cell_id": cell_id})
+
+
 @_tool("link_cells")
 async def link_cells(source_cell_id: str, target_cell_id: str, justification: str) -> Json:
-    """Feed the output of one cell into the matching input of another. The workflow decides
-    which links are valid; each input has a single source."""
+    """Link two cells: the target gets the source and its whole context. A cell has one parent,
+    or several only if their contexts share no stage type (union); roots (mission, equipment)
+    have none; no stage type may repeat; types follow the catalog order. Use
+    list_link_targets first."""
     return await call(
         "link_cells",
         json={

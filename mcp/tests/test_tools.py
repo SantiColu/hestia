@@ -119,6 +119,7 @@ CASES: list[tuple[str, dict[str, Any], str, str, dict[str, Any] | None]] = [
     ("list_link_targets", {"cell_id": "c1"}, "GET", "/project/cells/c1/link-targets", None),
     ("list_branch_options", {"cell_id": "c1"}, "GET", "/project/cells/c1/branch-options", None),
     ("list_branch_targets", {"template": "phase_1"}, "GET", "/project/branch-targets", None),
+    ("get_cell_context", {"cell_id": "c1"}, "GET", "/project/cells/c1/context", None),
     (
         "link_cells",
         {"source_cell_id": "a", "target_cell_id": "b", **J},
