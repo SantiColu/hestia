@@ -34,7 +34,14 @@ line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "W", "F", "I", "B", "UP", "N", "SIM", "RUF"]
+# Conventions in docs/conventions.md («Python»). Beyond the base set: comprehensions (C4),
+# misc. simplifications (PIE, RET, FURB, PERF), pathlib (PTH), no print (T20), no commented-out
+# code (ERA), timezone-aware datetimes (DTZ), no blind except (BLE), no shadowed builtins (A),
+# no unused arguments (ARG).
+select = [
+    "E", "W", "F", "I", "B", "UP", "N", "SIM", "RUF",
+    "C4", "PIE", "RET", "FURB", "PERF", "PTH", "T20", "ERA", "DTZ", "BLE", "A", "ARG",
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["hestia_mcp"]

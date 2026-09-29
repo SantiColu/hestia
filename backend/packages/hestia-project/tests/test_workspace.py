@@ -96,7 +96,7 @@ def test_save_as_moves_lock(ws: Workspace, tmp_path: Path) -> None:
     assert (tmp_path / "a.hestia").exists()
 
 
-def test_unsaved_changes_guard(ws: Workspace, tmp_path: Path) -> None:
+def test_unsaved_changes_guard(ws: Workspace) -> None:
     ws.new_project()
     _add_phase0(ws)
     with pytest.raises(UnsavedChangesError):

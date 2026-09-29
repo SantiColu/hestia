@@ -186,7 +186,7 @@ def write_project(
                 target.close()
         finally:
             memory.close()
-        os.replace(tmp, path)
+        tmp.replace(path)
     except BaseException:
         tmp.unlink(missing_ok=True)
         raise

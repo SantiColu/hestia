@@ -771,20 +771,18 @@ def _stats(low: list[float], high: list[float]) -> FluxStats:
 
 
 def _face_fluxes(profile: OrbitProfile) -> list[FaceFluxes]:
-    result: list[FaceFluxes] = []
-    for face in profile.faces:
-        result.append(
-            FaceFluxes(
-                condition_id=profile.condition_id,
-                mode_id=profile.mode_id,
-                face=face.face,
-                solar=_stats(face.solar_min, face.solar_max),
-                albedo=_stats(face.albedo_min, face.albedo_max),
-                ir=_stats(face.ir_min, face.ir_max),
-                total=_stats(face.total_min, face.total_max),
-            )
+    return [
+        FaceFluxes(
+            condition_id=profile.condition_id,
+            mode_id=profile.mode_id,
+            face=face.face,
+            solar=_stats(face.solar_min, face.solar_max),
+            albedo=_stats(face.albedo_min, face.albedo_max),
+            ir=_stats(face.ir_min, face.ir_max),
+            total=_stats(face.total_min, face.total_max),
         )
-    return result
+        for face in profile.faces
+    ]
 
 
 # ---------------------------------------------------------------- helpers

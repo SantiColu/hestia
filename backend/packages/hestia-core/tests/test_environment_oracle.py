@@ -56,7 +56,7 @@ def skyfield() -> Any:
     loader = api.Loader(str(CACHE), verbose=False)
     try:
         ephemeris = loader("de421.bsp")
-    except Exception as exc:  # any download failure means «no network»
+    except Exception as exc:  # noqa: BLE001  # any download failure means «no network»
         pytest.skip(
             f"No se pudo descargar la efeméride de421.bsp de Skyfield ({exc}): sin red, el "
             f"oráculo de β y eclipse no corre. Se guarda en {CACHE} (HESTIA_SKYFIELD_CACHE)."
