@@ -1,6 +1,6 @@
 # 0016. Contexto de celda por cadena aguas arriba
 
-- **Estado:** propuesto
+- **Estado:** propuesto; «Misión conserva los modos de actitud», reemplazado por 0023
 - **Fecha:** 2026-09-29
 - **Reemplaza en parte:** 0009 (la regla de vínculos por entrada)
 

@@ -1,6 +1,6 @@
 # 0020. El entorno orbital se calcula con un proveedor analítico propio; Orekit queda diferido
 
-- **Estado:** propuesto
+- **Estado:** propuesto; la órbita y los modos de actitud vienen de los parámetros de Entorno (0023)
 - **Fecha:** 2026-09-29
 - **Reemplaza en parte:** 0002 (Orekit como backend de mecánica orbital)
 

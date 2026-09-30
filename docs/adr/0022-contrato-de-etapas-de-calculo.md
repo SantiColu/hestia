@@ -1,6 +1,6 @@
 # 0022. Contrato de las etapas de cálculo y formato del proyecto v4
 
-- **Estado:** propuesto
+- **Estado:** propuesto; la validación contra el tipo de órbita de Misión, reemplazada por 0023
 - **Fecha:** 2026-09-29
 - **Amplía:** 0019, 0020, 0021
 

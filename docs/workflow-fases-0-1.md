@@ -16,8 +16,8 @@ El número es metadato interno (orden de lectura y documentación): nunca se mue
 
 | # | id | Clase | Requiere en su contexto | Contenido |
 |---|---|---|---|---|
-| 0.1 | `mission` | raíz, formulario | — | Órbita, actitud, envolvente, criterios ([campos](etapas/mission.md)) |
-| 0.2 | `environment` | cálculo | `mission` | Ángulo β, eclipse, flujos incidentes por cara, condiciones extremas de ambiente ([especificación](etapas/environment.md)) |
+| 0.1 | `mission` | raíz, formulario | — | Fechas, envolvente, criterios ([campos](etapas/mission.md)) |
+| 0.2 | `environment` | cálculo | `mission` | Órbita y modos de actitud (ADR 0023); ángulo β, eclipse, flujos incidentes por cara, condiciones extremas de ambiente ([especificación](etapas/environment.md)) |
 | 0.3 | `equipment` | raíz, formulario | — | Modos operativos y equipos: masa, ubicación, disipación, límites ([campos](etapas/equipment.md)) |
 | 0.4 | `global_balance` | cálculo | `mission`, `environment`, `equipment` | Casos hot/cold (elige extremos de ambiente, actitud y modo operativo), nodo único, rango de temperatura, área de radiador, potencia de heaters |
 | 0.5 | `tcs_concept` | cálculo | `global_balance` (y su contexto) | Alternativas, trade-off, arquitectura. Itera a 0.4 |
@@ -73,7 +73,7 @@ equipment ───────────────┘
   No recrea vínculos quitados a propósito entre celdas existentes.
 - **Ramificar** una plantilla o etapa desde una celda X crea un **sistema nuevo** y vincula X a la primera celda del sistema nuevo (en orden de catálogo) que la acepte con un vínculo válido. Si ninguna la acepta, X no es un destino válido. Ejemplos:
   - Fase 1 sobre `tcs_concept` vincula `discretization`.
-  - Una etapa `environment` sobre `mission` crea una variante de ambiente.
+  - Una etapa `environment` sobre `mission` crea una variante de ambiente (otra órbita, otra actitud o otros valores de diseño).
   - Fase 0 sobre cualquier celda no es válido: sus celdas son raíces o ya tienen su padre adentro.
 - **Duplicar sistema:** copia celdas (con estado y artefacto), vínculos internos y vínculos entrantes desde otros sistemas; los salientes no.
 - **Eliminar:** borra la celda o el sistema con sus vínculos. Un sistema que queda sin celdas se elimina.
