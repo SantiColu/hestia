@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 
 /** Seconds of animation for one orbit at speed ×1. */
 const ORBIT_SECONDS = 30;
+/** One orbit per minute: slow enough to follow the satellite in the local view. */
+const DEFAULT_SPEED = 0.5;
 
 export type OrbitClock = {
   /** s within the orbit, in [0, period). */
@@ -18,7 +20,7 @@ export type OrbitClock = {
  * `ORBIT_SECONDS / speed` s. Switching views keeps it. */
 export function useOrbitClock(period: number): OrbitClock {
   const [playing, setPlaying] = useState(true);
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(DEFAULT_SPEED);
   const [time, setTime] = useState(0);
   const last = useRef<number | null>(null);
 

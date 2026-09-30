@@ -53,6 +53,30 @@ const lerp3 = (a: number[], b: number[], f: number): Vec3 => [
   lerp(at(a, 2), at(b, 2), f),
 ];
 
+/** A point between two samples of an orbit along the arc they span: the direction is blended on
+ * the sphere and the length linearly, so points of a circular orbit stay on it (a straight blend
+ * would cut the chord). */
+export function arc(a: number[], b: number[], f: number): Vec3 {
+  const la = Math.hypot(...a);
+  const lb = Math.hypot(...b);
+  if (la === 0 || lb === 0) return lerp3(a, b, f);
+  const ua = a.map((v) => v / la);
+  const ub = b.map((v) => v / lb);
+  const dot = Math.min(
+    1,
+    Math.max(
+      -1,
+      ua.reduce((sum, v, i) => sum + v * at(ub, i), 0),
+    ),
+  );
+  const theta = Math.acos(dot);
+  const length = lerp(la, lb, f);
+  if (theta < 1e-9) return lerp3(ua, ub, f).map((v) => v * length) as Vec3;
+  const wa = Math.sin((1 - f) * theta) / Math.sin(theta);
+  const wb = Math.sin(f * theta) / Math.sin(theta);
+  return ua.map((v, i) => (wa * v + wb * at(ub, i)) * length) as Vec3;
+}
+
 function slerp(a: number[], b: number[], f: number): Quat {
   let dot = a.reduce((sum, v, i) => sum + v * at(b, i), 0);
   const sign = dot < 0 ? -1 : 1;
@@ -100,8 +124,8 @@ export function instantAt(track: Track, time: number): Instant {
   const { quaternion } = track;
   return {
     time: t,
-    position: lerp3(at(track.position, i), at(track.position, j), f),
-    velocity: lerp3(at(track.velocity, i), at(track.velocity, j), f),
+    position: arc(at(track.position, i), at(track.position, j), f),
+    velocity: arc(at(track.velocity, i), at(track.velocity, j), f),
     sun: lerp3(at(track.sun, i), at(track.sun, j), f),
     sunlit: lerp(at(track.sunlit, i), at(track.sunlit, j), f),
     quaternion: quaternion ? slerp(at(quaternion, i), at(quaternion, j), f) : null,
