@@ -10,6 +10,7 @@ import { EditorHeader, FormEditor, type Title } from "./cell-editor";
 import { EnvironmentResults } from "./environment-results";
 import type { ResultStateProps } from "./result-state";
 import { contextLabel, useCellContext } from "./use-cell-context";
+import { useMissionEnvelope } from "./use-mission-envelope";
 
 // three.js is large: the 3D views load when first shown.
 const OrbitView = lazy(() => import("./orbit-view").then((m) => ({ default: m.OrbitView })));
@@ -50,7 +51,9 @@ export function ComputationEditor({
   const [result, setResult] = useState<CellResult | null>(null);
   const [updating, setUpdating] = useState(false);
   const revision = view.document.revision;
-  const sources = contextLabel(useCellContext(cellId, revision), view.project);
+  const context = useCellContext(cellId, revision);
+  const sources = contextLabel(context, view.project);
+  const envelope = useMissionEnvelope(context, revision);
 
   // The result; refetched on every project change (undo, another actor, an upstream change).
   useEffect(() => {
@@ -139,6 +142,7 @@ export function ComputationEditor({
                   parameters={current}
                   isDraft={isDraft}
                   revision={revision}
+                  envelope={envelope}
                 />
               </Suspense>
             )}
@@ -147,7 +151,7 @@ export function ComputationEditor({
         {section === "results" && <EnvironmentResults state={state} />}
         {section === "orbit" && (
           <Suspense fallback={LOADING}>
-            <OrbitView cellId={cellId} state={state} />
+            <OrbitView cellId={cellId} state={state} envelope={envelope} />
           </Suspense>
         )}
       </div>

@@ -197,12 +197,16 @@ function ShadowCylinder({ sun, colors }: { sun: THREE.Vector3; colors: Palette }
 function Spacecraft({
   instant,
   size,
+  dims,
   maxFlux,
   colors,
   onOpen,
 }: {
   instant: Instant;
+  /** Largest side (the marker's diameter without an attitude). */
   size: number;
+  /** Sides along the body axes x, y, z. */
+  dims: Vec3;
   maxFlux: number;
   colors: Palette;
   onOpen?: () => void;
@@ -230,13 +234,13 @@ function Spacecraft({
           onOpen?.();
         }}
       >
-        <boxGeometry args={[size, size, size]} />
+        <boxGeometry args={dims} />
         {materials.map((color, k) => (
           <meshBasicMaterial key={FACES[k]} attach={`material-${k}`} color={color} />
         ))}
       </mesh>
       <lineSegments>
-        <edgesGeometry args={[new THREE.BoxGeometry(size, size, size)]} />
+        <edgesGeometry args={[new THREE.BoxGeometry(...dims)]} />
         <lineBasicMaterial color={colors.bg} />
       </lineSegments>
     </group>
@@ -250,15 +254,23 @@ function bodyToWorld(instant: Instant): THREE.Quaternion | null {
   return FRAME.clone().multiply(new THREE.Quaternion(x, y, z, w));
 }
 
-/** Unit vector of each face normal in body axes (the envelope is a box aligned with them). */
-const FACE_NORMALS: Record<(typeof FACES)[number], THREE.Vector3> = {
-  "+X": new THREE.Vector3(1, 0, 0),
-  "-X": new THREE.Vector3(-1, 0, 0),
-  "+Y": new THREE.Vector3(0, 1, 0),
-  "-Y": new THREE.Vector3(0, -1, 0),
-  "+Z": new THREE.Vector3(0, 0, 1),
-  "-Z": new THREE.Vector3(0, 0, -1),
+/** Each face: its outward normal in body axes and the body axis across it (0, 1, 2 = x, y, z). */
+const FACE_GEOMETRY: Record<(typeof FACES)[number], { normal: THREE.Vector3; axis: 0 | 1 | 2 }> = {
+  "+X": { normal: new THREE.Vector3(1, 0, 0), axis: 0 },
+  "-X": { normal: new THREE.Vector3(-1, 0, 0), axis: 0 },
+  "+Y": { normal: new THREE.Vector3(0, 1, 0), axis: 1 },
+  "-Y": { normal: new THREE.Vector3(0, -1, 0), axis: 1 },
+  "+Z": { normal: new THREE.Vector3(0, 0, 1), axis: 2 },
+  "-Z": { normal: new THREE.Vector3(0, 0, -1), axis: 2 },
 };
+
+/** The envelope's sides in the scene: the mission's proportions with the largest side ``size``
+ * (not to scale next to the Earth); a cube without them. */
+function boxSides(size: number, envelope: Vec3 | null | undefined): Vec3 {
+  if (!envelope) return [size, size, size];
+  const largest = Math.max(...envelope);
+  return envelope.map((side) => (size * side) / largest) as Vec3;
+}
 
 // ---------------------------------------------------------------- cameras
 
@@ -432,7 +444,7 @@ function LabelProjector({
 function labelsOf(
   instant: Instant,
   local: boolean,
-  size: number,
+  dims: Vec3,
   vector: number,
   radius: number,
 ): SceneLabel[] {
@@ -468,10 +480,11 @@ function labelsOf(
   const attitude = bodyToWorld(instant);
   if (!attitude) return labels;
   for (const face of FACES) {
-    const normal = FACE_NORMALS[face].clone().applyQuaternion(attitude);
+    const { normal: bodyNormal, axis } = FACE_GEOMETRY[face];
+    const normal = bodyNormal.clone().applyQuaternion(attitude);
     labels.push({
       id: `face:${face}`,
-      at: satellite.clone().addScaledVector(normal, (size / 2) * FACE_LABEL_OFFSET),
+      at: satellite.clone().addScaledVector(normal, (dims[axis] / 2) * FACE_LABEL_OFFSET),
       text: face,
       detail: instant.faces ? fmt(instant.faces[face].total, 0) : undefined,
       tone: "text-foreground",
@@ -510,6 +523,7 @@ export function OrbitScene({
   instant,
   mode,
   maxFlux = 0,
+  envelope,
   onOpenLocal,
 }: {
   track: Track;
@@ -517,6 +531,8 @@ export function OrbitScene({
   mode: CameraMode;
   /** Top of the flux color scale, W/m² (a profile with fluxes). */
   maxFlux?: number;
+  /** Sizes of the mission's envelope (x, y, z, m): the satellite keeps its proportions. */
+  envelope?: Vec3 | null;
   onOpenLocal: () => void;
 }) {
   const colors = useMemo(() => palette(), []);
@@ -526,7 +542,8 @@ export function OrbitScene({
   const local = mode === "local";
   const size = local ? LOCAL_BOX : 0.05;
   const vector = local ? LOCAL_VECTOR : 0.25;
-  const labels = labelsOf(instant, local, size, vector, radius);
+  const dims = boxSides(size, envelope);
+  const labels = labelsOf(instant, local, dims, vector, radius);
   const elements = useRef(new Map<string, HTMLElement>());
 
   return (
@@ -553,6 +570,7 @@ export function OrbitScene({
         <Spacecraft
           instant={instant}
           size={size}
+          dims={dims}
           maxFlux={maxFlux}
           colors={colors}
           onOpen={onOpenLocal}

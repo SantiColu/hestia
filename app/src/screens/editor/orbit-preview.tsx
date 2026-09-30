@@ -15,7 +15,7 @@ import { useProject } from "@/project/store";
 import { date as isoDate, deg, fmt, minutes } from "./format";
 import { OrbitTimeline } from "./orbit-timeline";
 import { useOrbitClock } from "./use-orbit-clock";
-import { instantAt } from "./orbit-profile";
+import { instantAt, type Vec3 } from "./orbit-profile";
 import { OrbitScene, type CameraMode } from "./orbit-scene";
 
 const CAMERAS: { value: CameraMode; label: string }[] = [
@@ -33,12 +33,15 @@ export function OrbitPreview({
   parameters,
   isDraft,
   revision,
+  envelope,
 }: {
   cellId: string;
   parameters: JsonObject;
   isDraft: boolean;
   /** Project revision: the mission (launch date) may change upstream. */
   revision: number;
+  /** Sizes of the mission's envelope, to draw the satellite with its shape. */
+  envelope: Vec3 | null;
 }) {
   const { fail } = useProject();
   const [on, setOn] = useState<string | null>(null);
@@ -119,6 +122,7 @@ export function OrbitPreview({
             instant={instant}
             mode={camera}
             onOpenLocal={() => setCamera("local")}
+            envelope={envelope}
           />
         ) : (
           <p className="p-4 text-xs text-subtle-foreground">

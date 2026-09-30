@@ -7,7 +7,7 @@ import { useProject } from "@/project/store";
 import { cn } from "@/lib/utils";
 import { column } from "./layout";
 import { deg, fmt } from "./format";
-import { FACES, instantAt, maxTotalFlux, type Instant } from "./orbit-profile";
+import { FACES, instantAt, maxTotalFlux, type Instant, type Vec3 } from "./orbit-profile";
 import { OrbitScene, type CameraMode } from "./orbit-scene";
 import { OrbitTimeline } from "./orbit-timeline";
 import { ResultState, type ResultStateProps } from "./result-state";
@@ -43,7 +43,16 @@ const CAMERA_TEXT: Record<CameraMode, { title: string; subtitle: string; hint: s
  * «Órbita 3D» of an environment cell: one orbit of a condition in an attitude mode, as the API
  * computed it (`get_orbit_profile`). The view only interpolates between samples to animate.
  */
-export function OrbitView({ cellId, state }: { cellId: string; state: ResultStateProps }) {
+export function OrbitView({
+  cellId,
+  state,
+  envelope,
+}: {
+  cellId: string;
+  state: ResultStateProps;
+  /** Sizes of the mission's envelope, to draw the satellite with its shape. */
+  envelope: Vec3 | null;
+}) {
   const { fail } = useProject();
   const { result } = state;
   const environment = result?.environment ?? null;
@@ -124,6 +133,7 @@ export function OrbitView({ cellId, state }: { cellId: string; state: ResultStat
             instant={instant}
             mode={camera}
             maxFlux={maxFlux}
+            envelope={envelope}
             onOpenLocal={() => setCamera("local")}
           />
         ) : (
