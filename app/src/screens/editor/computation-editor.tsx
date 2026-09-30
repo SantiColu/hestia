@@ -1,22 +1,15 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { CornerDownRight, RefreshCw } from "lucide-react";
-import {
-  api,
-  unwrap,
-  type CellContext,
-  type CellResult,
-  type CellStatus,
-  type ProjectView,
-} from "@/api/client";
+import { api, unwrap, type CellResult, type CellStatus, type ProjectView } from "@/api/client";
 import { StageStatusBadge } from "@/components/feedback/stage-status";
 import { PanelTabs, PanelTabsList, PanelTabsTrigger } from "@/components/navigation/panel-tabs";
 import { Button } from "@/components/ui/button";
 import { useEditor } from "@/project/editor";
-import { findSystem } from "@/project/lookup";
 import { useProject } from "@/project/store";
 import { EditorHeader, FormEditor, type Title } from "./cell-editor";
 import { EnvironmentResults } from "./environment-results";
-import { useCellContext } from "./use-cell-context";
+import type { ResultStateProps } from "./result-state";
+import { contextLabel, useCellContext } from "./use-cell-context";
 
 // three.js is large: the 3D views load when first shown.
 const OrbitView = lazy(() => import("./orbit-view").then((m) => ({ default: m.OrbitView })));
@@ -57,7 +50,7 @@ export function ComputationEditor({
   const [result, setResult] = useState<CellResult | null>(null);
   const [updating, setUpdating] = useState(false);
   const revision = view.document.revision;
-  const context = useCellContext(cellId, revision);
+  const sources = contextLabel(useCellContext(cellId, revision), view.project);
 
   // The result; refetched on every project change (undo, another actor, an upstream change).
   useEffect(() => {
@@ -98,13 +91,20 @@ export function ComputationEditor({
   }, [cellId, drafts, fail, notify, section, setView]);
 
   const onUpdate = () => void update();
+  const state: ResultStateProps = {
+    result,
+    updating,
+    sources,
+    onUpdate,
+    onOpenParameters: () => setSection("parameters"),
+  };
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 flex-col gap-3 border-b border-border px-6 pt-5">
         <EditorHeader
           title={title}
-          source={<ContextSources context={context} view={view} />}
+          source={<ContextSources label={sources} />}
           badge={
             <div className="flex items-center gap-2.5">
               <StageStatusBadge status={updating ? "running" : status} />
@@ -144,12 +144,10 @@ export function ComputationEditor({
             )}
           />
         )}
-        {section === "results" && (
-          <EnvironmentResults result={result} view={view} updating={updating} onUpdate={onUpdate} />
-        )}
+        {section === "results" && <EnvironmentResults state={state} />}
         {section === "orbit" && (
           <Suspense fallback={LOADING}>
-            <OrbitView cellId={cellId} result={result} updating={updating} onUpdate={onUpdate} />
+            <OrbitView cellId={cellId} state={state} />
           </Suspense>
         )}
       </div>
@@ -158,15 +156,12 @@ export function ComputationEditor({
 }
 
 /** «usa Misión · Fase 0 · base»: the cells whose results or artifacts this one reads. */
-function ContextSources({ context, view }: { context: CellContext | null; view: ProjectView }) {
-  if (!context?.entries.length) return null;
-  const sources = context.entries.map(
-    (e) => `${e.cell_name} · ${findSystem(view.project, e.system_id)?.name ?? ""}`,
-  );
+function ContextSources({ label }: { label: string | null }) {
+  if (!label) return null;
   return (
     <span className="flex min-w-0 items-center gap-1.5 pl-1.5 text-xs text-subtle-foreground">
       <CornerDownRight aria-hidden className="size-3 shrink-0" />
-      <span className="truncate">usa {sources.join(", ")}</span>
+      <span className="truncate">usa {label}</span>
     </span>
   );
 }

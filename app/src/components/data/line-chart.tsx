@@ -26,6 +26,10 @@ type LineChartProps = {
   formatX: (x: number) => string;
   formatY: (y: number) => string;
   height?: number;
+  /** Legend under the plot; off when the caller shows it (e.g. in a card header). */
+  legend?: boolean;
+  /** Dates or values under the x axis; off for a plot stacked over another one. */
+  xAxis?: boolean;
   className?: string;
 };
 
@@ -44,6 +48,8 @@ export function LineChart({
   formatX,
   formatY,
   height = 180,
+  legend = true,
+  xAxis = true,
   className,
 }: LineChartProps) {
   const id = useId();
@@ -90,7 +96,7 @@ export function LineChart({
     return `${top.join("")}${bottom.join("")}Z`;
   };
   const ticks = [yMin + margin, (yMin + yMax) / 2, yMax - margin];
-  const xTicks = [x0, x0 + (x1 - x0) / 2, x1];
+  const xTicks = xAxis ? [x0, x0 + (x1 - x0) / 2, x1] : [];
 
   return (
     <figure className={cn("flex flex-col gap-2", className)}>
@@ -98,7 +104,7 @@ export function LineChart({
         viewBox={`0 0 ${WIDTH} ${height}`}
         className="w-full"
         role="img"
-        aria-labelledby={`${id}-legend`}
+        aria-labelledby={legend ? `${id}-legend` : undefined}
       >
         {ticks.map((t) => (
           <g key={t}>
@@ -138,24 +144,44 @@ export function LineChart({
           <path key={s.label} d={path(s.values)} fill="none" stroke={s.color} strokeWidth={1.5} />
         ))}
       </svg>
-      <figcaption
-        id={`${id}-legend`}
-        className="flex flex-wrap gap-4 text-2xs text-muted-foreground"
-      >
-        {bands.map((b) => (
-          <span key={b.label} className="flex items-center gap-1.5">
-            <span className="h-2 w-3 rounded-sm opacity-40" style={{ background: b.color }} />
-            {b.label}
-          </span>
-        ))}
-        {series.map((s) => (
-          <span key={s.label} className="flex items-center gap-1.5">
-            <span className="h-0.5 w-3" style={{ background: s.color }} />
-            {s.label}
-          </span>
-        ))}
-        <span className="ml-auto font-mono">{unit}</span>
-      </figcaption>
+      {legend && (
+        <figcaption id={`${id}-legend`}>
+          <ChartLegend bands={bands} series={series} unit={unit} />
+        </figcaption>
+      )}
     </figure>
+  );
+}
+
+/** Swatches of the bands and lines of a chart, and its unit. */
+export function ChartLegend({
+  bands = [],
+  series = [],
+  unit,
+  className,
+}: {
+  bands?: ChartBand[];
+  series?: ChartSeries[];
+  unit?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("flex flex-wrap items-center gap-4 text-2xs text-muted-foreground", className)}
+    >
+      {series.map((s) => (
+        <span key={s.label} className="flex items-center gap-1.5">
+          <span className="h-0.5 w-3" style={{ background: s.color }} />
+          {s.label}
+        </span>
+      ))}
+      {bands.map((b) => (
+        <span key={b.label} className="flex items-center gap-1.5">
+          <span className="h-2 w-3 rounded-sm opacity-40" style={{ background: b.color }} />
+          {b.label}
+        </span>
+      ))}
+      {unit && <span className="ml-auto font-mono">{unit}</span>}
+    </div>
   );
 }

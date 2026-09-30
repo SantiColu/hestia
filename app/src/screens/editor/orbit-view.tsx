@@ -1,18 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pause, Play } from "lucide-react";
-import { api, unwrap, type CellResult, type OrbitProfile } from "@/api/client";
-import { KeyValue } from "@/components/data/readouts";
+import { Satellite, Sun } from "lucide-react";
+import { api, unwrap, type OrbitProfile } from "@/api/client";
+import { CompactSelect } from "@/components/forms/compact-select";
 import { Segmented } from "@/components/forms/segmented";
-import { SelectField } from "@/components/forms/select-field";
-import { Button } from "@/components/ui/button";
 import { useProject } from "@/project/store";
 import { cn } from "@/lib/utils";
 import { column } from "./layout";
-import { deg, fmt, minutes } from "./format";
-import { FACES, instantAt, maxTotalFlux, type FaceName } from "./orbit-profile";
+import { deg, fmt } from "./format";
+import { FACES, instantAt, maxTotalFlux, type Instant } from "./orbit-profile";
 import { OrbitScene, type CameraMode } from "./orbit-scene";
-import { ResultState } from "./result-state";
+import { OrbitTimeline } from "./orbit-timeline";
+import { ResultState, type ResultStateProps } from "./result-state";
 import { useOrbitClock } from "./use-orbit-clock";
+
+const CAMERAS: { value: CameraMode; label: string }[] = [
+  { value: "global", label: "Global" },
+  { value: "local", label: "Local" },
+];
 
 const SPEEDS = [
   { value: "1", label: "×1" },
@@ -20,22 +24,27 @@ const SPEEDS = [
   { value: "16", label: "×16" },
 ];
 
+/** What each camera shows and how to move it (`Label` and `Hint` in the design). */
+const CAMERA_TEXT: Record<CameraMode, { title: string; subtitle: string; hint: string }> = {
+  global: {
+    title: "Global",
+    subtitle: "Marco inercial · Tierra girando",
+    hint: "Arrastrar para rotar · rueda para acercar · doble clic en el satélite: vista local",
+  },
+  local: {
+    title: "Local",
+    subtitle: "Sigue al satélite · envolvente fuera de escala · W/m²",
+    hint: "La cámara sigue al satélite",
+  },
+};
+
 /**
  * «Órbita 3D» of an environment cell: one orbit of a condition in an attitude mode, as the API
  * computed it (`get_orbit_profile`). The view only interpolates between samples to animate.
  */
-export function OrbitView({
-  cellId,
-  result,
-  updating,
-  onUpdate,
-}: {
-  cellId: string;
-  result: CellResult | null;
-  updating: boolean;
-  onUpdate: () => void;
-}) {
+export function OrbitView({ cellId, state }: { cellId: string; state: ResultStateProps }) {
   const { fail } = useProject();
+  const { result } = state;
   const environment = result?.environment ?? null;
   const [conditionId, setConditionId] = useState("");
   const [modeId, setModeId] = useState("");
@@ -45,7 +54,6 @@ export function OrbitView({
     environment?.attitude_modes.find((m) => m.id === modeId) ?? environment?.attitude_modes[0];
   const [profile, setProfile] = useState<OrbitProfile | null>(null);
   const [camera, setCamera] = useState<CameraMode>("global");
-  const [face, setFace] = useState<FaceName>("+X");
   const resultId = result?.result_id ?? null;
 
   useEffect(() => {
@@ -74,40 +82,41 @@ export function OrbitView({
     return (
       <div className="h-full overflow-y-auto px-6 py-6">
         <div className={cn(column, "gap-7")}>
-          <ResultState result={result} updating={updating} onUpdate={onUpdate} />
+          <ResultState {...state} />
         </div>
       </div>
     );
   }
 
   const instant = profile ? instantAt(profile, orbit.time) : null;
-  const flux = instant?.faces?.[face];
+  const text = CAMERA_TEXT[camera];
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="shrink-0 border-b border-border px-6 py-3">
-        <div className={cn(column, "gap-3")}>
-          {result?.status !== "up_to_date" && (
-            <ResultState result={result} updating={updating} onUpdate={onUpdate} />
-          )}
-          {condition.note && <p className="text-2xs text-warn">{condition.note}</p>}
-          <div className="grid grid-cols-2 gap-4">
-            <SelectField
-              label="Condición"
-              options={environment.conditions.map((c) => ({ value: c.id, label: c.name }))}
-              value={condition.id}
-              onValueChange={setConditionId}
-            />
-            <SelectField
-              label="Modo de actitud"
-              options={environment.attitude_modes.map((m) => ({ value: m.id, label: m.name }))}
-              value={mode.id}
-              onValueChange={setModeId}
-            />
-          </div>
-        </div>
+    <div className="flex h-full flex-col gap-3 px-4 py-3.5">
+      {result?.status !== "up_to_date" && <ResultState {...state} />}
+      <div className="flex shrink-0 items-center gap-2">
+        <Segmented aria-label="Vista" options={CAMERAS} value={camera} onValueChange={setCamera} />
+        <CompactSelect
+          label="Condición"
+          icon={Sun}
+          options={environment.conditions.map((c) => ({ value: c.id, label: c.name }))}
+          value={condition.id}
+          onValueChange={setConditionId}
+          className="max-w-64"
+        />
+        <CompactSelect
+          label="Modo de actitud"
+          icon={Satellite}
+          options={environment.attitude_modes.map((m) => ({ value: m.id, label: m.name }))}
+          value={mode.id}
+          onValueChange={setModeId}
+          className="max-w-48"
+        />
+        <span className="flex-1" />
+        <span className="truncate text-xs text-subtle-foreground">{text.hint}</span>
       </div>
-      <div className="relative min-h-0 flex-1">
+      {condition.note && <p className="text-2xs text-warn">{condition.note}</p>}
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-background">
         {profile && instant ? (
           <OrbitScene
             track={profile}
@@ -119,83 +128,89 @@ export function OrbitView({
         ) : (
           <p className="p-6 text-xs text-subtle-foreground">Cargando…</p>
         )}
-        {instant && flux && (
-          <div className="absolute top-3 right-3 w-72 rounded-lg border border-border bg-surface/90 px-3 py-2">
-            <KeyValue label="Tiempo" value={`${minutes(instant.time)} / ${minutes(period)} min`} />
-            <KeyValue label="β" value={`${deg(condition.beta)}°`} />
-            <KeyValue
-              label="Sol"
-              value={
-                instant.sunlit >= 0.999
-                  ? "Sol"
-                  : instant.sunlit <= 0.001
-                    ? "Eclipse"
-                    : `Penumbra (${fmt(instant.sunlit * 100, 0)} %)`
-              }
-            />
-            <div className="flex items-center justify-between gap-2 py-1.5 text-xs text-muted-foreground">
-              <span>Cara</span>
-              <Segmented
-                aria-label="Cara"
-                options={FACES.map((f) => ({ value: f, label: f }))}
-                value={face}
-                onValueChange={setFace}
-              />
-            </div>
-            <KeyValue label="Solar" value={`${fmt(flux.solar)} W/m²`} />
-            <KeyValue label="Albedo" value={`${fmt(flux.albedo)} W/m²`} />
-            <KeyValue label="IR" value={`${fmt(flux.ir)} W/m²`} />
-            <KeyValue label="Total" value={`${fmt(flux.total)} W/m²`} className="border-b-0" />
-            <div className="mt-2 flex flex-col gap-1">
-              <div
-                className="h-1.5 rounded-sm"
-                style={{ background: "linear-gradient(to right, var(--cold), var(--hot))" }}
-                aria-hidden
-              />
-              <div className="flex justify-between font-mono text-3xs text-subtle-foreground">
-                <span>0</span>
-                <span>{fmt(maxFlux, 0)} W/m² · flujo total máx.</span>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="shrink-0 border-t border-border bg-surface px-6 py-2">
-        <div className="flex items-center gap-3">
-          <Segmented
-            aria-label="Vista"
-            options={[
-              { value: "global", label: "Global" },
-              { value: "local", label: "Local" },
-            ]}
-            value={camera}
-            onValueChange={setCamera}
-          />
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            aria-label={orbit.playing ? "Pausa" : "Reproducir"}
-            onClick={orbit.toggle}
-          >
-            {orbit.playing ? <Pause /> : <Play />}
-          </Button>
-          <input
-            type="range"
-            aria-label="Instante de la órbita"
-            min={0}
-            max={period || 1}
-            step={period / 1000 || 1}
-            value={orbit.time}
-            onChange={(e) => orbit.seek(Number(e.target.value))}
-            className="min-w-0 flex-1 accent-primary"
-          />
-          <Segmented
-            aria-label="Velocidad"
-            options={SPEEDS}
-            value={String(orbit.speed)}
-            onValueChange={(next) => orbit.setSpeed(Number(next))}
-          />
+        <div className="pointer-events-none absolute top-3 left-3.5 flex flex-col gap-0.5">
+          <span className="font-mono text-2xs font-medium tracking-label text-subtle-foreground uppercase">
+            {text.title}
+          </span>
+          <span className="text-2xs text-muted-foreground">{text.subtitle}</span>
         </div>
+        {camera === "global" ? <OrbitLegend /> : <FluxScale max={maxFlux} />}
+      </div>
+      <OrbitTimeline clock={orbit} period={period}>
+        <CompactSelect
+          label="Velocidad"
+          options={SPEEDS}
+          value={String(orbit.speed)}
+          onValueChange={(next) => orbit.setSpeed(Number(next))}
+          className="w-18"
+        />
+        {instant && <InstantReadout beta={condition.beta} instant={instant} />}
+      </OrbitTimeline>
+    </div>
+  );
+}
+
+/** «β 33.9° · en sol · +Y 1182 W/m²»: the face with the largest total incident flux now. */
+function InstantReadout({ beta, instant }: { beta: number; instant: Instant }) {
+  const { faces } = instant;
+  const hottest = faces ? FACES.reduce((a, b) => (faces[b].total > faces[a].total ? b : a)) : null;
+  const light =
+    instant.sunlit >= 0.999
+      ? "en sol"
+      : instant.sunlit <= 0.001
+        ? "en eclipse"
+        : `penumbra ${fmt(instant.sunlit * 100, 0)} %`;
+  return (
+    <span className="flex shrink-0 items-center gap-2 font-mono text-xs tabular-nums">
+      <span>β {deg(beta)}°</span>
+      <span className="text-subtle-foreground">·</span>
+      <span className={instant.sunlit > 0.5 ? "text-primary" : "text-muted-foreground"}>
+        {light}
+      </span>
+      {faces && hottest && (
+        <>
+          <span className="text-subtle-foreground">·</span>
+          <span className="text-hot">
+            {hottest} {fmt(faces[hottest].total, 0)} W/m²
+          </span>
+        </>
+      )}
+    </span>
+  );
+}
+
+function OrbitLegend() {
+  return (
+    <div className="pointer-events-none absolute bottom-3 left-3.5 flex items-center gap-3.5 text-2xs text-muted-foreground">
+      <span className="flex items-center gap-1.5">
+        <span aria-hidden className="h-0.5 w-3 bg-primary" />
+        en sol
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span aria-hidden className="h-0.5 w-3 bg-idle" />
+        eclipse
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span aria-hidden className="h-2 w-3 rounded-sm border border-border-strong bg-surface-2" />
+        sombra
+      </span>
+    </div>
+  );
+}
+
+/** Color scale of the faces in the local view: total incident flux, 0 to the profile's max. */
+function FluxScale({ max }: { max: number }) {
+  return (
+    <div className="pointer-events-none absolute right-3 bottom-3 flex w-56 flex-col gap-1 rounded-lg bg-surface/90 px-2 py-1.5">
+      <div
+        aria-hidden
+        className="h-1.5 rounded-sm"
+        style={{ background: "linear-gradient(to right, var(--cold), var(--hot))" }}
+      />
+      <div className="flex justify-between font-mono text-3xs text-subtle-foreground">
+        <span>0</span>
+        <span>flujo incidente total</span>
+        <span>{fmt(max, 0)} W/m²</span>
       </div>
     </div>
   );

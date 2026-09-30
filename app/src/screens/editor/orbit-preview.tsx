@@ -4,15 +4,9 @@ import { api, unwrap, type EnvironmentParameters, type OrbitPreviewResult } from
 import { KeyValue } from "@/components/data/readouts";
 import { Notice } from "@/components/feedback/notice";
 import { Tag } from "@/components/feedback/tag";
+import { CompactSelect } from "@/components/forms/compact-select";
 import { fieldBoxClass } from "@/components/forms/field-box";
 import { Segmented } from "@/components/forms/segmented";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { JsonObject } from "@/lib/json";
 import { isIsoDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -94,28 +88,14 @@ export function OrbitPreview({
         <span className="font-mono text-2xs text-subtle-foreground">sin guardar · sin flujos</span>
       </header>
       <div className="grid grid-cols-2 gap-2">
-        <Select
-          items={(shown?.attitude_modes ?? []).map((m) => ({ value: m.id, label: m.name }))}
+        <CompactSelect
+          label="Modo de actitud"
+          icon={Satellite}
+          options={(shown?.attitude_modes ?? []).map((m) => ({ value: m.id, label: m.name }))}
           value={shown?.mode_id ?? null}
-          onValueChange={(next) => typeof next === "string" && setModeId(next)}
-          disabled={!shown?.attitude_modes.length}
-        >
-          <SelectTrigger
-            size="sm"
-            aria-label="Modo de actitud"
-            className="w-full bg-background text-ui"
-          >
-            <Satellite aria-hidden className="text-subtle-foreground" />
-            <SelectValue placeholder="Sin modos de actitud" />
-          </SelectTrigger>
-          <SelectContent>
-            {shown?.attitude_modes.map((m) => (
-              <SelectItem key={m.id} value={m.id} className="text-ui">
-                {m.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onValueChange={setModeId}
+          placeholder="Sin modos de actitud"
+        />
         <OrbitDate
           value={on ?? (shown ? isoDate(shown.date) : "")}
           isLaunch={!!launch}

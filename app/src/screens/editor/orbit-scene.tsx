@@ -115,7 +115,7 @@ function OrbitLine({ track, colors }: { track: Track; colors: Palette }) {
     for (let k = 0; k < n; k++) {
       const a = world(track.position[k]);
       const b = world(track.position[(k + 1) % n]);
-      const color = (track.sunlit[k] ?? 1) > 0.5 ? colors.sun : colors.shade;
+      const color = (track.sunlit[k] ?? 1) > 0.5 ? colors.primary : colors.shade;
       positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
       vertexColors.push(color.r, color.g, color.b, color.r, color.g, color.b);
     }

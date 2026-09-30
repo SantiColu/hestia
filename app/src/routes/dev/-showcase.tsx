@@ -7,6 +7,7 @@ import {
   Play,
   Plus,
   RotateCcw,
+  Satellite,
   Trash2,
   Workflow,
   X,
@@ -31,6 +32,7 @@ import { DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NumberField } from "@/components/forms/number-field";
 import { TextField } from "@/components/forms/text-field";
+import { CompactSelect } from "@/components/forms/compact-select";
 import { SelectField } from "@/components/forms/select-field";
 import { JustificationField } from "@/components/forms/justification-field";
 import { CheckboxField, SwitchField } from "@/components/forms/choice-fields";
@@ -174,6 +176,16 @@ export function Showcase() {
           <CheckboxField label="Incluir transitorios" />
           <SwitchField label="Recalcular al cambiar" defaultChecked />
           <SwitchField label="Mostrar en Kelvin" />
+          <CompactSelect
+            label="Modo de actitud"
+            icon={Satellite}
+            value="nadir"
+            onValueChange={() => undefined}
+            options={[
+              { value: "nadir", label: "Apuntado nadir" },
+              { value: "sun", label: "Apuntado al Sol" },
+            ]}
+          />
           <Segmented
             aria-label="Tipo de solución"
             value={mode}
