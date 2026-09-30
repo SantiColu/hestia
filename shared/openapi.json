@@ -2600,6 +2600,13 @@
             "title": "Altitude",
             "type": "number"
           },
+          "attitude_modes": {
+            "items": {
+              "$ref": "#/components/schemas/AttitudeModeRef"
+            },
+            "title": "Attitude Modes",
+            "type": "array"
+          },
           "beta": {
             "title": "Beta",
             "type": "number"
@@ -2734,6 +2741,7 @@
           "eclipse_fraction",
           "eclipse_duration",
           "node_assumed",
+          "attitude_modes",
           "mode_id",
           "quaternion"
         ],

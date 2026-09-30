@@ -464,7 +464,9 @@ def test_preview_attitude_of_the_chosen_mode() -> None:
 def test_preview_skips_incomplete_modes_and_draws_without_attitude() -> None:
     c = case(SSO)
     draft = c.parameters(attitude_modes=[{"name": "A medias", "primary_axis": "+Z"}, NADIR])
-    assert PROVIDER.preview(c.mission, draft, None, None).mode_id == "nadir"
+    preview = PROVIDER.preview(c.mission, draft, None, None)
+    assert preview.mode_id == "nadir"
+    assert [(m.id, m.name) for m in preview.attitude_modes] == [("nadir", "Apuntado nadir")]
     bare = PROVIDER.preview(c.mission, c.parameters(attitude_modes=[]), None, "nadir")
     assert bare.mode_id is None and bare.quaternion is None
 

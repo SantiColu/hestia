@@ -234,6 +234,8 @@ class OrbitPreview(OrbitTrack):
     """s."""
     node_assumed: bool
     """True when the orbit does not fix its node and it is drawn at right ascension 0."""
+    attitude_modes: list[AttitudeModeRef]
+    """The complete and consistent attitude modes of the draft, the ones it can be drawn in."""
     mode_id: str | None
     """Attitude mode of ``quaternion``; null without valid attitude modes."""
     quaternion: list[list[float]] | None

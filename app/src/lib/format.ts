@@ -21,3 +21,12 @@ export function joinList(items: string[], max = Infinity): string {
   if (items.length <= 1) return items.join("");
   return `${items.slice(0, -1).join(", ")} y ${items[items.length - 1]}`;
 }
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Whether a typed text is a complete, real date aaaa-mm-dd. */
+export function isIsoDate(text: string): boolean {
+  if (!ISO_DATE.test(text)) return false;
+  const date = new Date(`${text}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(text);
+}

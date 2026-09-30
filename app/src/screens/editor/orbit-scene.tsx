@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import type { OrbitProfile } from "@/api/client";
-import { FACES, type Instant, type Vec3 } from "./orbit-profile";
+import { FACES, type Instant, type Track, type Vec3 } from "./orbit-profile";
 
 /**
- * 3D scene of one orbit (docs/etapas/environment.md, «Órbita 3D»). Draws the profile as the API
- * computed it; the only arithmetic is placing it in the scene (Earth radii, three.js axes).
+ * 3D scene of one orbit (docs/etapas/environment.md, «Órbita 3D»): a result profile or the preview
+ * of a draft. Draws the orbit as the API computed it; the only arithmetic is placing it in the
+ * scene (Earth radii, three.js axes).
  *
  * Units: 1 = Earth radius. Axes: the inertial frame has z to the north; three.js has y up, so
  * inertial (x, y, z) is drawn at (x, z, -y) — a rotation of -90° about x.
@@ -107,15 +107,15 @@ function Earth({ rotation, colors }: { rotation: number; colors: Palette }) {
   );
 }
 
-function OrbitLine({ profile, colors }: { profile: OrbitProfile; colors: Palette }) {
+function OrbitLine({ track, colors }: { track: Track; colors: Palette }) {
   const geometry = useMemo(() => {
-    const n = profile.position.length;
+    const n = track.position.length;
     const positions: number[] = [];
     const vertexColors: number[] = [];
     for (let k = 0; k < n; k++) {
-      const a = world(profile.position[k]);
-      const b = world(profile.position[(k + 1) % n]);
-      const color = (profile.sunlit[k] ?? 1) > 0.5 ? colors.sun : colors.shade;
+      const a = world(track.position[k]);
+      const b = world(track.position[(k + 1) % n]);
+      const color = (track.sunlit[k] ?? 1) > 0.5 ? colors.sun : colors.shade;
       positions.push(a.x, a.y, a.z, b.x, b.y, b.z);
       vertexColors.push(color.r, color.g, color.b, color.r, color.g, color.b);
     }
@@ -123,7 +123,7 @@ function OrbitLine({ profile, colors }: { profile: OrbitProfile; colors: Palette
     g.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
     g.setAttribute("color", new THREE.Float32BufferAttribute(vertexColors, 3));
     return g;
-  }, [profile, colors]);
+  }, [track, colors]);
   return (
     <lineSegments geometry={geometry}>
       <lineBasicMaterial vertexColors />
@@ -178,7 +178,8 @@ function ShadowCylinder({ sun, colors }: { sun: THREE.Vector3; colors: Palette }
   );
 }
 
-/** The envelope, not to scale, with its faces colored by the total incident flux. */
+/** The envelope, not to scale, with its faces colored by the total incident flux (neutral without
+ * fluxes); a plain marker without an attitude. */
 function Spacecraft({
   instant,
   size,
@@ -192,11 +193,20 @@ function Spacecraft({
   colors: Palette;
   onOpen?: () => void;
 }) {
+  if (!instant.quaternion) {
+    return (
+      <mesh position={world(instant.position)}>
+        <sphereGeometry args={[size / 2, 16, 8]} />
+        <meshBasicMaterial color={colors.primary} />
+      </mesh>
+    );
+  }
   const [w, x, y, z] = instant.quaternion;
   const quaternion = FRAME.clone().multiply(new THREE.Quaternion(x, y, z, w));
+  const { faces } = instant;
   // BoxGeometry material groups are +X, -X, +Y, -Y, +Z, -Z: the order of FACES.
   const materials = FACES.map((face) =>
-    fluxColor(colors, instant.faces[face]?.total ?? 0, maxFlux),
+    faces ? fluxColor(colors, faces[face].total, maxFlux) : colors.grid,
   );
   return (
     <group position={world(instant.position)} quaternion={quaternion}>
@@ -288,20 +298,21 @@ function LocalCamera({ instant }: { instant: Instant }) {
 // ---------------------------------------------------------------- scene
 
 export function OrbitScene({
-  profile,
+  track,
   instant,
   mode,
-  maxFlux,
+  maxFlux = 0,
   onOpenLocal,
 }: {
-  profile: OrbitProfile;
+  track: Track;
   instant: Instant;
   mode: CameraMode;
-  maxFlux: number;
+  /** Top of the flux color scale, W/m² (a profile with fluxes). */
+  maxFlux?: number;
   onOpenLocal: () => void;
 }) {
   const colors = useMemo(() => palette(), []);
-  const radius = world(profile.position[0]).length();
+  const radius = world(track.position[0]).length();
   const sun = direction(instant.sun);
   const satellite = world(instant.position);
   const local = mode === "local";
@@ -317,7 +328,7 @@ export function OrbitScene({
       <color attach="background" args={[colors.bg]} />
       {local ? <LocalCamera instant={instant} /> : <GlobalCamera radius={radius} />}
       <Earth rotation={instant.earthRotation} colors={colors} />
-      <OrbitLine profile={profile} colors={colors} />
+      <OrbitLine track={track} colors={colors} />
       {!local && <ShadowCylinder sun={sun} colors={colors} />}
       <Arrow
         origin={local ? satellite : new THREE.Vector3()}

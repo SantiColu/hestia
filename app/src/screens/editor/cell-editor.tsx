@@ -4,7 +4,6 @@ import {
   api,
   unwrap,
   type CellArtifact,
-  type CellContext,
   type EnvironmentParameters,
   type MissionArtifact,
   type Problem,
@@ -20,15 +19,14 @@ import { joinList, plural } from "@/lib/format";
 import { deepEqual, setAt, type Json, type JsonObject, type JsonPath } from "@/lib/json";
 import { cn } from "@/lib/utils";
 import { useDialogs } from "@/project/dialogs";
-import { useEditor } from "@/project/editor";
+import { DRAFT_DEBOUNCE_MS, useEditor } from "@/project/editor";
 import { findCell, findSystem, stageName } from "@/project/lookup";
 import { useProject } from "@/project/store";
 import { ComputationEditor } from "./computation-editor";
 import { column } from "./layout";
 import { changedLeaves, problemsBySection, type JsonSchema } from "./schema";
+import { useCellContext } from "./use-cell-context";
 import { SchemaForm } from "./schema-form";
-
-const VALIDATE_DEBOUNCE_MS = 300;
 
 /** Downstream cells named in the apply summary before "y N más". */
 const MAX_NAMED_CELLS = 3;
@@ -78,11 +76,21 @@ export function CellEditor({ cellId, view }: { cellId: string; view: ProjectView
 
 export type Title = { name: string; system: string };
 
-export function EditorHeader({ title, badge }: { title: Title; badge: ReactNode }) {
+export function EditorHeader({
+  title,
+  source,
+  badge,
+}: {
+  title: Title;
+  /** What the cell reads from its context, after its system. */
+  source?: ReactNode;
+  badge: ReactNode;
+}) {
   return (
     <header className="flex items-center gap-2.5">
       <h1 className="truncate text-lg font-semibold">{title.name}</h1>
       <span className="truncate text-ui text-subtle-foreground">{title.system}</span>
+      {source}
       <span className="flex-1" />
       {badge}
     </header>
@@ -101,19 +109,8 @@ function NotImplemented({
   status: StageStatus;
   view: ProjectView;
 }) {
-  const { catalog, fail } = useProject();
-  const [context, setContext] = useState<CellContext | null>(null);
-  const revision = view.document.revision;
-
-  useEffect(() => {
-    let live = true;
-    unwrap(api.GET("/project/cells/{cell_id}/context", { params: { path: { cell_id: cellId } } }))
-      .then((result) => live && setContext(result))
-      .catch(fail);
-    return () => {
-      live = false;
-    };
-  }, [cellId, revision, fail]);
+  const { catalog } = useProject();
+  const context = useCellContext(cellId, view.document.revision);
 
   return (
     <div className="h-full overflow-y-auto px-6 py-6">
@@ -148,7 +145,8 @@ function NotImplemented({
 /**
  * Draft + dry validation + Apply (ADR 0017). The draft lives in the editor store; the API
  * validates it (debounced) and decides status and provenance. `computation`: the parameters of
- * a computation stage (ADR 0021), shown inside its editor (no header of its own).
+ * a computation stage (ADR 0021), shown inside its editor (no header of its own), full width with
+ * an optional panel beside the form (`aside`, given the current draft or applied artifact).
  */
 export function FormEditor({
   cellId,
@@ -156,12 +154,14 @@ export function FormEditor({
   title,
   view,
   computation = false,
+  aside,
 }: {
   cellId: string;
   stage: StageType;
   title: Title;
   view: ProjectView;
   computation?: boolean;
+  aside?: (current: JsonObject, isDraft: boolean) => ReactNode;
 }) {
   const { fail, notify, setView } = useProject();
   const { drafts, setDraft } = useEditor();
@@ -217,7 +217,7 @@ export function FormEditor({
           if (latestDraft.current === draft) setDraftProblems(problems);
         })
         .catch(fail);
-    }, VALIDATE_DEBOUNCE_MS);
+    }, DRAFT_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [cellId, draft, fail]);
 
@@ -312,48 +312,53 @@ export function FormEditor({
   };
 
   const sections = [...new Set(changes.map((c) => c.section))];
+  /** Computation parameters use the whole width, as their header does. */
+  const body = computation ? "flex w-full flex-col" : column;
 
   return (
     <div className="flex h-full flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
-        <div className={cn(column, "gap-7")}>
-          {!computation && (
-            <EditorHeader
-              title={title}
-              badge={
-                draft && problems.length > 0 ? (
-                  <StageStatusBadge status="failed" label="Borrador con errores" />
-                ) : (
-                  <StageStatusBadge status={cellArtifact.status} />
-                )
-              }
+      <div className="flex min-h-0 flex-1">
+        <div className={cn("min-h-0 flex-1 overflow-y-auto px-6", computation ? "py-4" : "py-6")}>
+          <div className={cn(body, "gap-7")}>
+            {!computation && (
+              <EditorHeader
+                title={title}
+                badge={
+                  draft && problems.length > 0 ? (
+                    <StageStatusBadge status="failed" label="Borrador con errores" />
+                  ) : (
+                    <StageStatusBadge status={cellArtifact.status} />
+                  )
+                }
+              />
+            )}
+            {problems.length > 0 && (
+              <Notice tone="error" title={`${errorCount} de validación`}>
+                {problemsBySection(
+                  schema,
+                  problems.map((p) => p.path),
+                )}
+                .{" "}
+                {computation || draft
+                  ? `Podés aplicar igual: ${errorConsequence}`
+                  : "La celda queda Fallida hasta corregirlos."}
+              </Notice>
+            )}
+            <SchemaForm
+              root={schema}
+              applied={applied}
+              current={current}
+              problems={problems}
+              sources={sources}
+              onChange={onChange}
             />
-          )}
-          {problems.length > 0 && (
-            <Notice tone="error" title={`${errorCount} de validación`}>
-              {problemsBySection(
-                schema,
-                problems.map((p) => p.path),
-              )}
-              .{" "}
-              {computation || draft
-                ? `Podés aplicar igual: ${errorConsequence}`
-                : "La celda queda Fallida hasta corregirlos."}
-            </Notice>
-          )}
-          <SchemaForm
-            root={schema}
-            applied={applied}
-            current={current}
-            problems={problems}
-            sources={sources}
-            onChange={onChange}
-          />
+          </div>
         </div>
+        {aside?.(current, draft !== null)}
       </div>
       {(draft !== null || !cellArtifact.applied) && (
         <footer className="h-13 shrink-0 border-t border-border bg-surface px-6">
-          <div className={cn(column, "h-full flex-row items-center gap-3")}>
+          <div className={cn(body, "h-full flex-row items-center gap-3")}>
             <span
               aria-hidden
               className={cn(

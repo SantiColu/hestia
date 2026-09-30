@@ -1,10 +1,11 @@
 import type { OrbitProfile } from "@/api/client";
 
 /**
- * Interpolation between the samples of an orbit profile, to animate it (docs/etapas/environment.md:
- * «la UI dibuja `orbit_profiles` tal como llegan y solo interpola entre muestras»). No physics:
- * positions are blended linearly, attitudes with a spherical blend, angles unwrapped; fluxes are
- * the nearest sample's, so every number shown comes from the API.
+ * Interpolation between the samples of an orbit (a result profile or the preview of a draft), to
+ * animate it (docs/etapas/environment.md: «la UI dibuja `orbit_profiles` tal como llegan y solo
+ * interpola entre muestras»). No physics: positions are blended linearly, attitudes with a
+ * spherical blend, angles unwrapped; fluxes are the nearest sample's, so every number shown comes
+ * from the API.
  */
 
 export type Vec3 = [number, number, number];
@@ -15,6 +16,16 @@ export type FaceName = (typeof FACES)[number];
 
 export type FaceFlux = { solar: number; albedo: number; ir: number; total: number };
 
+/** One sampled orbit as the API gives it: a result profile (attitude and fluxes) or the preview of
+ * a draft (attitude only with a complete attitude mode, never fluxes). */
+export type Track = Pick<
+  OrbitProfile,
+  "period" | "time" | "position" | "velocity" | "sun" | "sunlit" | "earth_rotation_angle"
+> & {
+  quaternion: number[][] | null;
+  faces?: OrbitProfile["faces"];
+};
+
 export type Instant = {
   /** s from the profile's epoch, in [0, period). */
   time: number;
@@ -22,18 +33,13 @@ export type Instant = {
   velocity: Vec3;
   sun: Vec3;
   sunlit: number;
-  /** Body → inertial, [w, x, y, z]. */
-  quaternion: Quat;
+  /** Body → inertial, [w, x, y, z]; null without an attitude. */
+  quaternion: Quat | null;
   earthRotation: number;
   /** Incident fluxes at their maximum design values at the nearest sample, W/m² (as the API
-   * computed them, never interpolated). */
-  faces: Record<FaceName, FaceFlux>;
+   * computed them, never interpolated); null without fluxes. */
+  faces: Record<FaceName, FaceFlux> | null;
 };
-
-/** Period of the profile (from the API): the samples cover it uniformly. */
-export function profilePeriod(profile: OrbitProfile): number {
-  return profile.period;
-}
 
 /** Element k of a list the API guarantees to have (every profile list has one per sample). */
 function at<T>(list: T[], k: number): T {
@@ -69,37 +75,38 @@ function angle(a: number, b: number, f: number): number {
   return a + delta * f;
 }
 
-export function instantAt(profile: OrbitProfile, time: number): Instant {
-  const n = profile.time.length;
-  const period = profilePeriod(profile);
+function facesAt(track: Track, k: number): Record<FaceName, FaceFlux> | null {
+  if (!track.faces) return null;
+  const faces = {} as Record<FaceName, FaceFlux>;
+  for (const face of track.faces) {
+    faces[face.face as FaceName] = {
+      solar: at(face.solar_max, k),
+      albedo: at(face.albedo_max, k),
+      ir: at(face.ir_max, k),
+      total: at(face.total_max, k),
+    };
+  }
+  return faces;
+}
+
+export function instantAt(track: Track, time: number): Instant {
+  const n = track.time.length;
+  const period = track.period;
   const t = ((time % period) + period) % period;
   const step = period / n;
   const i = Math.min(Math.floor(t / step), n - 1);
   const j = (i + 1) % n;
   const f = (t - i * step) / step;
-  const nearest = f < 0.5 ? i : j;
-  const faces = {} as Record<FaceName, FaceFlux>;
-  for (const face of profile.faces) {
-    faces[face.face as FaceName] = {
-      solar: at(face.solar_max, nearest),
-      albedo: at(face.albedo_max, nearest),
-      ir: at(face.ir_max, nearest),
-      total: at(face.total_max, nearest),
-    };
-  }
+  const { quaternion } = track;
   return {
     time: t,
-    position: lerp3(at(profile.position, i), at(profile.position, j), f),
-    velocity: lerp3(at(profile.velocity, i), at(profile.velocity, j), f),
-    sun: lerp3(at(profile.sun, i), at(profile.sun, j), f),
-    sunlit: lerp(at(profile.sunlit, i), at(profile.sunlit, j), f),
-    quaternion: slerp(at(profile.quaternion, i), at(profile.quaternion, j), f),
-    earthRotation: angle(
-      at(profile.earth_rotation_angle, i),
-      at(profile.earth_rotation_angle, j),
-      f,
-    ),
-    faces,
+    position: lerp3(at(track.position, i), at(track.position, j), f),
+    velocity: lerp3(at(track.velocity, i), at(track.velocity, j), f),
+    sun: lerp3(at(track.sun, i), at(track.sun, j), f),
+    sunlit: lerp(at(track.sunlit, i), at(track.sunlit, j), f),
+    quaternion: quaternion ? slerp(at(quaternion, i), at(quaternion, j), f) : null,
+    earthRotation: angle(at(track.earth_rotation_angle, i), at(track.earth_rotation_angle, j), f),
+    faces: facesAt(track, f < 0.5 ? i : j),
   };
 }
 

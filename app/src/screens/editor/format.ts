@@ -21,6 +21,12 @@ export const deg = (rad: number, digits = 1) => fmt((rad * 180) / Math.PI, digit
 export const km = (m: number, digits = 0) => fmt(m / 1000, digits);
 export const minutes = (s: number, digits = 1) => fmt(s / 60, digits);
 
+/** "23:40": minutes and seconds of a time within an orbit. */
+export function clock(s: number): string {
+  const total = Math.floor(s);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
 export function date(iso: string): string {
   return iso.slice(0, 10);
 }

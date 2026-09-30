@@ -24,6 +24,7 @@ import {
   type JsonObject,
   type JsonPath,
 } from "@/lib/json";
+import { isIsoDate } from "@/lib/format";
 import { fromDisplay, toDisplay } from "@/lib/units";
 import { cn } from "@/lib/utils";
 import { field, formatValue, resolve, type Field, type JsonSchema } from "./schema";
@@ -245,14 +246,6 @@ function LeafField({ ctx, path, f }: { ctx: FormContext; path: JsonPath; f: Fiel
 }
 
 type FieldProps = { label: string; error?: string; modified: boolean; hint?: string };
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-
-function isIsoDate(text: string): boolean {
-  if (!ISO_DATE.test(text)) return false;
-  const date = new Date(`${text}T00:00:00Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(text);
-}
 
 /** A date typed as aaaa-mm-dd. Only complete dates reach the draft (like a number being typed). */
 function DateField({

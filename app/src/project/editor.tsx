@@ -12,6 +12,10 @@ import type { JsonObject } from "@/lib/json";
 import { useDialogs } from "./dialogs";
 import { useProject } from "./store";
 
+/** Wait after the last edit of a draft before asking the API about it (dry validation, orbit
+ * preview). */
+export const DRAFT_DEBOUNCE_MS = 300;
+
 /**
  * Document tabs and unapplied drafts (docs/ux-workspace.md, «Editor de celda»).
  *

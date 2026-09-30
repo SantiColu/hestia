@@ -373,7 +373,8 @@ class AnalyticEnvironmentProvider:
             samples = DEFAULT_ORBIT_SAMPLES
         track = _track(normal, orbit.altitude, when, samples, conical)
         fraction = float(eclipse_fraction(beta, track.radius, conical, float(distance)))
-        chosen = _preview_mode(parameters.attitude_modes, mode_id)
+        drawable = _drawable_modes(parameters.attitude_modes)
+        chosen = next((m for m in drawable if m[0] == mode_id), drawable[0] if drawable else None)
         quaternion = None
         if chosen is not None:
             matrix = _body_to_inertial(track, chosen[1])
@@ -389,6 +390,10 @@ class AnalyticEnvironmentProvider:
                 "eclipse_fraction": round(fraction, 6),
                 "eclipse_duration": round(fraction * _period(orbit, orbit.altitude), 2),
                 "node_assumed": orbit.type is OrbitType.KEPLERIAN,
+                "attitude_modes": [
+                    AttitudeModeRef(id=mode_id, name=mode.name or mode_id)
+                    for mode_id, mode in drawable
+                ],
                 "mode_id": chosen[0] if chosen is not None else None,
                 "quaternion": quaternion,
             }
@@ -401,18 +406,15 @@ def _mode_id(mode: AttitudeMode, index: int) -> str:
     return mode.id or f"mode_{index + 1}"
 
 
-def _preview_mode(
-    modes: list[AttitudeMode], mode_id: str | None
-) -> tuple[str, AttitudeMode] | None:
-    """The attitude mode ``mode_id`` (or the first) among the complete and consistent ones."""
+def _drawable_modes(modes: list[AttitudeMode]) -> list[tuple[str, AttitudeMode]]:
+    """The complete and consistent attitude modes, with the id the result gives them."""
 
     def drawable(mode: AttitudeMode) -> bool:
         p = Problems()
         validate_attitude_modes(p, [mode])
         return not p.items
 
-    valid = [(_mode_id(mode, i), mode) for i, mode in enumerate(modes) if drawable(mode)]
-    return next((m for m in valid if m[0] == mode_id), valid[0] if valid else None)
+    return [(_mode_id(mode, i), mode) for i, mode in enumerate(modes) if drawable(mode)]
 
 
 # ---------------------------------------------------------------- inputs

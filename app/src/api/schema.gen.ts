@@ -1751,6 +1751,8 @@ export interface components {
     OrbitPreview: {
       /** Altitude */
       altitude: number;
+      /** Attitude Modes */
+      attitude_modes: components["schemas"]["AttitudeModeRef"][];
       /** Beta */
       beta: number;
       /**

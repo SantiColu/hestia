@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import { api, unwrap, type CellResult, type OrbitProfile } from "@/api/client";
 import { KeyValue } from "@/components/data/readouts";
@@ -9,12 +9,10 @@ import { useProject } from "@/project/store";
 import { cn } from "@/lib/utils";
 import { column } from "./layout";
 import { deg, fmt, minutes } from "./format";
-import { FACES, instantAt, maxTotalFlux, profilePeriod, type FaceName } from "./orbit-profile";
+import { FACES, instantAt, maxTotalFlux, type FaceName } from "./orbit-profile";
 import { OrbitScene, type CameraMode } from "./orbit-scene";
 import { ResultState } from "./result-state";
-
-/** Seconds of animation for one orbit at speed ×1. */
-const ORBIT_SECONDS = 30;
+import { useOrbitClock } from "./use-orbit-clock";
 
 const SPEEDS = [
   { value: "1", label: "×1" },
@@ -47,9 +45,6 @@ export function OrbitView({
     environment?.attitude_modes.find((m) => m.id === modeId) ?? environment?.attitude_modes[0];
   const [profile, setProfile] = useState<OrbitProfile | null>(null);
   const [camera, setCamera] = useState<CameraMode>("global");
-  const [playing, setPlaying] = useState(true);
-  const [speed, setSpeed] = useState("1");
-  const [time, setTime] = useState(0);
   const [face, setFace] = useState<FaceName>("+X");
   const resultId = result?.result_id ?? null;
 
@@ -71,27 +66,9 @@ export function OrbitView({
     };
   }, [cellId, resultId, condition, mode, fail]);
 
-  const period = profile ? profilePeriod(profile) : 0;
+  const period = profile?.period ?? 0;
   const maxFlux = useMemo(() => (profile ? maxTotalFlux(profile) : 0), [profile]);
-
-  // Animation: advance the instant while playing (the camera keeps it when switching views).
-  const last = useRef<number | null>(null);
-  useEffect(() => {
-    if (!playing || period <= 0) return;
-    let frame = 0;
-    const tick = (now: number) => {
-      const previous = last.current ?? now;
-      last.current = now;
-      const rate = (period / ORBIT_SECONDS) * Number(speed);
-      setTime((t) => (t + ((now - previous) / 1000) * rate) % period);
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(frame);
-      last.current = null;
-    };
-  }, [playing, period, speed]);
+  const orbit = useOrbitClock(period);
 
   if (!environment || !condition || !mode) {
     return (
@@ -103,8 +80,8 @@ export function OrbitView({
     );
   }
 
-  const instant = profile ? instantAt(profile, time) : null;
-  const flux = instant?.faces[face];
+  const instant = profile ? instantAt(profile, orbit.time) : null;
+  const flux = instant?.faces?.[face];
 
   return (
     <div className="flex h-full flex-col">
@@ -133,7 +110,7 @@ export function OrbitView({
       <div className="relative min-h-0 flex-1">
         {profile && instant ? (
           <OrbitScene
-            profile={profile}
+            track={profile}
             instant={instant}
             mode={camera}
             maxFlux={maxFlux}
@@ -197,10 +174,10 @@ export function OrbitView({
           <Button
             size="icon-sm"
             variant="ghost"
-            aria-label={playing ? "Pausa" : "Reproducir"}
-            onClick={() => setPlaying((p) => !p)}
+            aria-label={orbit.playing ? "Pausa" : "Reproducir"}
+            onClick={orbit.toggle}
           >
-            {playing ? <Pause /> : <Play />}
+            {orbit.playing ? <Pause /> : <Play />}
           </Button>
           <input
             type="range"
@@ -208,18 +185,15 @@ export function OrbitView({
             min={0}
             max={period || 1}
             step={period / 1000 || 1}
-            value={time}
-            onChange={(e) => {
-              setPlaying(false);
-              setTime(Number(e.target.value));
-            }}
+            value={orbit.time}
+            onChange={(e) => orbit.seek(Number(e.target.value))}
             className="min-w-0 flex-1 accent-primary"
           />
           <Segmented
             aria-label="Velocidad"
             options={SPEEDS}
-            value={speed}
-            onValueChange={setSpeed}
+            value={String(orbit.speed)}
+            onValueChange={(next) => orbit.setSpeed(Number(next))}
           />
         </div>
       </div>
