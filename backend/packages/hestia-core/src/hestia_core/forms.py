@@ -1,8 +1,10 @@
-"""Shared pieces of form and computation stages (ADR 0017, 0021): validation problems."""
+"""Shared pieces of form and computation stages (ADR 0017, 0021): validation problems and
+helpers to declare and validate fields."""
 
 from enum import StrEnum
 
 from pydantic import BaseModel
+from pydantic.config import JsonDict
 
 
 class ProblemCode(StrEnum):
@@ -35,6 +37,59 @@ class Problem(BaseModel):
     code: ProblemCode
     message: str
     """In Spanish, for people."""
+
+
+class Problems:
+    """Collects the problems of a validation, in form order."""
+
+    def __init__(self) -> None:
+        self.items: list[Problem] = []
+
+    def add(self, path: str, code: ProblemCode, message: str) -> None:
+        self.items.append(Problem(path=path, code=code, message=message))
+
+    def required(self, path: str, value: object, label: str) -> bool:
+        """Report a missing value. Returns whether the value is present."""
+        if value is None or (isinstance(value, str) and not value.strip()):
+            self.add(path, ProblemCode.REQUIRED, f"Falta {label}.")
+            return False
+        return True
+
+    def positive(self, path: str, value: float | None, label: str) -> None:
+        if value is not None and not value > 0:
+            self.add(path, ProblemCode.MIN, f"{label} tiene que ser mayor que 0.")
+
+    def non_negative(self, path: str, value: float | None, label: str) -> None:
+        if value is not None and value < 0:
+            self.add(path, ProblemCode.MIN, f"{label} no puede ser negativo.")
+
+    def unique_name(
+        self, path: str, name: str | None, seen: set[str], label: str, taken: str
+    ) -> None:
+        """Require the name of a list item and report it if ``seen`` already holds it (compared
+        without case and extra spaces): «{taken} «name».». Adds it to ``seen``."""
+        if not self.required(path, name, label):
+            return
+        assert name is not None
+        key = " ".join(name.split()).casefold()
+        if key in seen:
+            self.add(path, ProblemCode.DUPLICATE_NAME, f"{taken} «{name.strip()}».")
+        seen.add(key)
+
+
+def unit(si: str, display: str | None = None, extra: JsonDict | None = None) -> JsonDict:
+    """JSON Schema extensions of a physical field: stored SI unit and the unit shown."""
+    return {"x-unit": si, "x-display-unit": display or si, **(extra or {})}
+
+
+def capitalize(text: str) -> str:
+    """First letter in upper case, the rest as is."""
+    return text[:1].upper() + text[1:]
+
+
+def format_km(value_m: float) -> str:
+    """A length in m shown in whole km with thin grouping: ``5 970 km``."""
+    return f"{value_m / 1000:,.0f}".replace(",", " ") + " km"
 
 
 class InputRejectedError(Exception):

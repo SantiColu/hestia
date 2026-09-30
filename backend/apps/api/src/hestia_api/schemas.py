@@ -1,7 +1,10 @@
 """Request bodies. Responses reuse the pydantic models of ``hestia_project``."""
 
+import datetime as dt
+
 from pydantic import BaseModel, Field
 
+from hestia_core.environment.parameters import EnvironmentParameters
 from hestia_project.artifacts import Artifact, CellArtifact
 from hestia_project.base import Schema
 from hestia_project.catalog import StageType
@@ -137,6 +140,19 @@ class ApplyArtifactResult(Schema):
 class UpdateCellRequest(BaseModel):
     justification: str = Field(
         default="", description="Why the cell is updated. Optional; stored with the author."
+    )
+
+
+class OrbitPreviewRequest(BaseModel):
+    """A draft of the environment parameters to draw its orbit (ADR 0023)."""
+
+    parameters: EnvironmentParameters
+    date: dt.date | None = Field(
+        default=None, description="Date of the orbit (UTC). Omitted: the launch date."
+    )
+    mode_id: str | None = Field(
+        default=None,
+        description="Attitude mode of the body attitude. Omitted: the first complete mode.",
     )
 
 

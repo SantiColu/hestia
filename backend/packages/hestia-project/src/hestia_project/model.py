@@ -10,7 +10,7 @@ from hestia_core.forms import Problem
 from hestia_project.base import Schema
 from hestia_project.catalog import StageType
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 """Version of the project schema. Bump on any incompatible change to these models.
 
 - 1: links name the input they feed (one source per input, ADR 0009).
@@ -18,6 +18,8 @@ SCHEMA_VERSION = 4
 - 3: cells of form stages keep their artifact, problems and field provenance (ADR 0017).
 - 4: computation stages (ADR 0021): parameters as a form, results stored apart and referenced
   by id (``Cell.result_id``), result provenance and the problems of the last update.
+- 5: the orbit and the attitude modes are environment parameters, not mission fields
+  (ADR 0023): mission artifact v2, environment parameters v2.
 """
 
 

@@ -68,8 +68,12 @@ def _analytic() -> Any:
     mission = MissionArtifact.model_validate(
         {
             "general": {"launch_date": LAUNCH.date().isoformat(), "design_life": 365.25 * 86400},
-            "orbit": {"type": "sso", "altitude": ALTITUDE_M, "ltan": LTAN},
             "envelope": {"size_x": 1, "size_y": 1, "size_z": 1, "mass": 100},
+        }
+    )
+    parameters = EnvironmentParameters.model_validate(
+        {
+            "orbit": {"type": "sso", "altitude": ALTITUDE_M, "ltan": LTAN},
             "attitude_modes": [
                 {
                     "id": "n",
@@ -82,7 +86,7 @@ def _analytic() -> Any:
             ],
         }
     )
-    return AnalyticEnvironmentProvider().compute(mission, EnvironmentParameters())
+    return AnalyticEnvironmentProvider().compute(mission, parameters)
 
 
 def _satellite(api: Any, timescale: Any) -> Any:

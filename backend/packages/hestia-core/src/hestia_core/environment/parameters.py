@@ -1,9 +1,11 @@
 """Parameters of the environment stage (``docs/etapas/environment.md``, ADR 0021).
 
 Edited as a form, like the mission (same ``x-`` JSON Schema extensions, see
-``hestia_core.mission``). Every field is optional so a draft can be incomplete;
-``validate_environment_parameters`` reports what is missing or inconsistent, against the
-mission of the cell's context when there is one. SI units.
+``hestia_core.mission``). They hold the orbit and the attitude modes (ADR 0023,
+``hestia_core.environment.orbit``) and the parameters of the computation. Every field is
+optional so a draft can be incomplete; ``validate_environment_parameters`` reports what is
+missing or inconsistent. Only the mission step looks at the mission of the cell's context (its
+design life). SI units.
 
 Design albedo and Earth IR (OLR) left empty take the library default for the orbit's
 inclination (``design_value_band``), resolved when the stage is updated and reported with its
@@ -13,16 +15,28 @@ source in the result.
 import math
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.config import JsonDict
 
-from hestia_core.forms import Problem, ProblemCode
-from hestia_core.mission import MIN_ALTITUDE_M, MissionArtifact, OrbitType
-from hestia_core.orbits import GEO_ALTITUDE_M, sso_inclination_rad
+from hestia_core.environment.orbit import (
+    MIN_ALTITUDE_M,
+    ORBIT_TYPE_LABELS,
+    AttitudeMode,
+    Orbit,
+    OrbitType,
+    nominal_altitude_m,
+    nominal_inclination_rad,
+    validate_attitude_modes,
+    validate_orbit,
+)
+from hestia_core.forms import Problem, ProblemCode, Problems, format_km, unit
+from hestia_core.mission import MissionArtifact
 
-ENVIRONMENT_PARAMETERS_SCHEMA_VERSION = 1
-"""Version of ``EnvironmentParameters``. Bump on any incompatible change."""
+ENVIRONMENT_PARAMETERS_SCHEMA_VERSION = 2
+"""Version of ``EnvironmentParameters``. Bump on any incompatible change. v2: the orbit and the
+attitude modes, from the mission (ADR 0023)."""
 
 DEFAULT_SOLAR_CONSTANT_W_M2 = 1361.0
 SOLAR_CONSTANT_SOURCE = "ECSS-E-ST-10-04C (a verificar)"
@@ -96,10 +110,6 @@ def design_value_band(inclination_rad: float) -> DesignValueBand:
 # ---------------------------------------------------------------- model
 
 
-def _unit(si: str, display: str | None = None, extra: JsonDict | None = None) -> JsonDict:
-    return {"x-unit": si, "x-display-unit": display or si, **(extra or {})}
-
-
 _BY_INCLINATION: JsonDict = {
     "x-placeholder": "tabla por inclinación",
     "x-default-source": DESIGN_VALUE_SOURCE,
@@ -113,7 +123,7 @@ class DesignValues(BaseModel):
         default=DEFAULT_SOLAR_CONSTANT_W_M2,
         title="Constante solar",
         description="Irradiancia solar a 1 UA. La de cada fecha sale de la distancia Tierra-Sol.",
-        json_schema_extra=_unit(
+        json_schema_extra=unit(
             "W/m²",
             extra={
                 "x-default": DEFAULT_SOLAR_CONSTANT_W_M2,
@@ -137,39 +147,39 @@ class DesignValues(BaseModel):
         default=None,
         title="IR terrestre mínima",
         description="Radiación de onda larga saliente mínima. Vacío: tabla por inclinación.",
-        json_schema_extra=_unit("W/m²", extra=_BY_INCLINATION),
+        json_schema_extra=unit("W/m²", extra=_BY_INCLINATION),
     )
     olr_max: float | None = Field(
         default=None,
         title="IR terrestre máxima",
         description="Radiación de onda larga saliente máxima. Vacío: tabla por inclinación.",
-        json_schema_extra=_unit("W/m²", extra=_BY_INCLINATION),
+        json_schema_extra=unit("W/m²", extra=_BY_INCLINATION),
     )
 
 
 class Dispersion(BaseModel):
     """Long-term perturbations that are not propagated: their extremes are evaluated around
-    the nominal orbit of the mission (ADR 0020)."""
+    the nominal orbit (ADR 0020)."""
 
     ltan_dispersion: float | None = Field(
         default=None,
         title="Deriva de la hora del nodo",
         description="Solo SSO. Deriva máxima (±) de la hora local del nodo a lo largo de la "
         "vida. Vacío: 0.",
-        json_schema_extra=_unit("s", "min", {"x-placeholder": "0"}),
+        json_schema_extra=unit("s", "min", {"x-placeholder": "0"}),
     )
     eol_altitude: float | None = Field(
         default=None,
         title="Altitud al fin de vida",
         description="SSO y LEO/MEO. Altitud por decaimiento al fin de vida. Vacío: sin "
         "decaimiento.",
-        json_schema_extra=_unit("m", "km", {"x-placeholder": "sin decaimiento"}),
+        json_schema_extra=unit("m", "km", {"x-placeholder": "sin decaimiento"}),
     )
     geo_max_inclination: float | None = Field(
         default=None,
         title="Inclinación máxima en GEO",
         description="Solo GEO. Inclinación máxima que alcanza la órbita. Vacío: 0.",
-        json_schema_extra=_unit("rad", "°", {"x-placeholder": "0"}),
+        json_schema_extra=unit("rad", "°", {"x-placeholder": "0"}),
     )
 
 
@@ -178,7 +188,7 @@ class Sampling(BaseModel):
         default=DEFAULT_MISSION_STEP_S,
         title="Paso a lo largo de la misión",
         description="Paso de las series de β, eclipse e irradiancia.",
-        json_schema_extra=_unit("s", "días", {"x-default": DEFAULT_MISSION_STEP_S}),
+        json_schema_extra=unit("s", "días", {"x-default": DEFAULT_MISSION_STEP_S}),
     )
     orbit_samples: int | None = Field(
         default=DEFAULT_ORBIT_SAMPLES,
@@ -209,22 +219,28 @@ class CustomCondition(BaseModel):
     name: str | None = Field(
         default=None, title="Nombre", json_schema_extra={"x-placeholder": "β = 30°"}
     )
-    beta: float | None = Field(default=None, title="Ángulo β", json_schema_extra=_unit("rad", "°"))
+    beta: float | None = Field(default=None, title="Ángulo β", json_schema_extra=unit("rad", "°"))
     altitude: float | None = Field(
         default=None,
         title="Altitud",
-        description="Vacío: la nominal de Misión.",
-        json_schema_extra=_unit("m", "km", {"x-placeholder": "nominal"}),
+        description="Vacío: la nominal.",
+        json_schema_extra=unit("m", "km", {"x-placeholder": "nominal"}),
     )
 
 
 class EnvironmentParameters(BaseModel):
-    """Parameters of the environment stage: design values, dispersions, sampling and custom
-    conditions."""
+    """Parameters of the environment stage: orbit, attitude modes, design values, dispersions,
+    sampling and custom conditions."""
 
     model_config = ConfigDict(extra="forbid")
 
     schema_version: int = ENVIRONMENT_PARAMETERS_SCHEMA_VERSION
+    orbit: Orbit = Field(default_factory=Orbit, title="Órbita")
+    attitude_modes: list[AttitudeMode] = Field(
+        default_factory=list[AttitudeMode],
+        title="Modos de actitud",
+        json_schema_extra={"x-add-label": "Agregar modo de actitud"},
+    )
     design_values: DesignValues = Field(default_factory=DesignValues, title="Valores de diseño")
     dispersion: Dispersion = Field(default_factory=Dispersion, title="Dispersión de la órbita")
     sampling: Sampling = Field(default_factory=Sampling, title="Muestreo")
@@ -236,8 +252,17 @@ class EnvironmentParameters(BaseModel):
 
 
 def environment_defaults() -> EnvironmentParameters:
-    """New parameters: the library defaults (solar constant, sampling), nothing else."""
+    """New parameters: the library defaults (orbit type, solar constant, sampling), nothing
+    else."""
     return EnvironmentParameters()
+
+
+def upgrade_environment_parameters(data: dict[str, Any]) -> dict[str, Any]:
+    """Environment parameters of any version (JSON) as the current version. v1 had no orbit nor
+    attitude modes: they take what ``data`` holds (the project migration merges the mission's
+    in), else the defaults."""
+    current = data | {"schema_version": ENVIRONMENT_PARAMETERS_SCHEMA_VERSION}
+    return EnvironmentParameters.model_validate(current).model_dump(mode="json")
 
 
 # ---------------------------------------------------------------- resolution
@@ -287,54 +312,7 @@ def resolve_design_values(values: DesignValues, inclination_rad: float) -> Resol
     )
 
 
-def nominal_altitude_m(mission: MissionArtifact) -> float | None:
-    """Altitude the environment treats as nominal: SSO altitude, LEO/MEO perigee, GEO."""
-    orbit = mission.orbit
-    if orbit.type is OrbitType.SSO:
-        return orbit.altitude
-    if orbit.type is OrbitType.KEPLERIAN:
-        return orbit.perigee_altitude
-    if orbit.type is OrbitType.GEO:
-        return GEO_ALTITUDE_M
-    return None
-
-
-def nominal_inclination_rad(mission: MissionArtifact) -> float | None:
-    """Inclination of the mission's orbit: computed for SSO, entered for LEO/MEO, 0 in GEO."""
-    orbit = mission.orbit
-    if orbit.type is OrbitType.SSO:
-        if orbit.altitude is None:
-            return None
-        try:
-            return sso_inclination_rad(orbit.altitude)
-        except ValueError:
-            return None
-    if orbit.type is OrbitType.KEPLERIAN:
-        return orbit.inclination
-    if orbit.type is OrbitType.GEO:
-        return 0.0
-    return None
-
-
 # ---------------------------------------------------------------- validation
-
-
-class _Problems:
-    def __init__(self) -> None:
-        self.items: list[Problem] = []
-
-    def add(self, path: str, code: ProblemCode, message: str) -> None:
-        self.items.append(Problem(path=path, code=code, message=message))
-
-    def required(self, path: str, value: object, label: str) -> bool:
-        if value is None or (isinstance(value, str) and not value.strip()):
-            self.add(path, ProblemCode.REQUIRED, f"Falta {label}.")
-            return False
-        return True
-
-
-def _km(value_m: float) -> str:
-    return f"{value_m / 1000:,.0f}".replace(",", " ") + " km"
 
 
 _DISPERSION_BY_ORBIT: dict[str, tuple[OrbitType, ...]] = {
@@ -347,7 +325,6 @@ _DISPERSION_LABELS = {
     "eol_altitude": "La altitud al fin de vida",
     "geo_max_inclination": "La inclinación máxima en GEO",
 }
-_ORBIT_LABELS = {OrbitType.SSO: "SSO", OrbitType.KEPLERIAN: "LEO/MEO", OrbitType.GEO: "GEO"}
 
 
 def validate_environment_parameters(
@@ -355,21 +332,20 @@ def validate_environment_parameters(
 ) -> list[Problem]:
     """Completeness and consistency of the parameters (``docs/etapas/environment.md``).
 
-    Rules that need the mission (fields of its orbit type, the end-of-life altitude below the
-    nominal one, the step within the design life) only apply when ``mission`` is given.
+    The mission step within the design life only applies when ``mission`` is given.
     Deterministic; problems in form order. An empty list means valid.
     """
-    p = _Problems()
-    _validate_design_values(p, parameters.design_values, mission)
-    _validate_dispersion(p, parameters.dispersion, mission)
+    p = Problems()
+    validate_orbit(p, parameters.orbit)
+    validate_attitude_modes(p, parameters.attitude_modes)
+    _validate_design_values(p, parameters.design_values, parameters.orbit)
+    _validate_dispersion(p, parameters.dispersion, parameters.orbit)
     _validate_sampling(p, parameters.sampling, mission)
     _validate_conditions(p, parameters.custom_conditions)
     return p.items
 
 
-def _validate_design_values(
-    p: _Problems, values: DesignValues, mission: MissionArtifact | None
-) -> None:
+def _validate_design_values(p: Problems, values: DesignValues, orbit: Orbit) -> None:
     path = "design_values"
     if p.required(f"{path}.solar_constant", values.solar_constant, "la constante solar"):
         assert values.solar_constant is not None
@@ -391,7 +367,7 @@ def _validate_design_values(
             p.add(f"{path}.{name}", ProblemCode.MIN, f"{label} tiene que ser mayor que 0.")
 
     # Order of the bounds, with empty bounds taken from the table when the orbit is known.
-    inclination = nominal_inclination_rad(mission) if mission is not None else None
+    inclination = nominal_inclination_rad(orbit)
     band = design_value_band(inclination) if inclination is not None else None
     albedo_min = values.albedo_min if values.albedo_min is not None else None
     albedo_max = values.albedo_max
@@ -413,11 +389,9 @@ def _validate_design_values(
         )
 
 
-def _validate_dispersion(
-    p: _Problems, dispersion: Dispersion, mission: MissionArtifact | None
-) -> None:
+def _validate_dispersion(p: Problems, dispersion: Dispersion, orbit: Orbit) -> None:
     path = "dispersion"
-    orbit_type = mission.orbit.type if mission is not None else None
+    orbit_type = orbit.type
     if orbit_type is not None:
         for name, allowed in _DISPERSION_BY_ORBIT.items():
             if orbit_type not in allowed and getattr(dispersion, name) is not None:
@@ -425,7 +399,7 @@ def _validate_dispersion(
                     f"{path}.{name}",
                     ProblemCode.NOT_ALLOWED,
                     f"{_DISPERSION_LABELS[name]} no corresponde a una órbita "
-                    f"{_ORBIT_LABELS[orbit_type]}: dejala vacía.",
+                    f"{ORBIT_TYPE_LABELS[orbit_type.value]}: dejala vacía.",
                 )
     if dispersion.ltan_dispersion is not None and dispersion.ltan_dispersion < 0:
         p.add(
@@ -445,18 +419,18 @@ def _validate_dispersion(
             p.add(
                 f"{path}.eol_altitude",
                 ProblemCode.MIN,
-                f"La altitud al fin de vida tiene que ser de al menos {_km(MIN_ALTITUDE_M)}.",
+                f"La altitud al fin de vida tiene que ser de al menos {format_km(MIN_ALTITUDE_M)}.",
             )
-        nominal = nominal_altitude_m(mission) if mission is not None else None
+        nominal = nominal_altitude_m(orbit)
         if nominal is not None and eol > nominal:
             p.add(
                 f"{path}.eol_altitude",
                 ProblemCode.MAX,
-                f"La altitud al fin de vida no puede superar la nominal ({_km(nominal)}).",
+                f"La altitud al fin de vida no puede superar la nominal ({format_km(nominal)}).",
             )
 
 
-def _validate_sampling(p: _Problems, sampling: Sampling, mission: MissionArtifact | None) -> None:
+def _validate_sampling(p: Problems, sampling: Sampling, mission: MissionArtifact | None) -> None:
     path = "sampling"
     if p.required(f"{path}.mission_step", sampling.mission_step, "el paso de la misión"):
         assert sampling.mission_step is not None
@@ -486,20 +460,17 @@ def _validate_sampling(p: _Problems, sampling: Sampling, mission: MissionArtifac
     p.required(f"{path}.eclipse_model", sampling.eclipse_model, "el modelo de sombra")
 
 
-def _validate_conditions(p: _Problems, conditions: list[CustomCondition]) -> None:
+def _validate_conditions(p: Problems, conditions: list[CustomCondition]) -> None:
     seen: set[str] = set()
     for i, condition in enumerate(conditions):
         path = f"custom_conditions[{i}]"
-        if p.required(f"{path}.name", condition.name, "el nombre de la condición"):
-            assert condition.name is not None
-            key = " ".join(condition.name.split()).casefold()
-            if key in seen:
-                p.add(
-                    f"{path}.name",
-                    ProblemCode.DUPLICATE_NAME,
-                    f"Ya hay una condición llamada «{condition.name.strip()}».",
-                )
-            seen.add(key)
+        p.unique_name(
+            f"{path}.name",
+            condition.name,
+            seen,
+            "el nombre de la condición",
+            "Ya hay una condición llamada",
+        )
         if p.required(f"{path}.beta", condition.beta, "el ángulo β"):
             assert condition.beta is not None
             if condition.beta < -math.pi / 2:
@@ -510,5 +481,5 @@ def _validate_conditions(p: _Problems, conditions: list[CustomCondition]) -> Non
             p.add(
                 f"{path}.altitude",
                 ProblemCode.MIN,
-                f"La altitud tiene que ser de al menos {_km(MIN_ALTITUDE_M)}.",
+                f"La altitud tiene que ser de al menos {format_km(MIN_ALTITUDE_M)}.",
             )

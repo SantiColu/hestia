@@ -163,6 +163,13 @@ CASES: list[tuple[str, dict[str, Any], str, str, dict[str, Any] | None]] = [
         None,
     ),
     (
+        "preview_orbit",
+        {"cell_id": "c1", "parameters": ARTIFACT},
+        "POST",
+        "/project/cells/c1/orbit-preview",
+        {"parameters": ARTIFACT, "date": None, "mode_id": None},
+    ),
+    (
         "copy_to_clipboard",
         {"system_ids": ["s1"]},
         "POST",

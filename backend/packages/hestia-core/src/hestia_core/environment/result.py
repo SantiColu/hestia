@@ -14,8 +14,9 @@ from enum import StrEnum
 
 from pydantic import BaseModel
 
+from hestia_core.environment.orbit import OrbitType
 from hestia_core.environment.parameters import DesignValueSource, EclipseModel
-from hestia_core.mission import Face, OrbitType
+from hestia_core.mission import Face
 
 ENVIRONMENT_RESULT_SCHEMA_VERSION = 1
 """Version of ``EnvironmentResult``. Bump on any incompatible change."""
@@ -56,7 +57,7 @@ class OrbitSummary(BaseModel):
     eol_altitude: float | None
     """m. Null: no decay."""
     eccentricity: float
-    """Of the mission's orbit (the provider treats it as circular)."""
+    """Of the entered orbit (the provider treats it as circular)."""
     period: float
     """s, from the semi-major axis of the mission's orbit."""
     raan_swept: bool
@@ -180,12 +181,10 @@ class FaceProfile(BaseModel):
     """Solar + albedo + IR, all at their maximum."""
 
 
-class OrbitProfile(BaseModel):
-    """One orbit of a condition in an attitude mode, ``orbit_samples`` points from the
-    ascending node. For charts, the 3D view and later the transients of ``load_cases``."""
+class OrbitTrack(BaseModel):
+    """One circular orbit sampled uniformly from the ascending node: the geometry shared by the
+    orbit profiles of the result and the preview of a draft."""
 
-    condition_id: str
-    mode_id: str
     epoch: datetime
     """Time of the first sample."""
     period: float
@@ -200,11 +199,45 @@ class OrbitProfile(BaseModel):
     """Unit vector to the Sun, inertial."""
     sunlit: list[float]
     """Visible fraction of the solar disk: 0 in umbra, 1 in full Sun."""
-    quaternion: list[list[float]]
-    """Body → inertial, ``[w, x, y, z]``."""
     earth_rotation_angle: list[float]
     """rad: Greenwich meridian from the x axis, to draw a rotating Earth."""
+
+
+class OrbitProfile(OrbitTrack):
+    """One orbit of a condition in an attitude mode, ``orbit_samples`` points from the
+    ascending node. For charts, the 3D view and later the transients of ``load_cases``."""
+
+    condition_id: str
+    mode_id: str
+    quaternion: list[list[float]]
+    """Body → inertial, ``[w, x, y, z]``."""
     faces: list[FaceProfile]
+
+
+class OrbitPreview(OrbitTrack):
+    """The nominal orbit of a draft of the parameters on one date, without fluxes (ADR 0023).
+
+    Drawn while the parameters are edited; nothing is stored. SSO: the node from the LTAN on
+    that date. GEO: equatorial. LEO/MEO: the orbit fixes no node, so it is drawn with the node
+    at 0 (``node_assumed``)."""
+
+    orbit_type: OrbitType
+    date: datetime
+    beta: float
+    """rad, on that date."""
+    inclination: float
+    """rad. SSO: from J2 and the altitude."""
+    altitude: float
+    """m. Nominal: SSO altitude, LEO/MEO perigee, GEO altitude."""
+    eclipse_fraction: float
+    eclipse_duration: float
+    """s."""
+    node_assumed: bool
+    """True when the orbit does not fix its node and it is drawn at right ascension 0."""
+    mode_id: str | None
+    """Attitude mode of ``quaternion``; null without valid attitude modes."""
+    quaternion: list[list[float]] | None
+    """Body → inertial, ``[w, x, y, z]``; null without an attitude mode."""
 
 
 class OrbitProfileRef(BaseModel):

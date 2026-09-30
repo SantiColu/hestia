@@ -1074,7 +1074,7 @@
                 "type": "null"
               }
             ],
-            "description": "Vacío: la nominal de Misión.",
+            "description": "Vacío: la nominal.",
             "title": "Altitud",
             "x-display-unit": "km",
             "x-placeholder": "nominal",
@@ -1270,7 +1270,7 @@
         "type": "object"
       },
       "Dispersion": {
-        "description": "Long-term perturbations that are not propagated: their extremes are evaluated around\nthe nominal orbit of the mission (ADR 0020).",
+        "description": "Long-term perturbations that are not propagated: their extremes are evaluated around\nthe nominal orbit (ADR 0020).",
         "properties": {
           "eol_altitude": {
             "anyOf": [
@@ -1515,8 +1515,16 @@
       },
       "EnvironmentParameters": {
         "additionalProperties": false,
-        "description": "Parameters of the environment stage: design values, dispersions, sampling and custom\nconditions.",
+        "description": "Parameters of the environment stage: orbit, attitude modes, design values, dispersions,\nsampling and custom conditions.",
         "properties": {
+          "attitude_modes": {
+            "items": {
+              "$ref": "#/components/schemas/AttitudeMode"
+            },
+            "title": "Modos de actitud",
+            "type": "array",
+            "x-add-label": "Agregar modo de actitud"
+          },
           "custom_conditions": {
             "items": {
               "$ref": "#/components/schemas/CustomCondition"
@@ -1533,12 +1541,16 @@
             "$ref": "#/components/schemas/Dispersion",
             "title": "Dispersión de la órbita"
           },
+          "orbit": {
+            "$ref": "#/components/schemas/Orbit",
+            "title": "Órbita"
+          },
           "sampling": {
             "$ref": "#/components/schemas/Sampling",
             "title": "Muestreo"
           },
           "schema_version": {
-            "default": 1,
+            "default": 2,
             "title": "Schema Version",
             "type": "integer"
           }
@@ -2245,16 +2257,8 @@
       },
       "MissionArtifact": {
         "additionalProperties": false,
-        "description": "Artifact of the mission stage: orbit, attitude, envelope and criteria.",
+        "description": "Artifact of the mission stage: mission window, envelope and criteria.",
         "properties": {
-          "attitude_modes": {
-            "items": {
-              "$ref": "#/components/schemas/AttitudeMode"
-            },
-            "title": "Modos de actitud",
-            "type": "array",
-            "x-add-label": "Agregar modo de actitud"
-          },
           "criteria": {
             "$ref": "#/components/schemas/Criteria",
             "title": "Criterios y restricciones"
@@ -2266,12 +2270,8 @@
           "general": {
             "$ref": "#/components/schemas/General"
           },
-          "orbit": {
-            "$ref": "#/components/schemas/Orbit",
-            "title": "Órbita"
-          },
           "schema_version": {
-            "default": 1,
+            "default": 2,
             "title": "Schema Version",
             "type": "integer"
           }
@@ -2586,11 +2586,224 @@
             },
             "x-notes": {
               "geo": "Altitud 35 786 km, circular y ecuatorial.",
-              "sso": "En una SSO la inclinación la fija la altitud: se calcula en Entorno."
+              "sso": "En una SSO la inclinación la fija la altitud: se calcula y se ve en la vista previa."
             }
           }
         },
         "title": "Orbit",
+        "type": "object"
+      },
+      "OrbitPreview": {
+        "description": "The nominal orbit of a draft of the parameters on one date, without fluxes (ADR 0023).\n\nDrawn while the parameters are edited; nothing is stored. SSO: the node from the LTAN on\nthat date. GEO: equatorial. LEO/MEO: the orbit fixes no node, so it is drawn with the node\nat 0 (``node_assumed``).",
+        "properties": {
+          "altitude": {
+            "title": "Altitude",
+            "type": "number"
+          },
+          "beta": {
+            "title": "Beta",
+            "type": "number"
+          },
+          "date": {
+            "format": "date-time",
+            "title": "Date",
+            "type": "string"
+          },
+          "earth_rotation_angle": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Earth Rotation Angle",
+            "type": "array"
+          },
+          "eclipse_duration": {
+            "title": "Eclipse Duration",
+            "type": "number"
+          },
+          "eclipse_fraction": {
+            "title": "Eclipse Fraction",
+            "type": "number"
+          },
+          "epoch": {
+            "format": "date-time",
+            "title": "Epoch",
+            "type": "string"
+          },
+          "inclination": {
+            "title": "Inclination",
+            "type": "number"
+          },
+          "mode_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode Id"
+          },
+          "node_assumed": {
+            "title": "Node Assumed",
+            "type": "boolean"
+          },
+          "orbit_type": {
+            "$ref": "#/components/schemas/OrbitType"
+          },
+          "period": {
+            "title": "Period",
+            "type": "number"
+          },
+          "position": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Position",
+            "type": "array"
+          },
+          "quaternion": {
+            "anyOf": [
+              {
+                "items": {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quaternion"
+          },
+          "sun": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Sun",
+            "type": "array"
+          },
+          "sunlit": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Sunlit",
+            "type": "array"
+          },
+          "time": {
+            "items": {
+              "type": "number"
+            },
+            "title": "Time",
+            "type": "array"
+          },
+          "velocity": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "title": "Velocity",
+            "type": "array"
+          }
+        },
+        "required": [
+          "epoch",
+          "period",
+          "time",
+          "position",
+          "velocity",
+          "sun",
+          "sunlit",
+          "earth_rotation_angle",
+          "orbit_type",
+          "date",
+          "beta",
+          "inclination",
+          "altitude",
+          "eclipse_fraction",
+          "eclipse_duration",
+          "node_assumed",
+          "mode_id",
+          "quaternion"
+        ],
+        "title": "OrbitPreview",
+        "type": "object"
+      },
+      "OrbitPreviewRequest": {
+        "description": "A draft of the environment parameters to draw its orbit (ADR 0023).",
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Date of the orbit (UTC). Omitted: the launch date.",
+            "title": "Date"
+          },
+          "mode_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Attitude mode of the body attitude. Omitted: the first complete mode.",
+            "title": "Mode Id"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/EnvironmentParameters"
+          }
+        },
+        "required": [
+          "parameters"
+        ],
+        "title": "OrbitPreviewRequest",
+        "type": "object"
+      },
+      "OrbitPreviewResult": {
+        "description": "The orbit of a draft of the environment parameters, or why it cannot be drawn.",
+        "properties": {
+          "preview": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OrbitPreview"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "problems": {
+            "items": {
+              "$ref": "#/components/schemas/Problem"
+            },
+            "title": "Problems",
+            "type": "array"
+          }
+        },
+        "required": [
+          "problems",
+          "preview"
+        ],
+        "title": "OrbitPreviewResult",
         "type": "object"
       },
       "OrbitProfile": {
@@ -2683,8 +2896,6 @@
           }
         },
         "required": [
-          "condition_id",
-          "mode_id",
           "epoch",
           "period",
           "time",
@@ -2692,8 +2903,10 @@
           "velocity",
           "sun",
           "sunlit",
-          "quaternion",
           "earth_rotation_angle",
+          "condition_id",
+          "mode_id",
+          "quaternion",
           "faces"
         ],
         "title": "OrbitProfile",
@@ -2939,7 +3152,7 @@
             "type": "string"
           },
           "schema_version": {
-            "default": 4,
+            "default": 5,
             "title": "Schema Version",
             "type": "integer"
           },
@@ -4710,6 +4923,89 @@
         "summary": "List Link Targets",
         "tags": [
           "schematic"
+        ]
+      }
+    },
+    "/project/cells/{cell_id}/orbit-preview": {
+      "post": {
+        "description": "Dry run: the nominal orbit of a draft of an environment cell's parameters on one date\n(the launch date by default), without fluxes. Changes nothing (no history, no status).\n\nSame geometry as `get_orbit_profile` plus β, inclination, period and eclipse of that orbit.\nSSO: the node from the LTAN. GEO: equatorial. LEO/MEO: the orbit fixes no node, so it is\ndrawn at right ascension 0 (`node_assumed`). `preview` is null and `problems` say why when\nthe mission has no launch date or the orbit of the draft has problems (other problems of\nthe draft do not matter). 422 `stage_not_implemented` for cells that are not environment.",
+        "operationId": "preview_orbit",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cell_id",
+            "required": true,
+            "schema": {
+              "title": "Cell Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrbitPreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrbitPreviewResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Preview Orbit",
+        "tags": [
+          "computations"
         ]
       }
     },

@@ -1,4 +1,4 @@
-"""Body frame from two body axis → direction pairs (``docs/etapas/mission.md``), vectorized.
+"""Body frame from two body axis → direction pairs (``docs/etapas/environment.md``), vectorized.
 
 The primary body axis points exactly at the primary direction; the secondary axis is as close
 as possible to the secondary direction (the TRIAD construction: Shuster & Oh, «Three-axis
@@ -10,7 +10,7 @@ quaternions are ``[w, x, y, z]`` (scalar first), unit and with w ≥ 0.
 
 import numpy as np
 
-from hestia_core.mission import Axis, Target
+from hestia_core.environment.orbit import Axis, Target
 from hestia_core.sun import FloatArray
 
 AXIS_VECTORS: dict[Axis, tuple[float, float, float]] = {

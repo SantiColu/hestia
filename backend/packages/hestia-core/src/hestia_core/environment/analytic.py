@@ -9,7 +9,7 @@ Model (``docs/etapas/environment.md``, «Qué calcula»):
   irradiance of each date is ``S / r²``.
 - Orbital plane: SSO follows the mean Sun from its LTAN, drifting with the J2 nodal rate
   (``orbits.nodal_precession_rate``, equal to the mean motion of the Sun); the LTAN dispersion
-  widens the node to ``±Δ``. LEO/MEO (``keplerian``): the mission fixes no node, so β is the
+  widens the node to ``±Δ``. LEO/MEO (``keplerian``): the orbit fixes no node, so β is the
   envelope over every node. GEO: equatorial (nominal β = solar declination), up to
   ``geo_max_inclination`` with any node.
 - β: ``sin β = ĥ · ŝ``; over an interval of nodes it is ``A sin(Ω - alpha☉) + C`` with
@@ -27,20 +27,30 @@ design values. The Sun is fixed during one orbit.
 
 import math
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import numpy as np
 from numpy.typing import NDArray
 
 from hestia_core.attitude import AXIS_VECTORS, quaternion_from_matrix, target_directions, triad
 from hestia_core.eclipse import eclipse_fraction, visible_sun_fraction
+from hestia_core.environment.orbit import (
+    AttitudeMode,
+    Axis,
+    OrbitType,
+    Target,
+    nominal_altitude_m,
+    nominal_inclination_rad,
+    validate_attitude_modes,
+)
 from hestia_core.environment.parameters import (
+    DEFAULT_ORBIT_SAMPLES,
+    MAX_ORBIT_SAMPLES,
+    MIN_ORBIT_SAMPLES,
     EclipseModel,
     EnvironmentParameters,
     ResolvedDesignValue,
     ResolvedDesignValues,
-    nominal_altitude_m,
-    nominal_inclination_rad,
     resolve_design_values,
 )
 from hestia_core.environment.result import (
@@ -54,14 +64,15 @@ from hestia_core.environment.result import (
     FaceProfile,
     FluxStats,
     MissionSeries,
+    OrbitPreview,
     OrbitProfile,
     OrbitSummary,
     ProviderInfo,
     RangeEntry,
     RangeQuantity,
 )
-from hestia_core.forms import InputRejectedError, Problem, ProblemCode
-from hestia_core.mission import AttitudeMode, Axis, Face, MissionArtifact, OrbitType, Target
+from hestia_core.forms import InputRejectedError, Problem, ProblemCode, Problems
+from hestia_core.mission import Face, MissionArtifact
 from hestia_core.orbits import (
     EARTH_MU_M3_PER_S2,
     EARTH_RADIUS_M,
@@ -290,8 +301,8 @@ class AnalyticEnvironmentProvider:
             (largest_eclipse, smallest_eclipse),
         )
         modes = [
-            (mode, mode.id or f"mode_{i + 1}", mode.name or f"Modo {i + 1}")
-            for i, mode in enumerate(mission.attitude_modes)
+            (mode, _mode_id(mode, i), mode.name or f"Modo {i + 1}")
+            for i, mode in enumerate(parameters.attitude_modes)
         ]
         fluxes: list[FaceFluxes] = []
         profiles: list[OrbitProfile] = []
@@ -302,7 +313,7 @@ class AnalyticEnvironmentProvider:
                     condition,
                     mode,
                     mode_id,
-                    parameters.sampling.orbit_samples or 120,
+                    parameters.sampling.orbit_samples or DEFAULT_ORBIT_SAMPLES,
                     conical,
                     values,
                     irradiance_min,
@@ -340,16 +351,79 @@ class AnalyticEnvironmentProvider:
             orbit_profiles=profiles,
         )
 
+    def preview(
+        self,
+        mission: MissionArtifact,
+        parameters: EnvironmentParameters,
+        on: date | None,
+        mode_id: str | None,
+    ) -> OrbitPreview:
+        orbit = _orbit(mission, parameters)
+        when = _midnight(on) if on is not None else orbit.epoch
+        sun, distance = sun_position(julian_date(when))
+        if orbit.type is OrbitType.GEO:
+            normal = np.array([0.0, 0.0, 1.0])
+        else:
+            raan = _raan_at(orbit, when)
+            normal = orbit_normal(raan if raan is not None else 0.0, orbit.inclination)
+        beta = float(beta_angle(normal, sun))
+        conical = parameters.sampling.eclipse_model is EclipseModel.CONICAL
+        samples = parameters.sampling.orbit_samples
+        if samples is None or not MIN_ORBIT_SAMPLES <= samples <= MAX_ORBIT_SAMPLES:
+            samples = DEFAULT_ORBIT_SAMPLES
+        track = _track(normal, orbit.altitude, when, samples, conical)
+        fraction = float(eclipse_fraction(beta, track.radius, conical, float(distance)))
+        chosen = _preview_mode(parameters.attitude_modes, mode_id)
+        quaternion = None
+        if chosen is not None:
+            matrix = _body_to_inertial(track, chosen[1])
+            quaternion = np.round(quaternion_from_matrix(matrix), 7).tolist()
+        return OrbitPreview.model_validate(
+            {
+                **_track_fields(track),
+                "orbit_type": orbit.type,
+                "date": when,
+                "beta": beta,
+                "inclination": orbit.inclination,
+                "altitude": orbit.altitude,
+                "eclipse_fraction": round(fraction, 6),
+                "eclipse_duration": round(fraction * _period(orbit, orbit.altitude), 2),
+                "node_assumed": orbit.type is OrbitType.KEPLERIAN,
+                "mode_id": chosen[0] if chosen is not None else None,
+                "quaternion": quaternion,
+            }
+        )
+
+
+def _mode_id(mode: AttitudeMode, index: int) -> str:
+    """Id of an attitude mode in the result: its own, or a positional one for an unapplied
+    draft."""
+    return mode.id or f"mode_{index + 1}"
+
+
+def _preview_mode(
+    modes: list[AttitudeMode], mode_id: str | None
+) -> tuple[str, AttitudeMode] | None:
+    """The attitude mode ``mode_id`` (or the first) among the complete and consistent ones."""
+
+    def drawable(mode: AttitudeMode) -> bool:
+        p = Problems()
+        validate_attitude_modes(p, [mode])
+        return not p.items
+
+    valid = [(_mode_id(mode, i), mode) for i, mode in enumerate(modes) if drawable(mode)]
+    return next((m for m in valid if m[0] == mode_id), valid[0] if valid else None)
+
 
 # ---------------------------------------------------------------- inputs
 
 
 def _orbit(mission: MissionArtifact, parameters: EnvironmentParameters) -> _Orbit:
-    orbit = mission.orbit
+    orbit = parameters.orbit
     assert orbit.type is not None and mission.general.launch_date is not None
-    epoch = datetime.combine(mission.general.launch_date, datetime.min.time(), tzinfo=UTC)
-    altitude = nominal_altitude_m(mission)
-    inclination = nominal_inclination_rad(mission)
+    epoch = _midnight(mission.general.launch_date)
+    altitude = nominal_altitude_m(orbit)
+    inclination = nominal_inclination_rad(orbit)
     assert altitude is not None and inclination is not None
     e = 0.0
     if orbit.type is OrbitType.KEPLERIAN and orbit.apogee_altitude is not None:
@@ -358,10 +432,10 @@ def _orbit(mission: MissionArtifact, parameters: EnvironmentParameters) -> _Orbi
         raise InputRejectedError(
             [
                 Problem(
-                    path="context",
+                    path="orbit.apogee_altitude",
                     code=ProblemCode.ECCENTRICITY_OUT_OF_RANGE,
-                    message=f"La órbita de Misión tiene excentricidad {e:.4f}: el proveedor "
-                    f"analítico solo admite órbitas casi circulares (e ≤ {MAX_ECCENTRICITY}).",
+                    message=f"La órbita tiene excentricidad {e:.4f}: el proveedor analítico "
+                    f"solo admite órbitas casi circulares (e ≤ {MAX_ECCENTRICITY}).",
                 )
             ]
         )
@@ -400,6 +474,18 @@ def _orbit(mission: MissionArtifact, parameters: EnvironmentParameters) -> _Orbi
         raan_dispersion=raan_dispersion,
         geo_max_inclination=geo_max,
     )
+
+
+def _midnight(day: date) -> datetime:
+    """00:00 UTC of a day: the launch epoch and the date of a preview."""
+    return datetime.combine(day, datetime.min.time(), tzinfo=UTC)
+
+
+def _raan_at(orbit: _Orbit, when: datetime) -> float | None:
+    """SSO: the nominal node at ``when``, drifting from the launch node. None otherwise."""
+    if orbit.raan0 is None:
+        return None
+    return orbit.raan0 + orbit.raan_rate * (when - orbit.epoch).total_seconds()
 
 
 def _mission_times(design_life_s: float, step_s: float) -> FloatArray:
@@ -615,7 +701,7 @@ def _conditions(
                 )
             else:
                 note = (
-                    "Ninguna órbita con la inclinación de Misión tiene este β: se dibuja con el "
+                    "Ninguna órbita con esta inclinación tiene este β: se dibuja con el "
                     "plano inclinado hasta alcanzarlo, en la fecha de lanzamiento."
                 )
         result.append(
@@ -654,6 +740,92 @@ def _first_date_with(beta: float, beta_min: FloatArray, beta_max: FloatArray) ->
 # ---------------------------------------------------------------- orbit profiles and fluxes
 
 
+@dataclass(frozen=True)
+class _Track:
+    """One circular orbit sampled uniformly from the ascending node, the Sun fixed."""
+
+    epoch: datetime
+    radius: float
+    mean_motion: float
+    time: FloatArray
+    position: FloatArray
+    velocity: FloatArray
+    sun: FloatArray
+    """Unit vector to the Sun at each sample."""
+    sunlit: FloatArray
+
+    @property
+    def r_hat(self) -> FloatArray:
+        return self.position / self.radius
+
+
+def _track(
+    normal: FloatArray, altitude: float, epoch: datetime, samples: int, conical: bool
+) -> _Track:
+    """Sample the circular orbit of plane ``normal`` at ``altitude`` from its ascending node."""
+    sun, distance_au = sun_position(julian_date(epoch))
+    node = np.cross(np.array([0.0, 0.0, 1.0]), normal)
+    if np.linalg.norm(node) < 1e-9:
+        node = np.array([1.0, 0.0, 0.0])
+    x_axis = node / np.linalg.norm(node)
+    y_axis = np.cross(normal, x_axis)
+
+    radius = EARTH_RADIUS_M + altitude
+    mean_motion = math.sqrt(EARTH_MU_M3_PER_S2 / radius**3)
+    u = np.arange(samples, dtype=np.float64) * _TWO_PI / samples
+    cos_u, sin_u = np.cos(u)[:, None], np.sin(u)[:, None]
+    position = radius * (cos_u * x_axis + sin_u * y_axis)
+    sun_b = np.broadcast_to(sun, position.shape).copy()
+    return _Track(
+        epoch=epoch,
+        radius=radius,
+        mean_motion=mean_motion,
+        time=u / mean_motion,
+        position=position,
+        velocity=radius * mean_motion * (-sin_u * x_axis + cos_u * y_axis),
+        sun=sun_b,
+        sunlit=visible_sun_fraction(position, sun_b, float(distance_au), conical),
+    )
+
+
+def _body_to_inertial(track: _Track, mode: AttitudeMode) -> FloatArray:
+    """Rotation matrices body → inertial of a valid attitude mode at each sample."""
+    samples = track.time.size
+    directions = target_directions(track.position, track.velocity, track.sun)
+    primary, secondary = (
+        directions[_target(mode.primary_target)],
+        directions[_target(mode.secondary_target)],
+    )
+    candidates = np.stack(
+        [directions[Target.ORBIT_NORMAL], directions[Target.VELOCITY], directions[Target.ZENITH]]
+    )
+    least_parallel = np.argmin(np.abs(np.sum(candidates * primary, axis=-1)), axis=0)
+    fallback = candidates[least_parallel, np.arange(samples)]
+    assert mode.primary_axis is not None and mode.secondary_axis is not None
+    return triad(
+        np.array(AXIS_VECTORS[mode.primary_axis]),
+        primary,
+        np.array(AXIS_VECTORS[mode.secondary_axis]),
+        secondary,
+        fallback,
+    )
+
+
+def _track_fields(track: _Track) -> dict[str, object]:
+    """The ``OrbitTrack`` fields of a sampled orbit, rounded for storage."""
+    jd = julian_date(track.epoch)
+    return {
+        "epoch": track.epoch,
+        "period": round(_TWO_PI / track.mean_motion, 3),
+        "time": _round(track.time, 3),
+        "position": np.round(track.position, 1).tolist(),
+        "velocity": np.round(track.velocity, 4).tolist(),
+        "sun": np.round(track.sun, 7).tolist(),
+        "sunlit": _round(track.sunlit, 6),
+        "earth_rotation_angle": _round(earth_rotation_angle(jd + track.time / SECONDS_PER_DAY), 7),
+    }
+
+
 def _profile(
     orbit: _Orbit,
     condition: Condition,
@@ -665,56 +837,21 @@ def _profile(
     irradiance_min: float,
     irradiance_max: float,
 ) -> OrbitProfile:
-    jd = julian_date(condition.date)
-    sun, distance_au = sun_position(jd)
-    raan_ref = None
-    if orbit.raan0 is not None:
-        seconds = (condition.date - orbit.epoch).total_seconds()
-        raan_ref = orbit.raan0 + orbit.raan_rate * seconds
-    normal = normal_for_beta(sun, condition.beta, orbit.solve_inclination, raan_ref)
-    node = np.cross(np.array([0.0, 0.0, 1.0]), normal)
-    if np.linalg.norm(node) < 1e-9:
-        node = np.array([1.0, 0.0, 0.0])
-    x_axis = node / np.linalg.norm(node)
-    y_axis = np.cross(normal, x_axis)
-
-    radius = EARTH_RADIUS_M + condition.altitude
-    mean_motion = math.sqrt(EARTH_MU_M3_PER_S2 / radius**3)
-    u = np.arange(samples, dtype=np.float64) * _TWO_PI / samples
-    time = u / mean_motion
-    cos_u, sin_u = np.cos(u)[:, None], np.sin(u)[:, None]
-    position = radius * (cos_u * x_axis + sin_u * y_axis)
-    velocity = radius * mean_motion * (-sin_u * x_axis + cos_u * y_axis)
-    sun_b = np.broadcast_to(sun, position.shape).copy()
-    sunlit = visible_sun_fraction(position, sun_b, float(distance_au), conical)
-
-    directions = target_directions(position, velocity, sun_b)
-    primary, secondary = (
-        directions[_target(mode.primary_target)],
-        directions[_target(mode.secondary_target)],
+    sun, _ = sun_position(julian_date(condition.date))
+    normal = normal_for_beta(
+        sun, condition.beta, orbit.solve_inclination, _raan_at(orbit, condition.date)
     )
-    candidates = np.stack(
-        [directions[Target.ORBIT_NORMAL], directions[Target.VELOCITY], directions[Target.ZENITH]]
-    )
-    least_parallel = np.argmin(np.abs(np.sum(candidates * primary, axis=-1)), axis=0)
-    fallback = candidates[least_parallel, np.arange(samples)]
-    assert mode.primary_axis is not None and mode.secondary_axis is not None
-    matrix = triad(
-        np.array(AXIS_VECTORS[mode.primary_axis]),
-        primary,
-        np.array(AXIS_VECTORS[mode.secondary_axis]),
-        secondary,
-        fallback,
-    )
-    quaternion = quaternion_from_matrix(matrix)
+    track = _track(normal, condition.altitude, condition.date, samples, conical)
+    matrix = _body_to_inertial(track, mode)
 
-    r_hat = position / radius
+    r_hat = track.r_hat
+    sun_b = track.sun
     cos_zenith = np.maximum(np.sum(r_hat * sun_b, axis=-1), 0.0)
     faces: list[FaceProfile] = []
     for face in Face:
         normal_i: FloatArray = matrix @ np.array(AXIS_VECTORS[Axis(face.value)])
-        solar = sunlit * np.maximum(np.sum(normal_i * sun_b, axis=-1), 0.0)
-        view = plate_to_earth_view_factor(np.sum(normal_i * -r_hat, axis=-1), radius)
+        solar = track.sunlit * np.maximum(np.sum(normal_i * sun_b, axis=-1), 0.0)
+        view = plate_to_earth_view_factor(np.sum(normal_i * -r_hat, axis=-1), track.radius)
         albedo = view * cos_zenith
         low = (
             irradiance_min * solar,
@@ -739,19 +876,14 @@ def _profile(
                 total_max=_round(high[0] + high[1] + high[2], 3),
             )
         )
-    return OrbitProfile(
-        condition_id=condition.id,
-        mode_id=mode_id,
-        epoch=condition.date,
-        period=round(_TWO_PI / mean_motion, 3),
-        time=_round(time, 3),
-        position=np.round(position, 1).tolist(),
-        velocity=np.round(velocity, 4).tolist(),
-        sun=np.round(sun_b, 7).tolist(),
-        sunlit=_round(sunlit, 6),
-        quaternion=np.round(quaternion, 7).tolist(),
-        earth_rotation_angle=_round(earth_rotation_angle(jd + time / SECONDS_PER_DAY), 7),
-        faces=faces,
+    return OrbitProfile.model_validate(
+        {
+            **_track_fields(track),
+            "condition_id": condition.id,
+            "mode_id": mode_id,
+            "quaternion": np.round(quaternion_from_matrix(matrix), 7).tolist(),
+            "faces": faces,
+        }
     )
 
 

@@ -6,7 +6,7 @@ uv workspace (Python 3.12). Toda la lógica de dominio de Hestia vive acá.
 
 | Paquete | Ruta | Contiene | Puede importar |
 |---|---|---|---|
-| `hestia_core` | `packages/hestia-core` | Física pura, modelos de artefactos (pydantic) y su validación (`mission`, `forms`, `orbits`), física del entorno (`sun`, `eclipse`, `view_factors`, `attitude`), etapa Entorno (`environment`: parámetros, resultado, Protocol `EnvironmentProvider` y proveedor analítico), Protocols de proveedores externos | nada de Hestia |
+| `hestia_core` | `packages/hestia-core` | Física pura, modelos de artefactos (pydantic) y su validación (`mission`, `forms`, `orbits`), física del entorno (`sun`, `eclipse`, `view_factors`, `attitude`), etapa Entorno (`environment`: órbita y modos de actitud, parámetros, resultado, Protocol `EnvironmentProvider` y proveedor analítico), Protocols de proveedores externos | nada de Hestia |
 | `hestia_adapters` | `packages/hestia-adapters` | Implementaciones de los Protocols de core (Orekit, pyViewFactor, SciPy…) | `hestia_core` |
 | `hestia_project` | `packages/hestia-project` | Grafo de etapas, estados, procedencia, historial/deshacer, persistencia | `hestia_core` |
 | `hestia_api` | `apps/api` | FastAPI: rutas, DTOs, composición de dependencias | todos |
@@ -33,7 +33,7 @@ Reglas completas en `docs/conventions.md` («Código limpio» → General y Pyth
 
 - pyright strict y ruff con reglas ampliadas (`[tool.ruff.lint]` en `pyproject.toml`: comprensiones, `pathlib`, sin `print`, sin código comentado, `datetime` con zona, sin `except` ciego, sin argumentos sin usar). No se relajan sin motivo escrito.
 - Mensajes para personas (`Problem.message`, errores de dominio, `Outcome.summary`) en español; código, identificadores y docstrings en inglés.
-- Validaciones repetidas → helper (ver `_Problems` en `hestia_core.mission`); búsquedas por id → `get_cell`/`get_system`/`get_link` de `hestia_project.schematic`, que lanzan `NotFoundError`.
+- Validaciones repetidas → helper (`Problems`, `unit`, `format_km` en `hestia_core.forms`); búsquedas por id → `get_cell`/`get_system`/`get_link` de `hestia_project.schematic`, que lanzan `NotFoundError`.
 - `assert x is not None` solo para estrechar tipos después de una validación que ya lo garantiza; nunca como validación de entrada.
 - Antes de terminar: skill `clean-code-review`.
 
@@ -56,8 +56,8 @@ uv run uvicorn hestia_api.main:app --reload   # http://localhost:8000/health
 | `model` | `Project` (con `SCHEMA_VERSION`), `System`, `Cell`, `Link`, estados, procedencia |
 | `schematic` | Operaciones del esquemático, contexto resuelto (ADR 0016), las cinco reglas de vínculo, propagación de `outdated` |
 | `forms`, `artifacts` | Registro de formularios (etapas formulario y parámetros de etapas de cálculo) y leer / validar en seco / aplicar su artefacto con procedencia por campo (ADR 0017, 0019) |
-| `computations` | Registro de etapas de cálculo, Actualizar, estados, procedencia y lectura del resultado y de los perfiles (ADR 0021, 0022) |
-| `migration` | Subir proyectos de versiones anteriores (vínculos reevaluados, avisos) |
+| `computations` | Registro de etapas de cálculo, Actualizar, estados, procedencia, lectura del resultado y de los perfiles (ADR 0021, 0022) y vista previa de la órbita de un borrador (ADR 0023) |
+| `migration` | Subir proyectos de versiones anteriores (vínculos reevaluados, órbita y actitud de Misión a Entorno, avisos) |
 | `clipboard` | Fragmentos versionados para copiar y pegar sistemas y celdas (ADR 0014) |
 | `history`, `document` | Log de cambios con autor y justificación; deshacer/rehacer; dirty |
 | `storage`, `lock`, `recents` | Archivo `.hestia`, lock contra doble apertura, recientes |

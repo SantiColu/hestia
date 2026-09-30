@@ -265,6 +265,33 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/project/cells/{cell_id}/orbit-preview": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Preview Orbit
+     * @description Dry run: the nominal orbit of a draft of an environment cell's parameters on one date
+     *     (the launch date by default), without fluxes. Changes nothing (no history, no status).
+     *
+     *     Same geometry as `get_orbit_profile` plus β, inclination, period and eclipse of that orbit.
+     *     SSO: the node from the LTAN. GEO: equatorial. LEO/MEO: the orbit fixes no node, so it is
+     *     drawn at right ascension 0 (`node_assumed`). `preview` is null and `problems` say why when
+     *     the mission has no launch date or the orbit of the draft has problems (other problems of
+     *     the draft do not matter). 422 `stage_not_implemented` for cells that are not environment.
+     */
+    post: operations["preview_orbit"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/project/cells/{cell_id}/result": {
     parameters: {
       query?: never;
@@ -1117,7 +1144,7 @@ export interface components {
     CustomCondition: {
       /**
        * Altitud
-       * @description Vacío: la nominal de Misión.
+       * @description Vacío: la nominal.
        */
       altitude?: number | null;
       /** Ángulo β */
@@ -1186,7 +1213,7 @@ export interface components {
     /**
      * Dispersion
      * @description Long-term perturbations that are not propagated: their extremes are evaluated around
-     *     the nominal orbit of the mission (ADR 0020).
+     *     the nominal orbit (ADR 0020).
      */
     Dispersion: {
       /**
@@ -1261,21 +1288,25 @@ export interface components {
     };
     /**
      * EnvironmentParameters
-     * @description Parameters of the environment stage: design values, dispersions, sampling and custom
-     *     conditions.
+     * @description Parameters of the environment stage: orbit, attitude modes, design values, dispersions,
+     *     sampling and custom conditions.
      */
     EnvironmentParameters: {
+      /** Modos de actitud */
+      attitude_modes?: components["schemas"]["AttitudeMode"][];
       /** Condiciones propias */
       custom_conditions?: components["schemas"]["CustomCondition"][];
       /** Valores de diseño */
       design_values?: components["schemas"]["DesignValues"];
       /** Dispersión de la órbita */
       dispersion?: components["schemas"]["Dispersion"];
+      /** Órbita */
+      orbit?: components["schemas"]["Orbit"];
       /** Muestreo */
       sampling?: components["schemas"]["Sampling"];
       /**
        * Schema Version
-       * @default 1
+       * @default 2
        */
       schema_version: number;
     };
@@ -1579,21 +1610,17 @@ export interface components {
     };
     /**
      * MissionArtifact
-     * @description Artifact of the mission stage: orbit, attitude, envelope and criteria.
+     * @description Artifact of the mission stage: mission window, envelope and criteria.
      */
     MissionArtifact: {
-      /** Modos de actitud */
-      attitude_modes?: components["schemas"]["AttitudeMode"][];
       /** Criterios y restricciones */
       criteria?: components["schemas"]["Criteria"];
       /** Envolvente */
       envelope?: components["schemas"]["Envelope"];
       general?: components["schemas"]["General"];
-      /** Órbita */
-      orbit?: components["schemas"]["Orbit"];
       /**
        * Schema Version
-       * @default 1
+       * @default 2
        */
       schema_version: number;
     };
@@ -1712,6 +1739,83 @@ export interface components {
        * @default sso
        */
       type: components["schemas"]["OrbitType"] | null;
+    };
+    /**
+     * OrbitPreview
+     * @description The nominal orbit of a draft of the parameters on one date, without fluxes (ADR 0023).
+     *
+     *     Drawn while the parameters are edited; nothing is stored. SSO: the node from the LTAN on
+     *     that date. GEO: equatorial. LEO/MEO: the orbit fixes no node, so it is drawn with the node
+     *     at 0 (``node_assumed``).
+     */
+    OrbitPreview: {
+      /** Altitude */
+      altitude: number;
+      /** Beta */
+      beta: number;
+      /**
+       * Date
+       * Format: date-time
+       */
+      date: string;
+      /** Earth Rotation Angle */
+      earth_rotation_angle: number[];
+      /** Eclipse Duration */
+      eclipse_duration: number;
+      /** Eclipse Fraction */
+      eclipse_fraction: number;
+      /**
+       * Epoch
+       * Format: date-time
+       */
+      epoch: string;
+      /** Inclination */
+      inclination: number;
+      /** Mode Id */
+      mode_id: string | null;
+      /** Node Assumed */
+      node_assumed: boolean;
+      orbit_type: components["schemas"]["OrbitType"];
+      /** Period */
+      period: number;
+      /** Position */
+      position: number[][];
+      /** Quaternion */
+      quaternion: number[][] | null;
+      /** Sun */
+      sun: number[][];
+      /** Sunlit */
+      sunlit: number[];
+      /** Time */
+      time: number[];
+      /** Velocity */
+      velocity: number[][];
+    };
+    /**
+     * OrbitPreviewRequest
+     * @description A draft of the environment parameters to draw its orbit (ADR 0023).
+     */
+    OrbitPreviewRequest: {
+      /**
+       * Date
+       * @description Date of the orbit (UTC). Omitted: the launch date.
+       */
+      date?: string | null;
+      /**
+       * Mode Id
+       * @description Attitude mode of the body attitude. Omitted: the first complete mode.
+       */
+      mode_id?: string | null;
+      parameters: components["schemas"]["EnvironmentParameters"];
+    };
+    /**
+     * OrbitPreviewResult
+     * @description The orbit of a draft of the environment parameters, or why it cannot be drawn.
+     */
+    OrbitPreviewResult: {
+      preview: components["schemas"]["OrbitPreview"] | null;
+      /** Problems */
+      problems: components["schemas"]["Problem"][];
     };
     /**
      * OrbitProfile
@@ -1863,7 +1967,7 @@ export interface components {
       name: string;
       /**
        * Schema Version
-       * @default 4
+       * @default 5
        */
       schema_version: number;
       /** Systems */
@@ -2848,6 +2952,68 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["CellIds"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Locked */
+      423: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  preview_orbit: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        cell_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["OrbitPreviewRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["OrbitPreviewResult"];
         };
       };
       /** @description Not Found */

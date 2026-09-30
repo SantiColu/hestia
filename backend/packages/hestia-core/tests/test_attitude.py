@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 
 from hestia_core.attitude import AXIS_VECTORS, quaternion_from_matrix, target_directions, triad
-from hestia_core.mission import Axis, Target
+from hestia_core.environment.orbit import Axis, Target
 
 
 def _rotate(q: np.ndarray, v: np.ndarray) -> np.ndarray:

@@ -20,7 +20,7 @@ Status rules:
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from typing import Any
 
 from pydantic import BaseModel
@@ -31,12 +31,13 @@ from hestia_core.environment.parameters import EnvironmentParameters
 from hestia_core.environment.result import (
     EnvironmentResult,
     EnvironmentSummary,
+    OrbitPreview,
     OrbitProfile,
     summarize,
 )
 from hestia_core.forms import InputRejectedError, Problem, ProblemCode
 from hestia_core.mission import MissionArtifact
-from hestia_project.artifacts import NoChange, artifact_problems
+from hestia_project.artifacts import NoChange, artifact_problems, form_context
 from hestia_project.base import Schema
 from hestia_project.catalog import ORDER, STAGES, StageType
 from hestia_project.errors import NotFoundError, StageNotImplementedError
@@ -123,15 +124,7 @@ def _inputs(
     project: Project, results: Mapping[str, StageResult], cell: Cell
 ) -> tuple[dict[StageType, BaseModel], list[ContextSource], list[Problem]]:
     """Resolve the context of ``cell`` into inputs, their provenance and the problems."""
-    problems = [
-        Problem(
-            path="context",
-            code=ProblemCode.MISSING,
-            message=f"Falta «{_stage_name(stage)}» en su contexto: vinculá una celda que la "
-            "provea.",
-        )
-        for stage in missing_requirements(project, cell.id)
-    ]
+    problems = [_missing(stage) for stage in missing_requirements(project, cell.id)]
     inputs: dict[StageType, BaseModel] = {}
     sources: list[ContextSource] = []
     by_type = context_cells(project, cell.id)
@@ -160,6 +153,14 @@ def _inputs(
                 inputs[stage] = upstream.result_model.model_validate(result.data)
         sources[-1].change_id = _change_of(provider)
     return inputs, sources, problems
+
+
+def _missing(stage: StageType) -> Problem:
+    return Problem(
+        path="context",
+        code=ProblemCode.MISSING,
+        message=f"Falta «{_stage_name(stage)}» en su contexto: vinculá una celda que la provea.",
+    )
 
 
 def _context_invalid(message: str) -> Problem:
@@ -309,3 +310,56 @@ def read_orbit_profile(
 def referenced_results(projects: list[Project]) -> set[str]:
     """Result ids referenced by ``projects`` (the current one and the history snapshots)."""
     return {c.result_id for p in projects for c in p.cells if c.result_id}
+
+
+# ---------------------------------------------------------------- orbit preview (ADR 0023)
+
+
+class OrbitPreviewResult(Schema):
+    """The orbit of a draft of the environment parameters, or why it cannot be drawn."""
+
+    problems: list[Problem]
+    """Why there is no preview: the mission window (``missing``, ``context_invalid``), the
+    orbit of the draft or an orbit outside the provider's envelope. Other problems of the draft
+    do not prevent the preview."""
+    preview: OrbitPreview | None
+
+
+def preview_orbit(
+    project: Project,
+    cell_id: str,
+    draft: EnvironmentParameters,
+    on: date | None = None,
+    mode_id: str | None = None,
+) -> OrbitPreviewResult:
+    """The nominal orbit of a draft on ``on`` (the launch date if None) in the attitude mode
+    ``mode_id`` (the first complete one if None), without fluxes. Stores nothing."""
+    cell = get_cell(project, cell_id)
+    if cell.stage is not StageType.ENVIRONMENT:
+        raise StageNotImplementedError(
+            f"«{cell.name}» no tiene vista previa de la órbita.", stage=cell.stage
+        )
+    mission = form_context(project, cell.id).get(StageType.MISSION)
+    problems = _window_problems(mission)
+    spec = FORMS[StageType.ENVIRONMENT]
+    problems += [
+        p for p in spec.validate(draft, {}) if p.path == "orbit" or p.path.startswith("orbit.")
+    ]
+    if problems:
+        return OrbitPreviewResult(problems=problems, preview=None)
+    assert isinstance(mission, MissionArtifact)
+    try:
+        preview = _ENVIRONMENT_PROVIDER.preview(mission, draft, on, mode_id)
+    except InputRejectedError as exc:
+        return OrbitPreviewResult(problems=exc.problems, preview=None)
+    return OrbitPreviewResult(problems=[], preview=preview)
+
+
+def _window_problems(mission: BaseModel | None) -> list[Problem]:
+    """The preview needs the launch date of the mission in the context."""
+    if not isinstance(mission, MissionArtifact):
+        return [_missing(StageType.MISSION)]
+    if mission.general.launch_date is None:
+        name = _stage_name(StageType.MISSION)
+        return [_context_invalid(f"«{name}» no tiene fecha de lanzamiento.")]
+    return []

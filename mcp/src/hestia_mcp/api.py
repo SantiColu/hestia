@@ -48,6 +48,7 @@ OPERATIONS: dict[str, tuple[str, str]] = {
     "update_cell": ("POST", "/project/cells/{cell_id}/update"),
     "get_cell_result": ("GET", "/project/cells/{cell_id}/result"),
     "get_orbit_profile": ("GET", "/project/cells/{cell_id}/result/orbit-profile"),
+    "preview_orbit": ("POST", "/project/cells/{cell_id}/orbit-preview"),
     "link_cells": ("POST", "/project/links"),
     "unlink_cells": ("DELETE", "/project/links/{link_id}"),
     "copy_to_clipboard": ("POST", "/project/clipboard/copy"),

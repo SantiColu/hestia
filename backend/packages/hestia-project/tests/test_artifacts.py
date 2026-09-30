@@ -30,17 +30,7 @@ AGENT = Author(kind=ActorKind.AGENT, name="stefan")
 
 VALID: dict[str, Any] = {
     "general": {"launch_date": "2028-03-01", "design_life": 157_788_000.0},
-    "orbit": {"type": "sso", "altitude": 600e3, "ltan": "10:30"},
     "envelope": {"size_x": 1.0, "size_y": 1.2, "size_z": 1.5, "mass": 450.0},
-    "attitude_modes": [
-        {
-            "name": "Apuntado nadir",
-            "primary_axis": "+Z",
-            "primary_target": "nadir",
-            "secondary_axis": "+X",
-            "secondary_target": "velocity",
-        }
-    ],
 }
 
 
@@ -84,17 +74,15 @@ def test_new_mission_cell_has_library_defaults() -> None:
     mission = cell_of(doc.project, S.MISSION)
     view = read_artifact(doc.project, mission.id)
     assert mission.status is CellStatus.NEVER_RUN and not view.applied
-    assert mission_of(view).orbit.type == "sso"
     assert mission_of(view).criteria.uncertainty_margin == 10.0
     assert set(view.provenance) == {
-        "orbit.type",
         "criteria.uncertainty_margin",
         "criteria.acceptance_margin",
         "criteria.qualification_margin",
     }
     assert all(p.source is FieldSource.DEFAULT for p in view.provenance.values())
     assert all(p.change_id == created.id for p in view.provenance.values())
-    assert {p.path for p in view.problems} >= {"general.launch_date", "attitude_modes"}
+    assert {p.path for p in view.problems} >= {"general.launch_date", "envelope.mass"}
     assert view.context.entries == [] and view.context.missing == []
 
 
@@ -116,10 +104,12 @@ def test_dry_validation_changes_nothing() -> None:
     doc = doc_with_phase0()
     before = doc.project.model_copy(deep=True)
     mission = cell_of(doc.project, S.MISSION)
-    problems = validate_draft(doc.project, mission.id, draft(orbit={"altitude": 6_000e3}))
+    problems = validate_draft(
+        doc.project, mission.id, draft(envelope={"size_x": 0, "size_y": 1.0, "size_z": 1.0})
+    )
     assert [(p.path, p.code) for p in problems] == [
-        ("orbit.altitude", ProblemCode.SSO_ALTITUDE),
-        ("orbit.ltan", ProblemCode.REQUIRED),
+        ("envelope.size_x", ProblemCode.MIN),
+        ("envelope.mass", ProblemCode.REQUIRED),
     ]
     assert validate_draft(doc.project, mission.id, draft()) == []
     assert doc.project == before
@@ -162,44 +152,22 @@ def test_provenance_only_changes_for_changed_fields() -> None:
     first = apply(doc, draft())
     mission = cell_of(doc.project, S.MISSION)
     view = read_artifact(doc.project, mission.id)
-    assert view.provenance["orbit.altitude"].source is FieldSource.ENTERED
-    assert view.provenance["orbit.altitude"].change_id == first
-    assert view.provenance["attitude_modes[0].name"].change_id == first
+    assert view.provenance["envelope.mass"].source is FieldSource.ENTERED
+    assert view.provenance["envelope.mass"].change_id == first
     # Untouched defaults keep their provenance.
     assert view.provenance["criteria.uncertainty_margin"].source is FieldSource.DEFAULT
     assert view.provenance["criteria.uncertainty_margin"].change_id == created
     assert "general.description" not in view.provenance  # empty fields have none
 
     second_draft = mission_of(view).model_copy(deep=True)
-    second_draft.orbit.altitude = 700e3
+    second_draft.envelope.mass = 480.0
     second_draft.criteria.uncertainty_margin = 12.0
     second = apply(doc, second_draft)
     after = read_artifact(doc.project, mission.id)
-    assert after.provenance["orbit.altitude"].change_id == second
+    assert after.provenance["envelope.mass"].change_id == second
     assert after.provenance["criteria.uncertainty_margin"].source is FieldSource.ENTERED
-    assert after.provenance["orbit.ltan"].change_id == first
+    assert after.provenance["envelope.size_x"].change_id == first
     assert "2 campos cambiados" in doc.changes()[-1].summary
-
-
-def test_list_items_get_backend_ids_that_stay() -> None:
-    doc = doc_with_phase0()
-    apply(doc, draft())
-    mission = cell_of(doc.project, S.MISSION)
-    view = read_artifact(doc.project, mission.id)
-    mode_id = mission_of(view).attitude_modes[0].id
-    assert mode_id is not None and mode_id.startswith("mode_")
-
-    # Insert a mode before it (no id, and a forged id): the first keeps its id and provenance.
-    edited = mission_of(view).model_copy(deep=True)
-    new_mode = edited.attitude_modes[0].model_copy(update={"id": None, "name": "Sol"})
-    forged = new_mode.model_copy(update={"id": "mine", "name": "Otro"})
-    edited.attitude_modes = [new_mode, forged, *edited.attitude_modes]
-    apply(doc, edited)
-    after = read_artifact(doc.project, mission.id)
-    ids = [m.id for m in mission_of(after).attitude_modes]
-    assert ids[2] == mode_id
-    assert len(set(ids)) == 3 and "mine" not in ids
-    assert after.provenance["attitude_modes[2].name"] == view.provenance["attitude_modes[0].name"]
 
 
 def test_same_content_is_not_a_change() -> None:
@@ -247,7 +215,7 @@ def test_undo_and_redo() -> None:
     applied = doc.project.model_copy(deep=True)
     doc.undo(HUMAN)
     assert cell_of(doc.project, S.MISSION).status is CellStatus.NEVER_RUN
-    assert mission_of(read_artifact(doc.project, mission_id)).orbit.altitude is None
+    assert mission_of(read_artifact(doc.project, mission_id)).envelope.mass is None
     doc.redo(HUMAN)
     assert doc.project == applied
 
@@ -281,7 +249,7 @@ def test_clipboard_copies_the_artifact() -> None:
     assert pasted.form.artifact == mission.form.artifact
     assert pasted.status is CellStatus.FAILED  # applied in the source, revalidated
     provenance = pasted.form.provenance
-    assert provenance["orbit.altitude"].source is FieldSource.ENTERED
+    assert provenance["envelope.size_x"].source is FieldSource.ENTERED
     assert provenance["criteria.acceptance_margin"].source is FieldSource.DEFAULT
     assert all(p.change_id == change.id for p in provenance.values())
 

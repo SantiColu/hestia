@@ -23,7 +23,9 @@ server = MCPServer(
         "context) to the target; each stage type requires some types in its context "
         "(get_cell_context shows what is missing). Form stages (mission) are edited with "
         "apply_cell_artifact; computation stages (environment) take parameters the same way "
-        "and run with update_cell, then get_cell_result. Start with get_session and get_catalog. "
+        "(the orbit and the attitude modes are environment parameters; preview_orbit draws a "
+        "draft's orbit before applying it) and run with update_cell, then get_cell_result. "
+        "Start with get_session and get_catalog. "
         "Every write needs a justification (updating a computation cell accepts an empty one). "
         "All numbers come from the Hestia API; never compute physical results yourself."
     ),
@@ -402,6 +404,25 @@ async def get_orbit_profile(cell_id: str, condition_id: str, mode_id: str) -> Js
         "get_orbit_profile",
         path={"cell_id": cell_id},
         params={"condition_id": condition_id, "mode_id": mode_id},
+    )
+
+
+@_tool("preview_orbit")
+async def preview_orbit(
+    cell_id: str, parameters: Json, date: str | None = None, mode_id: str | None = None
+) -> Json:
+    """Dry run: the nominal orbit of a draft of an environment cell's parameters (the whole
+    parameters, possibly incomplete, as returned by get_cell_artifact) on one date (YYYY-MM-DD,
+    the launch date if omitted) in one attitude mode (the first complete one if omitted),
+    without fluxes. Changes nothing. Returns `preview` (β, inclination, altitude, period,
+    eclipse fraction and duration, and the same geometry as get_orbit_profile; LEO/MEO is drawn
+    at right ascension 0: `node_assumed`) or null with `problems` (mission without launch date,
+    problems in the orbit, `eccentricity_out_of_range`). Use it to check an orbit before
+    apply_cell_artifact; the fluxes come from update_cell."""
+    return await call(
+        "preview_orbit",
+        path={"cell_id": cell_id},
+        json={"parameters": parameters, "date": date, "mode_id": mode_id},
     )
 
 

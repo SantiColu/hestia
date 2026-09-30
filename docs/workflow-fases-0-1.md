@@ -82,12 +82,13 @@ equipment ───────────────┘
 
 ## Migración de proyectos existentes
 
-Sube `Project.SCHEMA_VERSION` (hoy 4: la 2 es el contexto por cadena, la 3 guarda el artefacto de las etapas formulario, ADR 0019; la 4 guarda los resultados de las etapas de cálculo aparte, ADR 0022). Al abrir un `.hestia` de la versión 1:
+Sube `Project.SCHEMA_VERSION` (hoy 5: la 2 es el contexto por cadena, la 3 guarda el artefacto de las etapas formulario, ADR 0019; la 4 guarda los resultados de las etapas de cálculo aparte, ADR 0022; la 5 pasa la órbita y los modos de actitud de Misión a Entorno, ADR 0023). Al abrir un `.hestia` de la versión 1:
 - Se renumera el catálogo, que es metadato.
 - Los vínculos se reevalúan en orden de creación con las reglas nuevas; los que ya no son válidos se descartan y quedan en un aviso en Mensajes, sin cambio en el historial.
 - Los sistemas de plantilla Fase 0 existentes no ganan una celda `equipment` automáticamente.
 - Las celdas de Misión de archivos v1 y v2 reciben los defaults de biblioteca y quedan «nunca corrida».
 - Las celdas de Entorno de archivos v1 a v3 reciben los parámetros por defecto y quedan «nunca corrida»; los formularios aplicados de archivos v3 recuperan del historial el cambio que los aplicó (procedencia de los resultados).
+- En archivos v1 a v4, la órbita y los modos de actitud de cada Misión pasan, con su procedencia, a los parámetros de cada Entorno que la tiene en su contexto; el resultado y el estado del Entorno no cambian. Si una Misión con órbita o modos cargados no tiene Entorno, se crea uno vinculado en su sistema y queda un aviso en Mensajes. Las instantáneas del historial se migran igual, sin crear celdas. Un fragmento del portapapeles copiado por una versión anterior pega Misión sin órbita y Entorno con la órbita por defecto.
 
 ## Pendientes
 

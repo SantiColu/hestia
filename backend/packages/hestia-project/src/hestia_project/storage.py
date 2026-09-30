@@ -22,7 +22,11 @@ from hestia_project.computations import referenced_results
 from hestia_project.errors import ProjectFileError
 from hestia_project.forms import new_form_state
 from hestia_project.history import Change, ChangeRecord
-from hestia_project.migration import recover_applied_changes, relink
+from hestia_project.migration import (
+    move_orbit_to_environment,
+    recover_applied_changes,
+    relink,
+)
 from hestia_project.model import (
     SCHEMA_VERSION,
     Cell,
@@ -327,4 +331,11 @@ def _read(conn: sqlite3.Connection, path: Path) -> ProjectFile:
     else:
         # Applies older than version 4 record no change id: recover it from the history.
         recover_applied_changes(project, history)
+    if version < 5:
+        # The orbit and the attitude modes move from the mission to the environment (ADR
+        # 0023), in the history too so that undo never restores the old artifacts.
+        warnings += move_orbit_to_environment(project, create_missing=True)
+        for record in history:
+            move_orbit_to_environment(record.before, create_missing=False)
+            move_orbit_to_environment(record.after, create_missing=False)
     return ProjectFile(project=project, history=history, warnings=warnings, results=results)

@@ -32,17 +32,7 @@ AGENT = Author(kind=ActorKind.AGENT, name="stefan")
 
 VALID: dict[str, Any] = {
     "general": {"launch_date": "2028-03-01", "design_life": 157_788_000.0},
-    "orbit": {"type": "sso", "altitude": 600e3, "ltan": "10:30"},
     "envelope": {"size_x": 1.0, "size_y": 1.2, "size_z": 1.5, "mass": 450.0},
-    "attitude_modes": [
-        {
-            "name": "Apuntado nadir",
-            "primary_axis": "+Z",
-            "primary_target": "nadir",
-            "secondary_axis": "+X",
-            "secondary_target": "velocity",
-        }
-    ],
 }
 
 

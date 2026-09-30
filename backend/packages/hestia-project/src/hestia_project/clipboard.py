@@ -16,7 +16,13 @@ from pydantic import Field, ValidationError
 from hestia_project.base import Schema
 from hestia_project.catalog import StageType
 from hestia_project.errors import InvalidFragmentError, InvalidOperationError
-from hestia_project.forms import form_from_artifact, is_form_stage, new_form_state, status_for
+from hestia_project.forms import (
+    form_from_artifact,
+    is_form_stage,
+    new_form_state,
+    status_for,
+    upgrade_artifact,
+)
 from hestia_project.model import Cell, CellStatus, FieldSource, Position, Project, System
 from hestia_project.schematic import (
     SYSTEM_GAP,
@@ -249,12 +255,10 @@ def _paste_form(cell: Cell, form: FragmentForm | None) -> None:
     if cell.form is None or form is None:
         return
     try:
-        cell.form = form_from_artifact(cell.stage, form.artifact, form.sources, form.applied)
-    except InvalidOperationError as exc:
-        raise InvalidFragmentError(
-            f"El contenido copiado tiene un artefacto inválido en «{cell.name}»."
-        ) from exc
-    except ValidationError as exc:
+        # A fragment copied by an older Hestia may hold an older artifact (ADR 0023).
+        artifact = upgrade_artifact(cell.stage, form.artifact)
+        cell.form = form_from_artifact(cell.stage, artifact, form.sources, form.applied)
+    except (InvalidOperationError, ValidationError) as exc:
         raise InvalidFragmentError(
             f"El contenido copiado tiene un artefacto inválido en «{cell.name}»."
         ) from exc

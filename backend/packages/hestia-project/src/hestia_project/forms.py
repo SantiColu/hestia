@@ -14,10 +14,16 @@ from pydantic import BaseModel
 from hestia_core.environment.parameters import (
     EnvironmentParameters,
     environment_defaults,
+    upgrade_environment_parameters,
     validate_environment_parameters,
 )
 from hestia_core.forms import Problem
-from hestia_core.mission import MissionArtifact, mission_defaults, validate_mission
+from hestia_core.mission import (
+    MissionArtifact,
+    mission_defaults,
+    upgrade_mission,
+    validate_mission,
+)
 from hestia_project.catalog import STAGES, StageKind, StageType
 from hestia_project.errors import StageNotImplementedError
 from hestia_project.model import CellStatus, FieldProvenance, FieldSource, FormState
@@ -39,6 +45,8 @@ class FormSpec:
     validate: Callable[[Any, FormContext], list[Problem]]
     id_prefixes: dict[str, str] = field(default_factory=dict[str, str])
     """Lists whose items get a backend id (list path → id prefix)."""
+    upgrade: Callable[[dict[str, Any]], dict[str, Any]] | None = None
+    """Artifact of any older version (JSON) → current version. None: a single version."""
 
 
 def _validate_environment(parameters: EnvironmentParameters, context: FormContext) -> list[Problem]:
@@ -53,17 +61,24 @@ FORMS: dict[StageType, FormSpec] = {
         model=MissionArtifact,
         defaults=mission_defaults,
         validate=lambda artifact, _context: validate_mission(artifact),
-        id_prefixes={"attitude_modes": "mode"},
+        upgrade=upgrade_mission,
     ),
     StageType.ENVIRONMENT: FormSpec(
         model=EnvironmentParameters,
         defaults=environment_defaults,
         validate=_validate_environment,
-        id_prefixes={"custom_conditions": "cond"},
+        id_prefixes={"attitude_modes": "mode", "custom_conditions": "cond"},
+        upgrade=upgrade_environment_parameters,
     ),
 }
 """Implemented forms: form stages (``mission``; ``equipment`` has no editor yet) and the
 parameters of computation stages (registered by ``computations``)."""
+
+
+def upgrade_artifact(stage: StageType, data: dict[str, Any]) -> dict[str, Any]:
+    """An artifact saved by an older Hestia (file, clipboard) as the current model reads it."""
+    spec = FORMS.get(stage)
+    return spec.upgrade(data) if spec is not None and spec.upgrade is not None else data
 
 
 def is_form_stage(stage: StageType) -> bool:
