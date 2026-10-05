@@ -1,9 +1,11 @@
 import { Pencil, Trash2 } from "lucide-react";
 import type { EquipmentArtifact, EquipmentItem, OperatingMode } from "@/api/client";
 import { TableTextInput } from "@/components/forms/table-inputs";
+import { SegmentMeter } from "@/components/data/segment-meter";
 import { Button } from "@/components/ui/button";
 import { formatPath } from "@/lib/json";
 import { cn } from "@/lib/utils";
+import { fmtUpTo } from "../format";
 import { FieldCell, type EquipmentForm } from "./cells";
 import { itemName, operatingModeName, removeOperatingMode } from "./edits";
 import { appliedAt, errorAt, fieldOf } from "./equipment-schema";
@@ -19,7 +21,8 @@ export function ItemHeader({ item, index }: { item: EquipmentItem; index: number
   );
 }
 
-/** Name of an operating mode with a pencil to rename it in place. */
+/** Header of an operating mode: its name with a pencil to rename it in place and, below, its
+ * total dissipation from the API with a meter against the largest total. */
 export function ModeHeader({
   form,
   mode,
@@ -36,39 +39,54 @@ export function ModeHeader({
   const path = ["operating_modes", index, "name"];
   const error = errorAt(form.problems, formatPath(path));
   const name = operatingModeName(mode, index);
-  if (editing) {
-    return (
-      <RenameInput
-        label={`Nombre de ${name}`}
-        value={mode.name ?? null}
-        error={error}
-        onChange={(next) => form.set(path, next)}
-        onDone={() => onEditing(false)}
-      />
-    );
-  }
   return (
-    <span className="flex min-w-0 items-center gap-1">
-      <span
-        title={error}
-        className={cn(
-          "truncate text-xs font-medium text-foreground",
-          !mode.name && "text-subtle-foreground",
-          error && "text-error",
-        )}
-      >
-        {name}
-      </span>
-      <Button
-        size="icon-xs"
-        variant="ghost"
-        aria-label={`Renombrar ${name}`}
-        title="Renombrar"
-        className="text-subtle-foreground"
-        onClick={() => onEditing(true)}
-      >
-        <Pencil />
-      </Button>
+    <span className="flex flex-col gap-0.5 py-1">
+      {editing ? (
+        <RenameInput
+          label={`Nombre de ${name}`}
+          value={mode.name ?? null}
+          error={error}
+          onChange={(next) => form.set(path, next)}
+          onDone={() => onEditing(false)}
+        />
+      ) : (
+        <span className="flex min-w-0 items-center gap-1">
+          <span
+            title={error}
+            className={cn(
+              "truncate text-xs font-medium text-foreground",
+              !mode.name && "text-subtle-foreground",
+              error && "text-error",
+            )}
+          >
+            {name}
+          </span>
+          <Button
+            size="icon-xs"
+            variant="ghost"
+            aria-label={`Renombrar ${name}`}
+            title="Renombrar"
+            className="text-subtle-foreground"
+            onClick={() => onEditing(true)}
+          >
+            <Pencil />
+          </Button>
+        </span>
+      )}
+      <ModeTotal total={form.scale.totalOf(mode.id)} max={form.scale.maxTotal} />
+    </span>
+  );
+}
+
+/** «Σ 45 W» with its meter; «Σ — W» while the API cannot add it up. */
+function ModeTotal({ total, max }: { total: number | null | undefined; max: number }) {
+  return (
+    <span
+      className="flex items-center gap-2 font-mono text-2xs font-normal text-muted-foreground tabular-nums"
+      title={typeof total === "number" ? undefined : "Sin total: faltan datos o hay errores"}
+    >
+      Σ {typeof total === "number" ? fmtUpTo(total) : "—"} W
+      {typeof total === "number" && <SegmentMeter value={total} max={max} />}
     </span>
   );
 }
@@ -149,6 +167,7 @@ export function StateCell({
       value={item.id in states ? states[item.id] : undefined}
       applied={typeof applied === "string" || applied === null ? applied : undefined}
       error={errorAt(form.problems, formatPath(path))}
+      maxPerItem={form.scale.maxPerItem}
       onChange={(next) => form.set(path, next)}
     />
   );

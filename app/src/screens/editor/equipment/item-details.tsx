@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from "lucide-react";
 import type { EquipmentArtifact } from "@/api/client";
 import { tableCellClass, tableHeadClass } from "@/components/forms/table-inputs";
+import { SegmentMeter } from "@/components/data/segment-meter";
 import { SectionLabel } from "@/components/navigation/section-label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -42,7 +43,7 @@ export function ItemDetails({
             <thead>
               <tr className="bg-surface-2">
                 <th className={tableHeadClass}>{columnTitle(fieldOf(modeFields, "name"))}</th>
-                <th className={cn(tableHeadClass, "w-32")}>
+                <th className={cn(tableHeadClass, "w-44")}>
                   {columnTitle(fieldOf(modeFields, "dissipation"))}
                 </th>
                 <th className={cn(tableHeadClass, "w-11")} />
@@ -58,12 +59,21 @@ export function ItemDetails({
                       const f = fieldOf(modeFields, key);
                       return (
                         <td key={key} className={cn(tableCellClass, "px-0")}>
-                          <FieldCell
-                            form={form}
-                            f={f}
-                            path={[...path, key]}
-                            label={`${f.meta.title ?? key} de ${modeName} (${name})`}
-                          />
+                          <span className="flex h-full items-center">
+                            <FieldCell
+                              form={form}
+                              f={f}
+                              path={[...path, key]}
+                              label={`${f.meta.title ?? key} de ${modeName} (${name})`}
+                            />
+                            {key === "dissipation" && (
+                              <SegmentMeter
+                                value={mode.dissipation ?? 0}
+                                max={form.scale.maxPerItem}
+                                className="pr-2.5"
+                              />
+                            )}
+                          </span>
                         </td>
                       );
                     })}

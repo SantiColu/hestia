@@ -59,7 +59,7 @@ function editStates(artifact: EquipmentArtifact, edit: (states: States) => State
   };
 }
 
-export function updateItem(
+function updateItem(
   artifact: EquipmentArtifact,
   index: number,
   patch: Partial<EquipmentItem>,
@@ -103,18 +103,6 @@ export function removeItem(artifact: EquipmentArtifact, index: number): Equipmen
   return editStates(without, (states) =>
     Object.fromEntries(Object.entries(states).filter(([itemId]) => itemId !== id)),
   );
-}
-
-export function updateItemMode(
-  artifact: EquipmentArtifact,
-  itemIndex: number,
-  modeIndex: number,
-  patch: Partial<ItemMode>,
-): EquipmentArtifact {
-  const item = itemsOf(artifact)[itemIndex];
-  if (!item) return artifact;
-  const modes = modesOf(item).map((mode, i) => (i === modeIndex ? { ...mode, ...patch } : mode));
-  return updateItem(artifact, itemIndex, { modes });
 }
 
 export function addItemMode(

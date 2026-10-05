@@ -139,3 +139,21 @@ def test_a_replaced_id_breaks_the_reference_and_is_reported(opened: TestClient) 
         (f"operating_modes[0].states.{new_id}", "required"),
         (f"operating_modes[0].states.{malformed}", "not_allowed"),
     ]
+
+
+def test_read_and_validate_return_the_dissipation_of_each_operating_mode(
+    opened: TestClient,
+) -> None:
+    cells = _phase0(opened)
+    url = f"/project/cells/{cells['equipment']}/artifact"
+    # The defaults have no dissipation yet: no total.
+    assert opened.get(url).json()["derived"] == {
+        "operating_mode_dissipation": [{"operating_mode_id": "opmode_1", "dissipation": None}]
+    }
+    # Hand calculation: 4 wheels at «Pico» (20 W each) = 80 W.
+    validated = opened.post(f"{url}/validate", json={"artifact": DRAFT}).json()
+    assert validated["derived"]["operating_mode_dissipation"] == [
+        {"operating_mode_id": "opmode_00a1", "dissipation": 80.0}
+    ]
+    opened.put(url, json={"artifact": DRAFT})
+    assert opened.get(url).json()["derived"] == validated["derived"]

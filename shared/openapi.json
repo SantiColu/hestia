@@ -510,14 +510,12 @@
           "derived": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/EquipmentDerived"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Derived"
+            ]
           },
           "outdates": {
             "items": {
@@ -1724,6 +1722,23 @@
         "title": "EquipmentArtifact",
         "type": "object"
       },
+      "EquipmentDerived": {
+        "description": "What the backend derives from the equipment artifact (``docs/etapas/equipment.md``).",
+        "properties": {
+          "operating_mode_dissipation": {
+            "items": {
+              "$ref": "#/components/schemas/OperatingModeDissipation"
+            },
+            "title": "Operating Mode Dissipation",
+            "type": "array"
+          }
+        },
+        "required": [
+          "operating_mode_dissipation"
+        ],
+        "title": "EquipmentDerived",
+        "type": "object"
+      },
       "EventType": {
         "enum": [
           "connected",
@@ -2862,6 +2877,42 @@
           }
         },
         "title": "OperatingMode",
+        "type": "object"
+      },
+      "OperatingModeDissipation": {
+        "description": "Total dissipation of an operating mode.",
+        "properties": {
+          "dissipation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Σ quantity * dissipation of the mode of each item (Off: 0 W). Null when it cannot be added up: a missing or invalid state, or a chosen mode without dissipation.",
+            "title": "Dissipation",
+            "x-display-unit": "W",
+            "x-unit": "W"
+          },
+          "operating_mode_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operating Mode Id"
+          }
+        },
+        "required": [
+          "operating_mode_id",
+          "dissipation"
+        ],
+        "title": "OperatingModeDissipation",
         "type": "object"
       },
       "Operation": {
@@ -4272,14 +4323,12 @@
           "derived": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/EquipmentDerived"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Derived"
+            ]
           },
           "problems": {
             "items": {

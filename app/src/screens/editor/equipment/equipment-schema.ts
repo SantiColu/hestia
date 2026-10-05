@@ -59,7 +59,7 @@ export function errorAt(problems: Problem[], path: string): string | undefined {
   return messages.length > 0 ? messages.join(" ") : undefined;
 }
 
-export type CellState = { error?: string; modified: boolean; hint?: string };
+type CellState = { error?: string; modified: boolean; hint?: string };
 
 /** Error, «modified» mark and the applied value of a field of the draft. */
 export function cellState(

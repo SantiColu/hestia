@@ -2,10 +2,13 @@
 
 from typing import Any
 
+import pytest
+
 from hestia_core.equipment import (
     EquipmentArtifact,
     Location,
     equipment_defaults,
+    operating_mode_dissipation,
     validate_equipment,
 )
 from hestia_core.forms import ProblemCode
@@ -209,3 +212,52 @@ def test_items_without_a_usable_id_have_no_state() -> None:
         {"items": [WHEEL, twin], "operating_modes": [operating_mode({"item_a1": None})]}
     )
     assert codes(value) == {("operating_modes[0].states", C.REQUIRED)}
+
+
+# ---------------------------------------------------------------- dissipation per operating mode
+
+# Tolerance: a sum of a few products of exact decimals; only float rounding remains.
+SUM_TOLERANCE = 1e-12
+
+
+def totals(value: EquipmentArtifact) -> list[float | None]:
+    return [t.dissipation for t in operating_mode_dissipation(value)]
+
+
+def test_total_is_quantity_times_dissipation_of_the_chosen_modes() -> None:
+    # Hand calculation: 4 wheels in «Nominal» (8 W each) + 1 transmitter in «Transmisión»
+    # (15 W) = 4 * 8 + 1 * 15 = 47 W. With the wheels in «Standby» (3 W) and the transmitter
+    # Off (0 W): 4 * 3 = 12 W.
+    value = configured(
+        operating_mode({"item_a1": "imode_a2", "item_b1": "imode_b1"}),
+        operating_mode({"item_a1": "imode_a1", "item_b1": None}, id="opmode_2", name="Seguro"),
+    )
+    assert totals(value) == pytest.approx([47.0, 12.0], rel=SUM_TOLERANCE)
+    assert [t.operating_mode_id for t in operating_mode_dissipation(value)] == [
+        "opmode_1",
+        "opmode_2",
+    ]
+
+
+def test_all_off_dissipates_nothing() -> None:
+    assert totals(configured(operating_mode({"item_a1": None, "item_b1": None}))) == [0.0]
+
+
+def test_no_total_with_invalid_references_or_missing_values() -> None:
+    # Never a partial sum: an operating mode that cannot be added up has no total.
+    other_item = operating_mode({"item_a1": "imode_b1", "item_b1": None})
+    missing = operating_mode({"item_a1": "imode_a2"})
+    extra = operating_mode({"item_a1": None, "item_b1": None, "item_zz": None})
+    assert totals(configured(other_item, missing, extra)) == [None, None, None]
+    no_value = EquipmentArtifact.model_validate(
+        {
+            "items": [WHEEL | {"modes": [{"id": "imode_a1", "name": "Standby"}]}],
+            "operating_modes": [operating_mode({"item_a1": "imode_a1"})],
+        }
+    )
+    assert totals(no_value) == [None]
+    # An unchosen mode without a value does not matter.
+    off = EquipmentArtifact.model_validate(
+        no_value.model_dump() | {"operating_modes": [operating_mode({"item_a1": None})]}
+    )
+    assert totals(off) == [0.0]

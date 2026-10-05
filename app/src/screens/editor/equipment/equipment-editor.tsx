@@ -8,6 +8,7 @@ import { DraftBar, DraftErrors } from "../draft-bar";
 import { changedLeaves } from "../schema";
 import { useArtifactDraft } from "../use-artifact-draft";
 import type { EquipmentForm } from "./cells";
+import { dissipationScale } from "./dissipation";
 import { asEquipment, toDraft } from "./edits";
 import { equipmentSchema } from "./equipment-schema";
 import { ItemsTable } from "./items-table";
@@ -47,8 +48,9 @@ export function EquipmentEditor({
 
   if (!schema || !fields || !cellArtifact || !current || !applied) return <EditorLoading />;
 
-  const form: EquipmentForm = { schema: fields, current, applied, problems, set };
   const artifact = asEquipment(current);
+  const scale = dissipationScale(draft.derived, artifact);
+  const form: EquipmentForm = { schema: fields, current, applied, problems, scale, set };
   const onEdit = (next: typeof artifact) => change(toDraft(next));
 
   return (

@@ -6,20 +6,46 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SegmentMeter } from "@/components/data/segment-meter";
 import { cn } from "@/lib/utils";
+import { fmtUpTo } from "../format";
 import { modesOf } from "./edits";
 
 /** The option of Off, which is `null` in the artifact. Not an id: ids have `<prefix>_<hex>`. */
 const OFF = "off";
 const OFF_LABEL = "Apagado";
 
-type Option = { value: string; label: string };
+type Option = { value: string; label: string; dissipation?: number | null };
 
 function optionsOf(item: EquipmentItem): Option[] {
   const modes = modesOf(item).flatMap((mode, i) =>
-    mode.id ? [{ value: mode.id, label: mode.name?.trim() || `Modo ${i + 1}` }] : [],
+    mode.id
+      ? [
+          {
+            value: mode.id,
+            label: mode.name?.trim() || `Modo ${i + 1}`,
+            dissipation: mode.dissipation,
+          },
+        ]
+      : [],
   );
   return [...modes, { value: OFF, label: OFF_LABEL }];
+}
+
+/** «Nominal  8 W ▮▮▯▯▯»: a mode with its dissipation per item and a meter against the largest
+ * of the table; Off has neither. */
+function OptionLabel({ option, maxPerItem }: { option: Option; maxPerItem: number }) {
+  if (option.value === OFF) return <span className="text-subtle-foreground">{option.label}</span>;
+  const watts = option.dissipation;
+  return (
+    <span className="flex min-w-0 flex-1 items-center gap-2">
+      <span className="flex-1 truncate">{option.label}</span>
+      <span className="font-mono text-subtle-foreground tabular-nums">
+        {typeof watts === "number" ? fmtUpTo(watts) : "—"} W
+      </span>
+      <SegmentMeter value={watts ?? 0} max={maxPerItem} />
+    </span>
+  );
 }
 
 /**
@@ -33,6 +59,7 @@ export function StateSelect({
   value,
   applied,
   error,
+  maxPerItem,
   onChange,
 }: {
   /** Accessible name, e.g. «Rueda de reacción en Adquisición». */
@@ -41,13 +68,16 @@ export function StateSelect({
   value: string | null | undefined;
   applied: string | null | undefined;
   error?: string;
+  /** Largest dissipation per item of the table, W: what the meters compare against. */
+  maxPerItem: number;
   onChange: (value: string | null) => void;
 }) {
   const options = optionsOf(item);
   const asOption = (state: string | null | undefined) =>
     state === undefined ? null : (state ?? OFF);
+  const find = (option: string | null) => options.find((o) => o.value === option);
   const labelOf = (option: string | null) =>
-    option === null ? "—" : (options.find((o) => o.value === option)?.label ?? "Modo inexistente");
+    option === null ? "—" : (find(option)?.label ?? "Modo inexistente");
   const selected = asOption(value);
   const modified = selected !== asOption(applied);
   return (
@@ -70,16 +100,21 @@ export function StateSelect({
           selected === OFF && "text-subtle-foreground",
         )}
       >
-        <SelectValue>{(option: string | null) => labelOf(option)}</SelectValue>
+        <SelectValue>
+          {(value: string | null) => {
+            const option = find(value);
+            return option ? (
+              <OptionLabel option={option} maxPerItem={maxPerItem} />
+            ) : (
+              labelOf(value)
+            );
+          }}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {options.map((option) => (
-          <SelectItem
-            key={option.value}
-            value={option.value}
-            className={cn("text-xs", option.value === OFF && "text-subtle-foreground")}
-          >
-            {option.label}
+          <SelectItem key={option.value} value={option.value} className="min-w-56 text-xs">
+            <OptionLabel option={option} maxPerItem={maxPerItem} />
           </SelectItem>
         ))}
       </SelectContent>

@@ -224,6 +224,24 @@ def equipment_defaults() -> EquipmentArtifact:
     )
 
 
+class OperatingModeDissipation(BaseModel):
+    """Total dissipation of an operating mode."""
+
+    operating_mode_id: str | None
+    dissipation: float | None = Field(
+        description="Σ quantity * dissipation of the mode of each item (Off: 0 W). Null when it "
+        "cannot be added up: a missing or invalid state, or a chosen mode without dissipation.",
+        json_schema_extra=unit("W"),
+    )
+
+
+class EquipmentDerived(BaseModel):
+    """What the backend derives from the equipment artifact (``docs/etapas/equipment.md``)."""
+
+    operating_mode_dissipation: list[OperatingModeDissipation]
+    """In the order of ``operating_modes``."""
+
+
 # ---------------------------------------------------------------- validation
 
 
@@ -406,3 +424,48 @@ def _validate_states(
     for key in states:
         if key not in referable:
             p.add(f"{path}.{key}", ProblemCode.NOT_ALLOWED, f"«{key}» no es un equipo de la lista.")
+
+
+# ---------------------------------------------------------------- derived
+
+
+def operating_mode_dissipation(artifact: EquipmentArtifact) -> list[OperatingModeDissipation]:
+    """Total dissipation of each operating mode: Σ ``quantity`` * ``dissipation`` of the mode
+    each item is in (Off: 0 W), in W, in the order of ``operating_modes``.
+
+    Steady values entered per item; no physics beyond the sum. Never a partial sum: an
+    operating mode with a missing or invalid state (an unknown item or a mode of another item)
+    or a chosen mode without dissipation (or an item without quantity) has no total.
+    """
+    referable, unreferable = _referable_items(artifact.items)
+    return [
+        OperatingModeDissipation(
+            operating_mode_id=mode.id,
+            dissipation=None if unreferable else _total_dissipation(mode.states, referable),
+        )
+        for mode in artifact.operating_modes
+    ]
+
+
+def _total_dissipation(
+    states: dict[str, str | None], referable: dict[str, _Referable]
+) -> float | None:
+    if set(states) != set(referable):
+        return None
+    total_w = 0.0
+    for item_id, entry in referable.items():
+        mode_id = states[item_id]
+        if mode_id is None:
+            continue
+        if mode_id not in entry.mode_ids:
+            return None
+        mode = next(m for m in entry.item.modes if m.id == mode_id)
+        if entry.item.quantity is None or mode.dissipation is None:
+            return None
+        total_w += entry.item.quantity * mode.dissipation
+    return total_w
+
+
+def equipment_derived(artifact: EquipmentArtifact) -> EquipmentDerived:
+    """The derived values of the equipment stage: the dissipation of each operating mode."""
+    return EquipmentDerived(operating_mode_dissipation=operating_mode_dissipation(artifact))

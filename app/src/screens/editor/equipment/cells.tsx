@@ -4,15 +4,18 @@ import { TableNumberInput, TableSelect, TableTextInput } from "@/components/form
 import { formatPath, getAt, type Json, type JsonObject, type JsonPath } from "@/lib/json";
 import { fromDisplay, toDisplay } from "@/lib/units";
 import { enumOptions, type Field } from "../schema";
+import type { DissipationScale } from "./dissipation";
 import { appliedAt, cellState, type EquipmentSchema } from "./equipment-schema";
 
 /** What every field of the equipment editor needs: the draft, the applied artifact, the
- * problems of the latest validation and how to set a value. */
+ * problems and derived values of the latest validation and how to set a value. */
 export type EquipmentForm = {
   schema: EquipmentSchema;
   current: JsonObject;
   applied: JsonObject;
   problems: Problem[];
+  /** Totals from the API and the maxima the dissipation meters compare against. */
+  scale: DissipationScale;
   set: (path: JsonPath, value: Json) => void;
 };
 

@@ -22,7 +22,9 @@ from hestia_core.equipment import (
     ITEM_MODE_ID_PREFIX,
     OPERATING_MODE_ID_PREFIX,
     EquipmentArtifact,
+    EquipmentDerived,
     equipment_defaults,
+    equipment_derived,
     validate_equipment,
 )
 from hestia_core.forms import Problem
@@ -41,6 +43,9 @@ PENDING_CHANGE = "__pending__"
 with the id of the change that records the operation."""
 
 
+Derived = EquipmentDerived
+"""Derived values of the stages that have them (a union as more stages add theirs)."""
+
 FormContext = Mapping[StageType, BaseModel]
 """Upstream inputs a form is validated against: the artifacts of the form stages in the cell's
 context, by stage type. Empty for roots and when nothing is linked."""
@@ -56,7 +61,7 @@ class FormSpec:
     the items of its parent: ``items[].modes`` (ADR 0025)."""
     upgrade: Callable[[dict[str, Any]], dict[str, Any]] | None = None
     """Artifact of any older version (JSON) → current version. None: a single version."""
-    derive: Callable[[Any], dict[str, Any]] | None = None
+    derive: Callable[[Any], Derived] | None = None
     """Values the backend computes from the artifact (e.g. totals), returned when reading it and
     validating a draft. None: the stage has no derived values."""
 
@@ -84,6 +89,7 @@ FORMS: dict[StageType, FormSpec] = {
             "items[].modes": ITEM_MODE_ID_PREFIX,
             "operating_modes": OPERATING_MODE_ID_PREFIX,
         },
+        derive=equipment_derived,
     ),
     StageType.ENVIRONMENT: FormSpec(
         model=EnvironmentParameters,

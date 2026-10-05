@@ -17,6 +17,11 @@ export function fmt(value: number, digits = 1): string {
   return format.format(value);
 }
 
+/** Up to `digits` decimals, without trailing zeros: "8", "2.5". */
+export function fmtUpTo(value: number, digits = 1): string {
+  return Number(value.toFixed(digits)).toString();
+}
+
 export const deg = (rad: number, digits = 1) => fmt((rad * 180) / Math.PI, digits);
 export const km = (m: number, digits = 0) => fmt(m / 1000, digits);
 export const minutes = (s: number, digits = 1) => fmt(s / 60, digits);

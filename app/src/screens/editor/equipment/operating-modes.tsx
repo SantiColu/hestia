@@ -68,7 +68,9 @@ export function OperatingModes({
       <div className="flex items-center gap-6">
         <p className="flex-1 text-xs text-subtle-foreground">
           Cada modo operativo es una configuración del satélite: elegí en qué modo está cada equipo.
-          Apagado disipa 0 W y se verifica con los límites no operativos.
+          Apagado disipa 0 W y se verifica con los límites no operativos. Σ es la disipación total
+          del modo (cantidad × W por ítem); sus barras lo comparan con el modo que más disipa, y las
+          de cada celda, con la mayor disipación por ítem de la tabla.
         </p>
         <span className="flex items-center gap-2 text-xs text-muted-foreground">
           Filas:

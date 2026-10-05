@@ -374,7 +374,9 @@ async def get_cell_artifact(cell_id: str) -> Json:
     computation cell (environment: design values, dispersion, sampling, custom conditions):
     values in SI units, validation problems ({path, code, message}), per-field provenance ({source,
     change_id}), status, context and `derived`: values the backend computes from the artifact
-    (null for stages without them). Start from this artifact to build a draft."""
+    (equipment: `operating_mode_dissipation`, the total W of each operating mode, null when it
+    cannot be added up; null for stages without derived values). Start from this artifact to
+    build a draft."""
     return await call("get_cell_artifact", path={"cell_id": cell_id})
 
 

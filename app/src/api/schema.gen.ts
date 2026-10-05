@@ -981,10 +981,7 @@ export interface components {
       /** Cell Id */
       cell_id: string;
       context: components["schemas"]["CellContext"];
-      /** Derived */
-      derived: {
-        [key: string]: unknown;
-      } | null;
+      derived: components["schemas"]["EquipmentDerived"] | null;
       /** Outdates */
       outdates: string[];
       /** Problems */
@@ -1424,6 +1421,14 @@ export interface components {
        * @default 1
        */
       schema_version?: number;
+    };
+    /**
+     * EquipmentDerived
+     * @description What the backend derives from the equipment artifact (``docs/etapas/equipment.md``).
+     */
+    EquipmentDerived: {
+      /** Operating Mode Dissipation */
+      operating_mode_dissipation: components["schemas"]["OperatingModeDissipation"][];
     };
     /**
      * EventType
@@ -1896,6 +1901,19 @@ export interface components {
       states?: {
         [key: string]: string | null;
       };
+    };
+    /**
+     * OperatingModeDissipation
+     * @description Total dissipation of an operating mode.
+     */
+    OperatingModeDissipation: {
+      /**
+       * Dissipation
+       * @description Σ quantity * dissipation of the mode of each item (Off: 0 W). Null when it cannot be added up: a missing or invalid state, or a chosen mode without dissipation.
+       */
+      dissipation: number | null;
+      /** Operating Mode Id */
+      operating_mode_id: string | null;
     };
     /**
      * Operation
@@ -2461,10 +2479,7 @@ export interface components {
     };
     /** ValidationResult */
     ValidationResult: {
-      /** Derived */
-      derived: {
-        [key: string]: unknown;
-      } | null;
+      derived: components["schemas"]["EquipmentDerived"] | null;
       /** Problems */
       problems: components["schemas"]["Problem"][];
     };

@@ -50,6 +50,7 @@ import { DenseTable } from "@/components/data/dense-table";
 import { KeyValue, Metric } from "@/components/data/readouts";
 import { ActorAvatar } from "@/components/data/actor-avatar";
 import { EmptyState } from "@/components/data/empty-state";
+import { SegmentMeter } from "@/components/data/segment-meter";
 import { HistoryItem } from "@/components/workflow/history-item";
 import { ProvenanceRow } from "@/components/workflow/provenance-row";
 
@@ -295,6 +296,13 @@ export function Showcase() {
               <KeyValue label="Eclipse máx." value="35.4 min" />
             </div>
             <ActorAvatar name="Ana Ruiz" />
+            <div className="flex flex-col gap-2 font-mono text-xs">
+              {[45, 20, 3, 0].map((watts) => (
+                <span key={watts} className="flex items-center gap-2">
+                  <SegmentMeter value={watts} max={45} />Σ {watts} W
+                </span>
+              ))}
+            </div>
           </div>
         </div>
         <EmptyState

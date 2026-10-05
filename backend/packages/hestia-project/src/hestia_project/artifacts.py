@@ -24,6 +24,7 @@ from hestia_project.errors import InvalidOperationError
 from hestia_project.forms import (
     FORMS,
     PENDING_CHANGE,
+    Derived,
     FormContext,
     FormSpec,
     form_spec,
@@ -75,15 +76,15 @@ class CellArtifact(Schema):
     results and, for a computation stage, the cell itself), in project order. Preview for the
     confirmation; applying the same content or the first apply of the defaults outdates
     nothing."""
-    derived: dict[str, Any] | None
-    """Values the backend computes from the applied artifact (e.g. totals). Null for stages
-    without derived values."""
+    derived: Derived | None
+    """Values the backend computes from the applied artifact (equipment: the dissipation of
+    each operating mode). Null for stages without derived values."""
 
 
 class ValidationResult(Schema):
     problems: list[Problem]
     """Empty: the draft is valid."""
-    derived: dict[str, Any] | None
+    derived: Derived | None
     """Values the backend computes from the draft, as ``CellArtifact.derived``."""
 
 
@@ -140,7 +141,7 @@ def artifact_problems(project: Project, cell: Cell) -> list[Problem]:
     return spec.validate(spec.model.model_validate(state.artifact), form_context(project, cell.id))
 
 
-def _derived(spec: FormSpec, artifact: BaseModel) -> dict[str, Any] | None:
+def _derived(spec: FormSpec, artifact: BaseModel) -> Derived | None:
     return spec.derive(artifact) if spec.derive is not None else None
 
 
