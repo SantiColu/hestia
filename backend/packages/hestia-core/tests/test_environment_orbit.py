@@ -133,3 +133,9 @@ def test_json_schema_declares_units() -> None:
     assert schema["altitude"]["x-unit"] == "m" and schema["altitude"]["x-display-unit"] == "km"
     assert schema["inclination"]["x-display-unit"] == "°"
     assert schema["type"]["x-enum-labels"]["keplerian"] == "LEO/MEO"
+
+
+def test_json_schema_carries_the_altitude_between_orbit_types() -> None:
+    schema = Orbit.model_json_schema()["properties"]
+    assert schema["altitude"]["x-carry-from"] == ["perigee_altitude"]
+    assert schema["perigee_altitude"]["x-carry-from"] == ["altitude"]

@@ -16,7 +16,7 @@ import { StageStatusBadge, type StageStatus } from "@/components/feedback/stage-
 import { SectionLabel } from "@/components/navigation/section-label";
 import { Button } from "@/components/ui/button";
 import { joinList, plural } from "@/lib/format";
-import { deepEqual, setAt, type Json, type JsonObject, type JsonPath } from "@/lib/json";
+import { deepEqual, getAt, setAt, type Json, type JsonObject, type JsonPath } from "@/lib/json";
 import { cn } from "@/lib/utils";
 import { useDialogs } from "@/project/dialogs";
 import { DRAFT_DEBOUNCE_MS, useEditor } from "@/project/editor";
@@ -24,7 +24,7 @@ import { findCell, findSystem, stageName } from "@/project/lookup";
 import { useProject } from "@/project/store";
 import { ComputationEditor } from "./computation-editor";
 import { column } from "./layout";
-import { changedLeaves, problemsBySection, type JsonSchema } from "./schema";
+import { changedLeaves, problemsBySection, switchOption, type JsonSchema } from "./schema";
 import { useCellContext } from "./use-cell-context";
 import { SchemaForm } from "./schema-form";
 
@@ -226,10 +226,28 @@ export function FormEditor({
   const onChange = useCallback(
     (path: JsonPath, value: Json) => {
       if (!current || !applied) return;
-      const next = setAt(current, path, value) as JsonObject;
-      setDraft(cellId, deepEqual(next, applied) ? null : next);
+      const changed = setAt(current, path, value) as JsonObject;
+      // Fields that stop applying with this change are cleared or carried to their equivalent
+      // (switchOption). Ask first when that loses values not applied yet.
+      const { next, dropped } = schema
+        ? switchOption(schema, current, changed)
+        : { next: changed, dropped: [] };
+      const commit = () => setDraft(cellId, deepEqual(next, applied) ? null : next);
+      const unapplied = dropped.filter(
+        (f) => !deepEqual(getAt(changed, f.path), getAt(applied, f.path) ?? null),
+      );
+      if (unapplied.length === 0) return commit();
+      void dialogs
+        .askConfirm({
+          title: "Valores sin aplicar",
+          description: `Con la opción elegida dejan de aplicar campos con valores sin aplicar: ${joinList(
+            unapplied.map((f) => f.label),
+          )}. Si continuás, se borran.`,
+          confirmLabel: "Borrar y cambiar",
+        })
+        .then((confirmed) => confirmed && commit());
     },
-    [current, applied, cellId, setDraft],
+    [current, applied, schema, cellId, setDraft, dialogs],
   );
 
   const changes = useMemo(

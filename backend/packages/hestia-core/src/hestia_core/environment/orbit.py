@@ -83,7 +83,7 @@ class Orbit(BaseModel):
         default=None,
         title="Altitud",
         description="Órbita circular.",
-        json_schema_extra=unit("m", "km", _SSO_ONLY),
+        json_schema_extra=unit("m", "km", {**_SSO_ONLY, "x-carry-from": ["perigee_altitude"]}),
     )
     ltan: str | None = Field(
         default=None,
@@ -94,7 +94,7 @@ class Orbit(BaseModel):
     perigee_altitude: float | None = Field(
         default=None,
         title="Altitud del perigeo",
-        json_schema_extra=unit("m", "km", _KEPLERIAN_ONLY),
+        json_schema_extra=unit("m", "km", {**_KEPLERIAN_ONLY, "x-carry-from": ["altitude"]}),
     )
     apogee_altitude: float | None = Field(
         default=None,

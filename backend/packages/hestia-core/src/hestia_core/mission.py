@@ -12,7 +12,11 @@ JSON Schema extensions read by the UI to build the form (presentation only):
 
 - ``x-unit`` / ``x-display-unit``: stored unit and the unit shown to people.
 - ``x-enum-labels``: label of each enum value.
-- ``x-show-if``: ``{sibling field: [values]}``; the field only applies for those values.
+- ``x-show-if``: ``{sibling field: [values]}``; the field only applies for those values. A
+  dotted key is a path from the artifact's root (``orbit.type``). When a change makes a field
+  stop applying, the form clears it.
+- ``x-carry-from``: ``[sibling fields]``; when the field starts applying empty, it takes the
+  value of the first of them that stops applying (the perigee becomes the SSO altitude).
 - ``x-notes``: ``{enum value: note}`` shown when that value is selected.
 - ``x-input``: ``textarea`` or ``time`` for text fields.
 - ``x-placeholder``: text shown while the field is empty.

@@ -3,6 +3,7 @@ import {
   deepEqual,
   formatPath,
   getAt,
+  setAt,
   type Json,
   type JsonObject,
   type JsonPath,
@@ -26,6 +27,7 @@ export type JsonSchema = {
   "x-display-unit"?: string;
   "x-enum-labels"?: Record<string, string>;
   "x-show-if"?: Record<string, string[]>;
+  "x-carry-from"?: string[];
   "x-notes"?: Record<string, string>;
   "x-input"?: "textarea" | "time";
   "x-placeholder"?: string;
@@ -52,6 +54,64 @@ export function resolve(schema: JsonSchema, root: JsonSchema): JsonSchema {
 
 export function field(meta: JsonSchema, root: JsonSchema): Field {
   return { node: resolve(meta, root), meta };
+}
+
+// ---------------------------------------------------------------- applicable fields
+
+/** A field applies when every `x-show-if` condition holds. A condition names a sibling
+ * (`type`) or, with dots, a path from the artifact's root (`orbit.type`). */
+export function applies(meta: JsonSchema, artifact: JsonObject, parent: JsonPath): boolean {
+  return Object.entries(meta["x-show-if"] ?? {}).every(([key, values]) => {
+    const value = getAt(artifact, key.includes(".") ? key.split(".") : [...parent, key]);
+    return values.includes(String(value ?? ""));
+  });
+}
+
+export type DroppedField = { path: JsonPath; label: string };
+
+/**
+ * An edit that changes which fields apply (e.g. the orbit type). Fields with a value that stop
+ * applying are cleared; an empty field that starts applying takes the value of the first of
+ * its `x-carry-from` siblings that stopped (the perigee becomes the SSO altitude). `dropped`
+ * are the cleared values that were not carried. Table rows are not looked into.
+ */
+export function switchOption(
+  root: JsonSchema,
+  before: JsonObject,
+  after: JsonObject,
+): { next: JsonObject; dropped: DroppedField[] } {
+  let next = after;
+  const dropped: DroppedField[] = [];
+  const walk = (schema: JsonSchema, path: JsonPath) => {
+    const leaves: [string, JsonSchema][] = [];
+    for (const [key, meta] of Object.entries(schema.properties ?? {})) {
+      const f = field(meta, root);
+      if (f.node.type === "object") walk(f.node, [...path, key]);
+      else leaves.push([key, meta]);
+    }
+    const valueOf = (key: string) => getAt(after, [...path, key]) ?? null;
+    const stopped = leaves.filter(
+      ([key, meta]) =>
+        valueOf(key) !== null && applies(meta, before, path) && !applies(meta, after, path),
+    );
+    const stoppedKeys = stopped.map(([key]) => key);
+    const carried = new Set<string>();
+    for (const [key, meta] of leaves) {
+      if (valueOf(key) !== null || applies(meta, before, path) || !applies(meta, after, path)) {
+        continue;
+      }
+      const source = meta["x-carry-from"]?.find((sibling) => stoppedKeys.includes(sibling));
+      if (!source) continue;
+      next = setAt(next, [...path, key], valueOf(source)) as JsonObject;
+      carried.add(source);
+    }
+    for (const [key, meta] of stopped) {
+      next = setAt(next, [...path, key], null) as JsonObject;
+      if (!carried.has(key)) dropped.push({ path: [...path, key], label: meta.title ?? key });
+    }
+  };
+  walk(root, []);
+  return { next, dropped };
 }
 
 // ---------------------------------------------------------------- value formatting

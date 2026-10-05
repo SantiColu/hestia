@@ -27,7 +27,7 @@ import {
 import { isIsoDate } from "@/lib/format";
 import { fromDisplay, toDisplay } from "@/lib/units";
 import { cn } from "@/lib/utils";
-import { field, formatValue, resolve, type Field, type JsonSchema } from "./schema";
+import { applies, field, formatValue, resolve, type Field, type JsonSchema } from "./schema";
 
 /**
  * A form generated from the JSON Schema of an artifact (ADR 0017, `workspace.pen` frames
@@ -105,16 +105,11 @@ function ObjectFields({
   path: JsonPath;
 }) {
   const parent = getAt(ctx.current, path);
-  const visible = Object.entries(schema.properties ?? {}).filter(([key, meta]) => {
-    const showIf = meta["x-show-if"];
-    if (!showIf) return true;
-    // A field of another option stays visible while it has a value, so the problem the API
-    // reports on it (e.g. `not_allowed`) can be fixed.
-    if ((getAt(parent, [key]) ?? null) !== null) return true;
-    return Object.entries(showIf).every(([sibling, values]) =>
-      values.includes(String(getAt(parent, [sibling]) ?? "")),
-    );
-  });
+  // A field of another option stays visible while it has a value (e.g. one an agent left), so
+  // the problem the API reports on it (`not_allowed`) can be fixed.
+  const visible = Object.entries(schema.properties ?? {}).filter(
+    ([key, meta]) => (getAt(parent, [key]) ?? null) !== null || applies(meta, ctx.current, path),
+  );
 
   // Consecutive fields share rows; selectors and free text take a row of their own.
   const rows: [string, JsonSchema][][] = [];

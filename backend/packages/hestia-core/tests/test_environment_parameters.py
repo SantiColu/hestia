@@ -85,6 +85,9 @@ def test_schema_marks_defaults_units_and_sources() -> None:
     assert (step["x-unit"], step["x-display-unit"]) == ("s", "días")
     ltan = schema["$defs"]["Dispersion"]["properties"]["ltan_dispersion"]
     assert (ltan["x-unit"], ltan["x-display-unit"]) == ("s", "min")
+    assert ltan["x-show-if"] == {"orbit.type": ["sso"]}
+    eol = schema["$defs"]["Dispersion"]["properties"]["eol_altitude"]
+    assert eol["x-show-if"] == {"orbit.type": ["sso", "keplerian"]}
     assert schema["properties"]["custom_conditions"]["x-add-label"] == "Agregar condición"
     assert schema["properties"]["attitude_modes"]["x-add-label"] == "Agregar modo de actitud"
     assert list(schema["properties"])[1:3] == ["orbit", "attitude_modes"]  # first in the form

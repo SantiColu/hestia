@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 from pydantic.config import JsonDict
 
 from hestia_core.environment.orbit import (
@@ -157,6 +157,19 @@ class DesignValues(BaseModel):
     )
 
 
+_DISPERSION_BY_ORBIT: dict[str, tuple[OrbitType, ...]] = {
+    "ltan_dispersion": (OrbitType.SSO,),
+    "eol_altitude": (OrbitType.SSO, OrbitType.KEPLERIAN),
+    "geo_max_inclination": (OrbitType.GEO,),
+}
+
+
+def _for_orbits(name: str, extra: JsonDict) -> JsonDict:
+    """``x-show-if`` of a dispersion field: the orbit types it applies to."""
+    types: list[JsonValue] = [t.value for t in _DISPERSION_BY_ORBIT[name]]
+    return {**extra, "x-show-if": {"orbit.type": types}}
+
+
 class Dispersion(BaseModel):
     """Long-term perturbations that are not propagated: their extremes are evaluated around
     the nominal orbit (ADR 0020)."""
@@ -166,20 +179,24 @@ class Dispersion(BaseModel):
         title="Deriva de la hora del nodo",
         description="Solo SSO. Deriva máxima (±) de la hora local del nodo a lo largo de la "
         "vida. Vacío: 0.",
-        json_schema_extra=unit("s", "min", {"x-placeholder": "0"}),
+        json_schema_extra=unit("s", "min", _for_orbits("ltan_dispersion", {"x-placeholder": "0"})),
     )
     eol_altitude: float | None = Field(
         default=None,
         title="Altitud al fin de vida",
         description="SSO y LEO/MEO. Altitud por decaimiento al fin de vida. Vacío: sin "
         "decaimiento.",
-        json_schema_extra=unit("m", "km", {"x-placeholder": "sin decaimiento"}),
+        json_schema_extra=unit(
+            "m", "km", _for_orbits("eol_altitude", {"x-placeholder": "sin decaimiento"})
+        ),
     )
     geo_max_inclination: float | None = Field(
         default=None,
         title="Inclinación máxima en GEO",
         description="Solo GEO. Inclinación máxima que alcanza la órbita. Vacío: 0.",
-        json_schema_extra=unit("rad", "°", {"x-placeholder": "0"}),
+        json_schema_extra=unit(
+            "rad", "°", _for_orbits("geo_max_inclination", {"x-placeholder": "0"})
+        ),
     )
 
 
@@ -315,11 +332,6 @@ def resolve_design_values(values: DesignValues, inclination_rad: float) -> Resol
 # ---------------------------------------------------------------- validation
 
 
-_DISPERSION_BY_ORBIT: dict[str, tuple[OrbitType, ...]] = {
-    "ltan_dispersion": (OrbitType.SSO,),
-    "eol_altitude": (OrbitType.SSO, OrbitType.KEPLERIAN),
-    "geo_max_inclination": (OrbitType.GEO,),
-}
 _DISPERSION_LABELS = {
     "ltan_dispersion": "La deriva de la hora del nodo",
     "eol_altitude": "La altitud al fin de vida",
