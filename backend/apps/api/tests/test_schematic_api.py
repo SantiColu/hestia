@@ -185,6 +185,28 @@ def test_rename_move_add_duplicate_delete(opened: TestClient) -> None:
     assert missing.json()["code"] == "not_found"
 
 
+def test_move_and_delete_a_selection_in_one_change(opened: TestClient) -> None:
+    first = _create(opened, stage="mission", name="A")["view"]["project"]["systems"][0]["id"]
+    project = _create(opened, stage="mission", name="B")["view"]["project"]
+    ids = [system["id"] for system in project["systems"]]
+    assert first in ids
+
+    moves = [{"system_id": sid, "position": {"x": 10.0 * i, "y": 0.0}} for i, sid in enumerate(ids)]
+    moved = opened.post("/project/systems/move", json={"moves": moves})
+    assert moved.status_code == 200
+    assert [s["position"]["x"] for s in moved.json()["view"]["project"]["systems"]] == [0, 10]
+
+    no_reason = opened.post("/project/delete", json={"system_ids": ids}, headers=AGENT)
+    assert no_reason.json()["code"] == "justification_required"
+    deleted = opened.post("/project/delete", json={"system_ids": ids})
+    assert deleted.status_code == 200
+    assert deleted.json()["view"]["project"]["systems"] == []
+    assert deleted.json()["change"]["operation"] == "delete_items"
+
+    opened.post("/project/undo", json={})
+    assert len(opened.get("/session").json()["project"]["project"]["systems"]) == 2
+
+
 def test_undo_redo_and_history(opened: TestClient) -> None:
     _create(opened, template="phase_0")
     assert opened.post("/project/redo", json={"justification": ""}).status_code == 409

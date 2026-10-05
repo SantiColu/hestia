@@ -10,14 +10,17 @@ import {
 import { api, unwrap, type Blueprint, type Position } from "@/api/client";
 import { readFragment } from "@/project/fragment";
 import { useProject } from "@/project/store";
-
-/** A system or a cell of the schematic. */
-export type Target = { kind: "system" | "cell"; id: string };
-export type Selection = Target | null;
+import { includesTarget, type Target } from "./target";
 
 type WorkspaceUi = {
-  selection: Selection;
-  select: (selection: Selection) => void;
+  /** Selected systems and cells; empty when nothing is selected. */
+  selection: readonly Target[];
+  /** Select only `target` (null clears the selection). */
+  select: (target: Target | null) => void;
+  /** Add `target` to the selection or take it out (Ctrl/Shift + click). */
+  toggleSelected: (target: Target) => void;
+  /** Replace the selection (box selection on the canvas). */
+  selectMany: (targets: Target[]) => void;
   /** What is being dragged from the Toolbox. */
   dragItem: Blueprint | null;
   /** Cells highlighted as valid targets (Toolbox drag or a link being drawn), per the API. */
@@ -37,7 +40,18 @@ const Context = createContext<WorkspaceUi | null>(null);
 
 export function WorkspaceUiProvider({ children }: { children: ReactNode }) {
   const { fail } = useProject();
-  const [selection, select] = useState<Selection>(null);
+  const [selection, setSelection] = useState<readonly Target[]>([]);
+  const select = useCallback((target: Target | null) => setSelection(target ? [target] : []), []);
+  const toggleSelected = useCallback(
+    (target: Target) =>
+      setSelection((current) =>
+        includesTarget(current, target)
+          ? current.filter((t) => t.kind !== target.kind || t.id !== target.id)
+          : [...current, target],
+      ),
+    [],
+  );
+  const selectMany = useCallback((targets: Target[]) => setSelection(targets), []);
   const [dragItem, setDragItem] = useState<Blueprint | null>(null);
   const [validTargets, setValidTargets] = useState<ReadonlySet<string> | null>(null);
   const [canPaste, setCanPaste] = useState(false);
@@ -97,6 +111,8 @@ export function WorkspaceUiProvider({ children }: { children: ReactNode }) {
     () => ({
       selection,
       select,
+      toggleSelected,
+      selectMany,
       dragItem,
       validTargets,
       startDrag,
@@ -107,7 +123,19 @@ export function WorkspaceUiProvider({ children }: { children: ReactNode }) {
       setCanPaste,
       pointerRef,
     }),
-    [selection, dragItem, validTargets, startDrag, startConnect, endDrag, canPaste, checkClipboard],
+    [
+      selection,
+      select,
+      toggleSelected,
+      selectMany,
+      dragItem,
+      validTargets,
+      startDrag,
+      startConnect,
+      endDrag,
+      canPaste,
+      checkClipboard,
+    ],
   );
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }

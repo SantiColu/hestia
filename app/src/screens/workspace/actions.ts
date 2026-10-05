@@ -8,12 +8,21 @@ import {
   type StageType,
 } from "@/api/client";
 import { useDialogs } from "@/project/dialogs";
+import { plural } from "@/lib/format";
 import { readFragment, writeFragment } from "@/project/fragment";
 import { findCell, findSystem, stageName as stageNameOf } from "@/project/lookup";
 import { useProject } from "@/project/store";
-import { useWorkspaceUi, type Target } from "./context";
+import { useWorkspaceUi } from "./context";
+import type { Target } from "./target";
 
 export type PasteOptions = { position?: Position; targetSystemId?: string };
+
+function idsOf(targets: readonly Target[]) {
+  return {
+    system_ids: targets.filter((t) => t.kind === "system").map((t) => t.id),
+    cell_ids: targets.filter((t) => t.kind === "cell").map((t) => t.id),
+  };
+}
 
 /**
  * Schematic writes. People are never asked for a justification (ADR 0024): every write runs
@@ -79,16 +88,10 @@ export function useSchematicActions() {
     [mutate],
   );
 
-  const moveSystem = useCallback(
-    (systemId: string, position: Position) =>
-      mutate(() =>
-        unwrap(
-          api.POST("/project/systems/{system_id}/move", {
-            params: { path: { system_id: systemId } },
-            body: { position },
-          }),
-        ),
-      ),
+  /** Move one or several systems (a multiple selection) in one change. */
+  const moveSystems = useCallback(
+    (moves: { system_id: string; position: Position }[]) =>
+      mutate(() => unwrap(api.POST("/project/systems/move", { body: { moves } }))),
     [mutate],
   );
 
@@ -160,40 +163,18 @@ export function useSchematicActions() {
   );
 
   const removeWith = useCallback(
-    (target: Target) =>
-      mutate(() =>
-        target.kind === "system"
-          ? unwrap(
-              api.DELETE("/project/systems/{system_id}", {
-                params: { path: { system_id: target.id } },
-                body: {},
-              }),
-            )
-          : unwrap(
-              api.DELETE("/project/cells/{cell_id}", {
-                params: { path: { cell_id: target.id } },
-                body: {},
-              }),
-            ),
-      ),
+    (targets: readonly Target[]) =>
+      mutate(() => unwrap(api.POST("/project/delete", { body: idsOf(targets) }))),
     [mutate],
   );
 
+  /** Delete systems and cells in one change. */
   const remove = useCallback(
-    async (target: Target) => {
-      const result = await removeWith(target);
+    async (targets: readonly Target[]) => {
+      const result = await removeWith(targets);
       if (result) select(null);
     },
     [removeWith, select],
-  );
-
-  const deleteSystem = useCallback(
-    (systemId: string) => remove({ kind: "system", id: systemId }),
-    [remove],
-  );
-  const deleteCell = useCallback(
-    (cellId: string) => remove({ kind: "cell", id: cellId }),
-    [remove],
   );
 
   const rename = useCallback(
@@ -203,25 +184,23 @@ export function useSchematicActions() {
   );
 
   const copyFragment = useCallback(
-    (target: Target) =>
-      unwrap(
-        api.POST("/project/clipboard/copy", {
-          body:
-            target.kind === "system"
-              ? { system_ids: [target.id], cell_ids: [] }
-              : { system_ids: [], cell_ids: [target.id] },
-        }),
-      ),
+    (targets: readonly Target[]) =>
+      unwrap(api.POST("/project/clipboard/copy", { body: idsOf(targets) })),
     [],
   );
 
   /** Copy to the system clipboard. Resolves false if it failed (reported in Messages). */
   const copy = useCallback(
-    async (target: Target): Promise<boolean> => {
+    async (targets: readonly Target[]): Promise<boolean> => {
       try {
-        await writeFragment(await copyFragment(target));
+        await writeFragment(await copyFragment(targets));
         setCanPaste(true);
-        notify(`Copió «${targetName(target)}».`);
+        const [only] = targets;
+        notify(
+          targets.length === 1 && only
+            ? `Copió «${targetName(only)}».`
+            : `Copió ${plural(targets.length, "elemento", "elementos")}.`,
+        );
         return true;
       } catch (error) {
         fail(error);
@@ -233,9 +212,9 @@ export function useSchematicActions() {
 
   /** Copy, then delete; nothing is deleted if copying failed. */
   const cut = useCallback(
-    async (target: Target) => {
-      if (!(await copy(target))) return;
-      const result = await removeWith(target);
+    async (targets: readonly Target[]) => {
+      if (!(await copy(targets))) return;
+      const result = await removeWith(targets);
       if (result) select(null);
     },
     [copy, removeWith, select],
@@ -278,7 +257,7 @@ export function useSchematicActions() {
         return;
       }
       const systemId = findCell(project, target.id)?.system_id;
-      await pasteFragment(() => copyFragment(target), { targetSystemId: systemId });
+      await pasteFragment(() => copyFragment([target]), { targetSystemId: systemId });
     },
     [duplicateSystem, project, pasteFragment, copyFragment],
   );
@@ -304,13 +283,11 @@ export function useSchematicActions() {
       createSystem,
       branch,
       addCell,
-      moveSystem,
+      moveSystems,
       link,
       renameSystem,
       renameCell,
       duplicateSystem,
-      deleteSystem,
-      deleteCell,
       unlink,
       rename,
       remove,
@@ -326,13 +303,11 @@ export function useSchematicActions() {
       createSystem,
       branch,
       addCell,
-      moveSystem,
+      moveSystems,
       link,
       renameSystem,
       renameCell,
       duplicateSystem,
-      deleteSystem,
-      deleteCell,
       unlink,
       rename,
       remove,

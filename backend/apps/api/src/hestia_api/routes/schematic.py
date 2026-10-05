@@ -11,9 +11,11 @@ from hestia_api.schemas import (
     BranchRequest,
     CellIds,
     CreateSystemRequest,
+    DeleteItemsRequest,
     DuplicateSystemRequest,
     LinkRequest,
     MoveSystemRequest,
+    MoveSystemsRequest,
     RenameRequest,
     WriteRequest,
 )
@@ -70,6 +72,20 @@ def move_system(
     )
 
 
+@router.post("/systems/move", operation_id="move_systems")
+def move_systems(
+    body: MoveSystemsRequest, workspace: WorkspaceDep, author: AuthorDep
+) -> MutationResult:
+    """Move several systems on the canvas in one change (one undo)."""
+    positions = {move.system_id: move.position for move in body.moves}
+    return workspace.apply(
+        Operation.MOVE_SYSTEMS,
+        author,
+        body.justification,
+        lambda p: ops.move_systems(p, positions),
+    )
+
+
 @router.post("/systems/{system_id}/duplicate", operation_id="duplicate_system")
 def duplicate_system(
     system_id: str, body: DuplicateSystemRequest, workspace: WorkspaceDep, author: AuthorDep
@@ -93,6 +109,20 @@ def delete_system(
         author,
         body.justification,
         lambda p: ops.delete_system(p, system_id),
+    )
+
+
+@router.post("/delete", operation_id="delete_items")
+def delete_items(
+    body: DeleteItemsRequest, workspace: WorkspaceDep, author: AuthorDep
+) -> MutationResult:
+    """Delete systems (with their cells) and cells, with their links, in one change (one
+    undo). A system left without cells is deleted too. An agent must justify it."""
+    return workspace.apply(
+        Operation.DELETE_ITEMS,
+        author,
+        body.justification,
+        lambda p: ops.delete_items(p, body.system_ids, body.cell_ids),
     )
 
 

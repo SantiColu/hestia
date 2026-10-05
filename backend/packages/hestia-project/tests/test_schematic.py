@@ -18,12 +18,14 @@ from hestia_project.schematic import (
     context_cells,
     create_system,
     delete_cell,
+    delete_items,
     delete_system,
     duplicate_system,
     invalidate,
     link,
     link_targets,
     move_system,
+    move_systems,
     rename_cell,
     rename_system,
     unlink,
@@ -506,6 +508,17 @@ def test_move_system(phase0: Project) -> None:
     assert phase0.systems[0].position == Position(x=100, y=-50)
 
 
+def test_move_systems_together(phase0: Project) -> None:
+    concept = cells_by_stage(phase0, "F0")[S.TCS_CONCEPT]
+    branch(phase0, concept.id, PHASE_1, name="F1")
+    f0, f1 = phase0.systems
+    outcome = move_systems(phase0, {f0.id: Position(x=0, y=0), f1.id: Position(x=400, y=0)})
+    assert (f0.position, f1.position) == (Position(x=0, y=0), Position(x=400, y=0))
+    assert outcome.summary == "Movió los sistemas «F0» y «F1»."
+    with pytest.raises(InvalidOperationError):
+        move_systems(phase0, {})
+
+
 def test_duplicate_system_keeps_incoming_links(phase0: Project) -> None:
     concept = cells_by_stage(phase0, "F0")[S.TCS_CONCEPT]
     branch(phase0, concept.id, PHASE_1, name="F1")
@@ -565,3 +578,29 @@ def test_delete_system_outdates_other_systems(phase0: Project) -> None:
     assert all(c.status is CellStatus.OUTDATED for c in phase0.cells)
     assert len(outcome.outdated_cell_ids) == 6
     assert all(lk.source_cell_id in {c.id for c in phase0.cells} for lk in phase0.links)
+
+
+def test_delete_items_removes_systems_and_cells_together(phase0: Project) -> None:
+    concept = cells_by_stage(phase0, "F0")[S.TCS_CONCEPT]
+    branch(phase0, concept.id, PHASE_1, name="F1")
+    f0_cells = cells_by_stage(phase0, "F0")
+    f1 = phase0.systems[1]
+    outcome = delete_items(
+        phase0, [f1.id], [f0_cells[S.ENVIRONMENT].id, f1.cell_ids[0], f0_cells[S.ENVIRONMENT].id]
+    )
+    assert [s.name for s in phase0.systems] == ["F0"]
+    assert f0_cells[S.ENVIRONMENT].id not in phase0.systems[0].cell_ids
+    # A cell of a deleted system is not named twice.
+    assert outcome.summary == (
+        f"Eliminó el sistema «F1» y la celda «{f0_cells[S.ENVIRONMENT].name}»."
+    )
+
+
+def test_delete_items_deletes_emptied_systems(project: Project) -> None:
+    create_system(project, Blueprint(stage=S.MISSION), name="A")
+    create_system(project, Blueprint(stage=S.MISSION), name="B")
+    outcome = delete_items(project, [], [c.id for c in project.cells])
+    assert project.systems == []
+    assert "los sistemas vacíos «A» y «B»" in outcome.summary
+    with pytest.raises(InvalidOperationError):
+        delete_items(project, [], [])

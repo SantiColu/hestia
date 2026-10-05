@@ -215,6 +215,21 @@ async def move_system(system_id: str, x: float, y: float, justification: str) ->
     )
 
 
+@_tool("move_systems")
+async def move_systems(moves: list[Json], justification: str) -> Json:
+    """Move several systems in one undoable change. Each move is
+    {"system_id": ..., "x": ..., "y": ...}."""
+    return await call(
+        "move_systems",
+        json={
+            "moves": [
+                {"system_id": m["system_id"], "position": {"x": m["x"], "y": m["y"]}} for m in moves
+            ],
+            "justification": justification,
+        },
+    )
+
+
 @_tool("duplicate_system")
 async def duplicate_system(system_id: str, justification: str) -> Json:
     """Copy a system with its cells, internal links and incoming links."""
@@ -259,6 +274,22 @@ async def delete_cell(cell_id: str, justification: str) -> Json:
     """Delete a cell and its links (an emptied system is deleted too)."""
     return await call(
         "delete_cell", path={"cell_id": cell_id}, json={"justification": justification}
+    )
+
+
+@_tool("delete_items")
+async def delete_items(
+    justification: str, system_ids: list[str] | None = None, cell_ids: list[str] | None = None
+) -> Json:
+    """Delete systems (with their cells) and loose cells, with their links, in one undoable
+    change. A system left without cells is deleted too."""
+    return await call(
+        "delete_items",
+        json={
+            "system_ids": system_ids or [],
+            "cell_ids": cell_ids or [],
+            "justification": justification,
+        },
     )
 
 
@@ -435,7 +466,7 @@ async def copy_to_clipboard(
 ) -> Json:
     """Copy whole systems and/or loose cells as a versioned fragment (changes nothing).
     Keep the returned fragment and pass it to paste_from_clipboard, in this or another project.
-    To cut, copy and then delete_system / delete_cell."""
+    To cut, copy and then delete_items."""
     return await call(
         "copy_to_clipboard", json={"system_ids": system_ids or [], "cell_ids": cell_ids or []}
     )

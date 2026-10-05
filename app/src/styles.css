@@ -160,3 +160,17 @@
     cursor: not-allowed;
   }
 }
+
+/* React Flow draws a box around the systems of a box selection that covers their cells and
+   steals their clicks. Selected systems already show it (accent border) and drag together. */
+.react-flow__nodesselection {
+  display: none;
+}
+
+/* Schematic cursors: the empty canvas keeps the normal arrow (React Flow shows a pointer while
+   box selection is on; with Space held it pans and shows grab). A system is grabbed only by its
+   header; its stage rows show a pointer (`system-node.tsx`). */
+.react-flow .react-flow__pane.selection,
+.react-flow .react-flow__node.draggable {
+  cursor: default;
+}

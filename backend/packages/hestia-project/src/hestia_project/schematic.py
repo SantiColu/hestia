@@ -15,7 +15,7 @@ Rules enforced here (``docs/workflow-fases-0-1.md``):
 """
 
 import uuid
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 
 from pydantic import Field, model_validator
 
@@ -615,10 +615,35 @@ def rename_cell(project: Project, cell_id: str, name: str) -> Outcome:
     return Outcome(summary=f"Renombró la celda «{old}» a «{cell.name}».")
 
 
+def _join(parts: list[str]) -> str:
+    """«A», «B» y «C»."""
+    return parts[0] if len(parts) == 1 else f"{', '.join(parts[:-1])} y {parts[-1]}"
+
+
+def _quoted(names: Iterable[str]) -> str:
+    return _join([f"«{name}»" for name in names])
+
+
+def _systems_phrase(systems: list[System], empty: bool = False) -> str:
+    """«el sistema «A»», «los sistemas vacíos «A» y «B»»."""
+    one, many = (
+        ("el sistema vacío", "los sistemas vacíos") if empty else ("el sistema", "los sistemas")
+    )
+    return f"{one if len(systems) == 1 else many} {_quoted(s.name for s in systems)}"
+
+
 def move_system(project: Project, system_id: str, position: Position) -> Outcome:
-    system = get_system(project, system_id)
-    system.position = position
-    return Outcome(summary=f"Movió el sistema «{system.name}».")
+    return move_systems(project, {system_id: position})
+
+
+def move_systems(project: Project, positions: Mapping[str, Position]) -> Outcome:
+    """Move several systems on the canvas in one operation (a multiple selection)."""
+    systems = [get_system(project, system_id) for system_id in positions]
+    if not systems:
+        raise InvalidOperationError("No hay sistemas para mover.")
+    for system in systems:
+        system.position = positions[system.id]
+    return Outcome(summary=f"Movió {_systems_phrase(systems)}.")
 
 
 def duplicate_system(project: Project, system_id: str, position: Position | None = None) -> Outcome:
@@ -676,19 +701,35 @@ def _remove_cells(project: Project, cell_ids: set[str]) -> list[str]:
 
 
 def delete_system(project: Project, system_id: str) -> Outcome:
-    system = get_system(project, system_id)
-    outdated = _remove_cells(project, set(system.cell_ids))
-    project.systems.remove(system)
-    return Outcome(summary=f"Eliminó el sistema «{system.name}».", outdated_cell_ids=outdated)
+    return delete_items(project, [system_id], [])
 
 
 def delete_cell(project: Project, cell_id: str) -> Outcome:
     """Delete a cell and its links. A system left without cells is deleted too."""
-    cell = get_cell(project, cell_id)
-    system = get_system(project, cell.system_id)
-    outdated = _remove_cells(project, {cell.id})
-    summary = f"Eliminó la celda «{cell.name}»."
-    if not system.cell_ids:
-        project.systems.remove(system)
-        summary = f"Eliminó la celda «{cell.name}» y el sistema vacío «{system.name}»."
-    return Outcome(summary=summary, outdated_cell_ids=outdated)
+    return delete_items(project, [], [cell_id])
+
+
+def delete_items(project: Project, system_ids: Iterable[str], cell_ids: Iterable[str]) -> Outcome:
+    """Delete systems (with their cells) and cells, with their links, in one operation (a
+    multiple selection). A system left without cells is deleted too."""
+    systems = [get_system(project, system_id) for system_id in dict.fromkeys(system_ids)]
+    picked = {system.id for system in systems}
+    cells = [
+        cell
+        for cell in (get_cell(project, cell_id) for cell_id in dict.fromkeys(cell_ids))
+        if cell.system_id not in picked
+    ]
+    if not systems and not cells:
+        raise InvalidOperationError("No hay sistemas ni celdas para eliminar.")
+    removed = {cid for system in systems for cid in system.cell_ids} | {c.id for c in cells}
+    outdated = _remove_cells(project, removed)
+    touched = {cell.system_id for cell in cells}
+    emptied = [s for s in project.systems if s.id in touched and not s.cell_ids]
+    project.systems = [s for s in project.systems if s.id not in picked and s not in emptied]
+    parts = [_systems_phrase(systems)] if systems else []
+    if cells:
+        noun = "la celda" if len(cells) == 1 else "las celdas"
+        parts.append(f"{noun} {_quoted(cell.name for cell in cells)}")
+    if emptied:
+        parts.append(_systems_phrase(emptied, empty=True))
+    return Outcome(summary=f"Eliminó {_join(parts)}.", outdated_cell_ids=outdated)

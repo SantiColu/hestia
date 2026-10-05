@@ -101,6 +101,13 @@ CASES: list[tuple[str, dict[str, Any], str, str, dict[str, Any] | None]] = [
         "/project/systems/s1/move",
         {"position": {"x": 3, "y": 4}, **J},
     ),
+    (
+        "move_systems",
+        {"moves": [{"system_id": "s1", "x": 3, "y": 4}], **J},
+        "POST",
+        "/project/systems/move",
+        {"moves": [{"system_id": "s1", "position": {"x": 3, "y": 4}}], **J},
+    ),
     ("duplicate_system", {"system_id": "s1", **J}, "POST", "/project/systems/s1/duplicate", J),
     ("delete_system", {"system_id": "s1", **J}, "DELETE", "/project/systems/s1", J),
     (
@@ -118,6 +125,13 @@ CASES: list[tuple[str, dict[str, Any], str, str, dict[str, Any] | None]] = [
         {"name": "LEO", **J},
     ),
     ("delete_cell", {"cell_id": "c1", **J}, "DELETE", "/project/cells/c1", J),
+    (
+        "delete_items",
+        {"system_ids": ["s1"], "cell_ids": ["c1"], **J},
+        "POST",
+        "/project/delete",
+        {"system_ids": ["s1"], "cell_ids": ["c1"], **J},
+    ),
     (
         "branch_cell",
         {"cell_id": "c1", "stage": "environment", **J},

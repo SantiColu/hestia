@@ -67,7 +67,7 @@ Abrir/Guardar nativos · Proyecto bloqueado por otra instancia (lock) · Renombr
 
 ## Menú Editar y atajos
 
-Mismo estilo que Archivo (ícono, etiqueta y atajo). Actúa sobre la selección (un sistema o una celda); sin selección, Cortar, Copiar, Duplicar, Renombrar, Deseleccionar y Eliminar quedan deshabilitados. Los menús contextuales de sistema y celda muestran los mismos ítems con su atajo.
+Mismo estilo que Archivo (ícono, etiqueta y atajo). Actúa sobre la selección, que puede tener varios sistemas y celdas: Cortar, Copiar y Eliminar toman toda la selección (un solo cambio en el historial); Duplicar y Renombrar necesitan un solo ítem. Sin selección quedan deshabilitados. Los menús contextuales de sistema y celda muestran los mismos ítems con su atajo; con clic derecho sobre un ítem de la selección, actúan sobre toda la selección.
 
 | Ítem | Atajo | Comportamiento |
 | --- | --- | --- |
@@ -79,7 +79,7 @@ Mismo estilo que Archivo (ícono, etiqueta y atajo). Actúa sobre la selección 
 | Duplicar | Ctrl+D | Sistema: `duplicate_system` (conserva vínculos entrantes). Celda: copia y pega en su sistema. |
 | Renombrar | F2 | Diálogo de renombrar del sistema o la celda. |
 | Deseleccionar | Esc | Limpia la selección. |
-| Eliminar | Supr | Elimina directo; se revierte con Deshacer. |
+| Eliminar | Supr | Elimina directo toda la selección (`delete_items`); se revierte con Deshacer. |
 
 Los atajos de edición no se interceptan en campos de texto, diálogos ni menús abiertos (cortar, copiar, pegar y deshacer de texto siguen siendo nativos), ni Ctrl+C / Ctrl+X cuando hay texto seleccionado en la página. Lo pegado queda seleccionado.
 
@@ -111,7 +111,7 @@ Implementado:
 - **Borradores sin aplicar:** al cerrar el proyecto, abrir o crear otro, o cerrar la ventana de escritorio, se pregunta antes de descartarlos.
 - **Mensajes:** los vínculos descartados al migrar un archivo viejo aparecen como avisos.
 - **Toolbox:** fases y etapas por nombre (incluye Equipos en Fase 0). Arrastrar al lienzo crea el sistema (plantilla o celda suelta) donde se suelta; soltar sobre una celda ramifica. Durante el arrastre solo se resaltan las celdas que la API (`branch-targets`) da como válidas.
-- **Esquemático (React Flow):** sistemas con sus celdas, estado de cada celda como ícono y vínculos ortogonales entre sistemas (los vínculos dentro de un sistema no se dibujan: el bloque ya los expresa); control de zoom abajo a la izquierda; selección de sistema o celda; mover sistemas; vincular arrastrando de la salida (derecha) a la entrada (izquierda) de otra celda, con destinos válidos según la API (`link-targets`). Menú contextual de sistema (renombrar, agregar etapa, actualizar deshabilitado, cortar, copiar, pegar, duplicar, eliminar) y de celda (renombrar, actualizar en etapas de cálculo, ramificar con opciones de la API, desvincular, cortar, copiar, pegar, duplicar, eliminar).
+- **Esquemático (React Flow):** sistemas con sus celdas, estado de cada celda como ícono y vínculos ortogonales entre sistemas (los vínculos dentro de un sistema no se dibujan: el bloque ya los expresa); control de zoom abajo a la izquierda; selección múltiple: clic selecciona uno, Ctrl/Shift + clic suma o quita, arrastrar sobre el lienzo vacío dibuja un recuadro que selecciona los sistemas que toca; el lienzo se desplaza con el botón del medio o Espacio + arrastrar; mover sistemas (los seleccionados se mueven juntos, un solo cambio con `move_systems`); vincular arrastrando de la salida (derecha) a la entrada (izquierda) de otra celda, con destinos válidos según la API (`link-targets`). Menú contextual de sistema (renombrar, agregar etapa, actualizar deshabilitado, cortar, copiar, pegar, duplicar, eliminar) y de celda (renombrar, actualizar en etapas de cálculo, ramificar con opciones de la API, desvincular, cortar, copiar, pegar, duplicar, eliminar).
 - **Justificación:** la UI no la pide en ninguna escritura (ADR 0024); el historial la muestra cuando un agente la dio.
 - **Errores de render:** la ruta raíz tiene `errorComponent`: un error muestra un mensaje con «Recargar» en lugar de dejar la ventana en blanco.
 - **Diálogos:** cambios sin guardar (al crear, abrir, cerrar proyecto o cerrar la ventana de escritorio), proyecto bloqueado por otra instancia (cancelar o abrir de todos modos), renombrar, borrador sin aplicar.

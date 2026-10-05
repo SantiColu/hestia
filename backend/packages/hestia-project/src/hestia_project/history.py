@@ -31,9 +31,11 @@ class Operation(StrEnum):
     RENAME_SYSTEM = "rename_system"
     RENAME_CELL = "rename_cell"
     MOVE_SYSTEM = "move_system"
+    MOVE_SYSTEMS = "move_systems"
     DUPLICATE_SYSTEM = "duplicate_system"
     DELETE_SYSTEM = "delete_system"
     DELETE_CELL = "delete_cell"
+    DELETE_ITEMS = "delete_items"
     PASTE = "paste"
     APPLY_ARTIFACT = "apply_artifact"
     UPDATE_CELL = "update_cell"
@@ -42,7 +44,13 @@ class Operation(StrEnum):
 
 
 JUSTIFICATION_REQUIRED: frozenset[Operation] = frozenset(
-    {Operation.DELETE_SYSTEM, Operation.DELETE_CELL, Operation.UNLINK, Operation.APPLY_ARTIFACT}
+    {
+        Operation.DELETE_SYSTEM,
+        Operation.DELETE_CELL,
+        Operation.DELETE_ITEMS,
+        Operation.UNLINK,
+        Operation.APPLY_ARTIFACT,
+    }
 )
 """Destructive operations and applying an artifact: an agent's empty justification is rejected
 (ADR 0024). Elsewhere, and always for humans, it may be empty."""
@@ -56,9 +64,11 @@ OPERATION_LABELS: dict[Operation, str] = {
     Operation.RENAME_SYSTEM: "renombrar sistema",
     Operation.RENAME_CELL: "renombrar celda",
     Operation.MOVE_SYSTEM: "mover sistema",
+    Operation.MOVE_SYSTEMS: "mover sistemas",
     Operation.DUPLICATE_SYSTEM: "duplicar sistema",
     Operation.DELETE_SYSTEM: "eliminar sistema",
     Operation.DELETE_CELL: "eliminar celda",
+    Operation.DELETE_ITEMS: "eliminar",
     Operation.PASTE: "pegar",
     Operation.APPLY_ARTIFACT: "aplicar cambios",
     Operation.UPDATE_CELL: "actualizar",

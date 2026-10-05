@@ -427,6 +427,27 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/project/delete": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Delete Items
+     * @description Delete systems (with their cells) and cells, with their links, in one change (one
+     *     undo). A system left without cells is deleted too. An agent must justify it.
+     */
+    post: operations["delete_items"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/project/history": {
     parameters: {
       query?: never;
@@ -602,6 +623,26 @@ export interface paths {
      * @description Create a system from a phase template (cells already linked) or with one cell.
      */
     post: operations["create_system"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/project/systems/move": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Move Systems
+     * @description Move several systems on the canvas in one change (one undo).
+     */
+    post: operations["move_systems"];
     delete?: never;
     options?: never;
     head?: never;
@@ -1162,6 +1203,22 @@ export interface components {
       name?: string | null;
     };
     /**
+     * DeleteItemsRequest
+     * @description Systems (with their cells) and loose cells to delete together.
+     */
+    DeleteItemsRequest: {
+      /** Cell Ids */
+      cell_ids?: string[];
+      /**
+       * Justification
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
+       */
+      justification?: string;
+      /** System Ids */
+      system_ids?: string[];
+    };
+    /**
      * DesignValue
      * @description A design value as used, with where it comes from.
      */
@@ -1664,6 +1721,17 @@ export interface components {
       justification?: string;
       position: components["schemas"]["Position"];
     };
+    /** MoveSystemsRequest */
+    MoveSystemsRequest: {
+      /**
+       * Justification
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
+       */
+      justification?: string;
+      /** Moves */
+      moves: components["schemas"]["SystemMove"][];
+    };
     /** MutationResult */
     MutationResult: {
       change: components["schemas"]["Change"];
@@ -1712,9 +1780,11 @@ export interface components {
       | "rename_system"
       | "rename_cell"
       | "move_system"
+      | "move_systems"
       | "duplicate_system"
       | "delete_system"
       | "delete_cell"
+      | "delete_items"
       | "paste"
       | "apply_artifact"
       | "update_cell"
@@ -2187,6 +2257,12 @@ export interface components {
       /** Name */
       name: string;
       position: components["schemas"]["Position"];
+    };
+    /** SystemMove */
+    SystemMove: {
+      position: components["schemas"]["Position"];
+      /** System Id */
+      system_id: string;
     };
     /**
      * Target
@@ -3437,6 +3513,71 @@ export interface operations {
       };
     };
   };
+  delete_items: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Author name. Defaults to the OS user running the API. */
+        "x-hestia-actor"?: string | null;
+        /** @description `human` (UI) or `agent` (MCP and other agents). */
+        "x-hestia-actor-kind"?: components["schemas"]["ActorKind"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DeleteItemsRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MutationResult"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Locked */
+      423: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
   get_history: {
     parameters: {
       query?: never;
@@ -3941,6 +4082,71 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": components["schemas"]["CreateSystemRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MutationResult"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+      /** @description Locked */
+      423: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ApiError"];
+        };
+      };
+    };
+  };
+  move_systems: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Author name. Defaults to the OS user running the API. */
+        "x-hestia-actor"?: string | null;
+        /** @description `human` (UI) or `agent` (MCP and other agents). */
+        "x-hestia-actor-kind"?: components["schemas"]["ActorKind"];
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MoveSystemsRequest"];
       };
     };
     responses: {

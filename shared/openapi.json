@@ -1117,6 +1117,33 @@
         "title": "CustomCondition",
         "type": "object"
       },
+      "DeleteItemsRequest": {
+        "description": "Systems (with their cells) and loose cells to delete together.",
+        "properties": {
+          "cell_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cell Ids",
+            "type": "array"
+          },
+          "justification": {
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
+            "title": "Justification",
+            "type": "string"
+          },
+          "system_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "System Ids",
+            "type": "array"
+          }
+        },
+        "title": "DeleteItemsRequest",
+        "type": "object"
+      },
       "DesignValue": {
         "description": "A design value as used, with where it comes from.",
         "properties": {
@@ -2396,6 +2423,29 @@
         "title": "MoveSystemRequest",
         "type": "object"
       },
+      "MoveSystemsRequest": {
+        "properties": {
+          "justification": {
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
+            "title": "Justification",
+            "type": "string"
+          },
+          "moves": {
+            "items": {
+              "$ref": "#/components/schemas/SystemMove"
+            },
+            "minItems": 1,
+            "title": "Moves",
+            "type": "array"
+          }
+        },
+        "required": [
+          "moves"
+        ],
+        "title": "MoveSystemsRequest",
+        "type": "object"
+      },
       "MutationResult": {
         "properties": {
           "change": {
@@ -2470,9 +2520,11 @@
           "rename_system",
           "rename_cell",
           "move_system",
+          "move_systems",
           "duplicate_system",
           "delete_system",
           "delete_cell",
+          "delete_items",
           "paste",
           "apply_artifact",
           "update_cell",
@@ -3708,6 +3760,23 @@
           "cell_ids"
         ],
         "title": "System",
+        "type": "object"
+      },
+      "SystemMove": {
+        "properties": {
+          "position": {
+            "$ref": "#/components/schemas/Position"
+          },
+          "system_id": {
+            "title": "System Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "system_id",
+          "position"
+        ],
+        "title": "SystemMove",
         "type": "object"
       },
       "Target": {
@@ -5554,6 +5623,109 @@
         ]
       }
     },
+    "/project/delete": {
+      "post": {
+        "description": "Delete systems (with their cells) and cells, with their links, in one change (one\nundo). A system left without cells is deleted too. An agent must justify it.",
+        "operationId": "delete_items",
+        "parameters": [
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteItemsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Delete Items",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
     "/project/history": {
       "get": {
         "description": "Every change of the project, oldest first, with author and justification.",
@@ -6314,6 +6486,109 @@
           }
         },
         "summary": "Create System",
+        "tags": [
+          "schematic"
+        ]
+      }
+    },
+    "/project/systems/move": {
+      "post": {
+        "description": "Move several systems on the canvas in one change (one undo).",
+        "operationId": "move_systems",
+        "parameters": [
+          {
+            "description": "Author name. Defaults to the OS user running the API.",
+            "in": "header",
+            "name": "x-hestia-actor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Author name. Defaults to the OS user running the API.",
+              "title": "X-Hestia-Actor"
+            }
+          },
+          {
+            "description": "`human` (UI) or `agent` (MCP and other agents).",
+            "in": "header",
+            "name": "x-hestia-actor-kind",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ActorKind",
+              "default": "human",
+              "description": "`human` (UI) or `agent` (MCP and other agents)."
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveSystemsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            },
+            "description": "Locked"
+          }
+        },
+        "summary": "Move Systems",
         "tags": [
           "schematic"
         ]

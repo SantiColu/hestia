@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useEditor } from "@/project/editor";
 import { CellMenu, SystemMenu } from "./menus";
 import { useWorkspaceUi } from "./context";
+import { includesTarget, type Target } from "./target";
 import type { SchematicActions } from "./actions";
 
 export type SystemNodeData = {
@@ -43,9 +44,13 @@ function openMenuFrom(event: MouseEvent<HTMLButtonElement>) {
 /** A system block: header (drag handle, name, rename, menu) and one row per cell. */
 export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNodeType>) {
   const { system, cells, links, missing, actions } = data;
-  const { selection, select, validTargets } = useWorkspaceUi();
+  const { selection, select, toggleSelected, validTargets } = useWorkspaceUi();
   const editor = useEditor();
-  const systemSelected = selection?.kind === "system" && selection.id === system.id;
+  const systemTarget: Target = { kind: "system", id: system.id };
+  const systemSelected = includesTarget(selection, systemTarget);
+  /** Ctrl or Shift + click adds to the selection or takes out; a plain click selects only. */
+  const onSelect = (event: MouseEvent, target: Target) =>
+    event.ctrlKey || event.metaKey || event.shiftKey ? toggleSelected(target) : select(target);
 
   return (
     <div
@@ -57,7 +62,7 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
       <SystemMenu system={system} actions={actions}>
         <div
           className="system-drag flex h-8 cursor-grab items-center gap-1 border-b border-border-strong bg-surface-2 pr-1 pl-2.5"
-          onClick={() => select({ kind: "system", id: system.id })}
+          onClick={(event) => onSelect(event, systemTarget)}
           onDoubleClick={() => void actions.renameSystem(system.id)}
         >
           <span className="flex-1 truncate text-ui font-semibold">{system.name}</span>
@@ -85,7 +90,8 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
         </div>
       </SystemMenu>
       {cells.map((cell) => {
-        const selected = selection?.kind === "cell" && selection.id === cell.id;
+        const cellTarget: Target = { kind: "cell", id: cell.id };
+        const selected = includesTarget(selection, cellTarget);
         const target = validTargets?.has(cell.id) ?? false;
         const cellMissing = missing[cell.id];
         return (
@@ -93,12 +99,12 @@ export const SystemNode = memo(function SystemNode({ data }: NodeProps<SystemNod
             <div
               data-cell-id={cell.id}
               className={cn(
-                "group/cell relative flex h-7.5 items-center gap-2 border-b border-border px-2.5 last:border-b-0",
+                "group/cell relative flex h-7.5 cursor-pointer items-center gap-2 border-b border-border px-2.5 last:border-b-0",
                 selected && "bg-primary-soft outline-1 -outline-offset-1 outline-primary",
                 validTargets && !target && "opacity-40",
                 target && "outline-1 -outline-offset-1 outline-primary",
               )}
-              onClick={() => select({ kind: "cell", id: cell.id })}
+              onClick={(event) => onSelect(event, cellTarget)}
               onDoubleClick={() => editor.open(cell.id)}
             >
               <Handle

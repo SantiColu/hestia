@@ -1,14 +1,16 @@
-import { useCallback, useMemo, useState, type CSSProperties, type DragEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
 import {
   MarkerType,
   Panel,
   ReactFlow,
   ReactFlowProvider,
+  SelectionMode,
   applyNodeChanges,
   useReactFlow,
   useViewport,
   type Connection,
   type Edge,
+  type Node,
   type NodeChange,
   type OnConnectStart,
 } from "@xyflow/react";
@@ -19,9 +21,18 @@ import type { Project, StageType } from "@/api/client";
 import { useProject } from "@/project/store";
 import { useSchematicActions } from "./actions";
 import { useWorkspaceUi } from "./context";
+import type { Target } from "./target";
 import { SystemNode, type SystemNodeType } from "./system-node";
 
 const nodeTypes = { system: SystemNode };
+
+/** Left drag on the empty canvas draws a selection box; the middle button (or Space + drag)
+ * pans. */
+const PAN_BUTTONS = [1];
+
+function movesOf(nodes: Node[]) {
+  return nodes.map((node) => ({ system_id: node.id, position: node.position }));
+}
 
 const zoomButton =
   "flex h-6 items-center justify-center rounded-lg px-1.5 text-muted-foreground hover:bg-surface-2 hover:text-foreground";
@@ -81,8 +92,16 @@ function SchematicCanvas({
 }) {
   const actions = useSchematicActions();
   const { notify } = useProject();
-  const { selection, select, dragItem, validTargets, startConnect, endDrag, pointerRef } =
-    useWorkspaceUi();
+  const {
+    selection,
+    select,
+    selectMany,
+    dragItem,
+    validTargets,
+    startConnect,
+    endDrag,
+    pointerRef,
+  } = useWorkspaceUi();
   const { screenToFlowPosition } = useReactFlow();
 
   const built = useMemo<SystemNodeType[]>(() => {
@@ -110,6 +129,14 @@ function SchematicCanvas({
     setNodes(built);
   }
 
+  // React Flow draws the selection of systems (and drags them together); the workspace
+  // selection is the source of truth.
+  const selectedIds = useMemo(() => new Set(selection.map((t) => t.id)), [selection]);
+  const shownNodes = useMemo(
+    () => nodes.map((node) => ({ ...node, selected: selectedIds.has(node.id) })),
+    [nodes, selectedIds],
+  );
+
   const systemOf = useMemo(
     () => new Map(project.cells.map((cell) => [cell.id, cell.system_id])),
     [project.cells],
@@ -122,12 +149,10 @@ function SchematicCanvas({
       project.links
         .filter((link) => systemOf.get(link.source_cell_id) !== systemOf.get(link.target_cell_id))
         .map((link) => {
-          const highlighted =
-            selection?.kind === "cell"
-              ? selection.id === link.source_cell_id || selection.id === link.target_cell_id
-              : selection?.kind === "system" &&
-                (systemOf.get(link.source_cell_id) === selection.id ||
-                  systemOf.get(link.target_cell_id) === selection.id);
+          const ends = [link.source_cell_id, link.target_cell_id];
+          const highlighted = ends.some(
+            (cellId) => selectedIds.has(cellId) || selectedIds.has(systemOf.get(cellId) ?? ""),
+          );
           const color = highlighted ? "var(--primary)" : "var(--subtle-foreground)";
           return {
             id: link.id,
@@ -143,13 +168,30 @@ function SchematicCanvas({
             markerEnd: { type: MarkerType.ArrowClosed, color, width: 28, height: 20 },
           };
         }),
-    [project.links, selection, systemOf],
+    [project.links, selectedIds, systemOf],
   );
 
+  // While a selection box is drawn, React Flow reports which systems it covers.
+  const boxed = useRef<Set<string> | null>(null);
   const onNodesChange = useCallback(
-    (changes: NodeChange<SystemNodeType>[]) =>
-      setNodes((current) => applyNodeChanges(changes, current)),
-    [],
+    (changes: NodeChange<SystemNodeType>[]) => {
+      const box = boxed.current;
+      const selects = changes.filter((change) => change.type === "select");
+      if (box && selects.length > 0) {
+        for (const change of selects) {
+          if (change.selected) box.add(change.id);
+          else box.delete(change.id);
+        }
+        selectMany([...box].map((id): Target => ({ kind: "system", id })));
+      }
+      setNodes((current) =>
+        applyNodeChanges(
+          changes.filter((change) => change.type !== "select"),
+          current,
+        ),
+      );
+    },
+    [selectMany],
   );
 
   const onConnectStart: OnConnectStart = useCallback(
@@ -212,7 +254,7 @@ function SchematicCanvas({
       }}
     >
       <ReactFlow<SystemNodeType>
-        nodes={nodes}
+        nodes={shownNodes}
         edges={edges}
         nodeTypes={nodeTypes}
         colorMode="dark"
@@ -222,7 +264,18 @@ function SchematicCanvas({
         fitViewOptions={{ maxZoom: 1 }}
         proOptions={{ hideAttribution: true }}
         onNodesChange={onNodesChange}
-        onNodeDragStop={(_, node) => void actions.moveSystem(node.id, node.position)}
+        onNodeDragStop={(_, __, dragged) => void actions.moveSystems(movesOf(dragged))}
+        onSelectionDragStop={(_, dragged) => void actions.moveSystems(movesOf(dragged))}
+        selectionOnDrag
+        selectionMode={SelectionMode.Partial}
+        panOnDrag={PAN_BUTTONS}
+        onSelectionStart={() => {
+          boxed.current = new Set();
+          select(null);
+        }}
+        onSelectionEnd={() => {
+          boxed.current = null;
+        }}
         onConnectStart={onConnectStart}
         onConnectEnd={endDrag}
         isValidConnection={isValidConnection}

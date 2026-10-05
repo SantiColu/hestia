@@ -79,6 +79,22 @@ class MoveSystemRequest(WriteRequest):
     position: Position
 
 
+class SystemMove(BaseModel):
+    system_id: str
+    position: Position
+
+
+class MoveSystemsRequest(WriteRequest):
+    moves: list[SystemMove] = Field(min_length=1)
+
+
+class DeleteItemsRequest(WriteRequest):
+    """Systems (with their cells) and loose cells to delete together."""
+
+    system_ids: list[str] = Field(default_factory=list[str])
+    cell_ids: list[str] = Field(default_factory=list[str])
+
+
 class DuplicateSystemRequest(WriteRequest):
     position: Position | None = None
 

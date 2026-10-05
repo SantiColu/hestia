@@ -144,10 +144,10 @@ export function TopBar({ view }: { view: ProjectView }) {
               <DropdownMenuShortcut>Ctrl+Shift+Z</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled={!edit.target} onClick={edit.cut}>
+            <DropdownMenuItem disabled={edit.targets.length === 0} onClick={edit.cut}>
               <Scissors /> Cortar <DropdownMenuShortcut>Ctrl+X</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem disabled={!edit.target} onClick={edit.copy}>
+            <DropdownMenuItem disabled={edit.targets.length === 0} onClick={edit.copy}>
               <Copy /> Copiar <DropdownMenuShortcut>Ctrl+C</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuItem disabled={!edit.canPaste} onClick={() => edit.paste(false)}>
@@ -160,12 +160,16 @@ export function TopBar({ view }: { view: ProjectView }) {
             <DropdownMenuItem disabled={!edit.target} onClick={edit.rename}>
               <Pencil /> Renombrar <DropdownMenuShortcut>F2</DropdownMenuShortcut>
             </DropdownMenuItem>
-            <DropdownMenuItem disabled={!edit.target} onClick={edit.clearSelection}>
+            <DropdownMenuItem disabled={edit.targets.length === 0} onClick={edit.clearSelection}>
               <SquareDashedMousePointer /> Deseleccionar{" "}
               <DropdownMenuShortcut>Esc</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem variant="destructive" disabled={!edit.target} onClick={edit.remove}>
+            <DropdownMenuItem
+              variant="destructive"
+              disabled={edit.targets.length === 0}
+              onClick={edit.remove}
+            >
               <Trash2 /> Eliminar <DropdownMenuShortcut>Supr</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuContent>
