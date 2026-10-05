@@ -16,13 +16,13 @@ from hestia_project.model import Position
 from hestia_project.schematic import Blueprint
 
 JUSTIFICATION_DOC = (
-    "Why the change is made. Stored in the history with the author. "
-    "Required (non-empty) for deletions and unlinking."
+    "Why the change is made. Stored in the history with the author. Agents must give one "
+    "(non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024)."
 )
 
 
 class WriteRequest(BaseModel):
-    justification: str = Field(description=JUSTIFICATION_DOC)
+    justification: str = Field(default="", description=JUSTIFICATION_DOC)
 
 
 class Session(Schema):
@@ -125,7 +125,7 @@ class ArtifactDraft(BaseModel):
 
 
 class ApplyArtifactRequest(WriteRequest):
-    """Replace the cell's artifact with the draft. The justification is required."""
+    """Replace the cell's artifact with the draft. An agent must justify it."""
 
     artifact: Artifact
 

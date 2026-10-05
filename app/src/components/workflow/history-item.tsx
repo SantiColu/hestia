@@ -15,7 +15,8 @@ type HistoryItemProps = {
   author: string;
   action: string;
   time: string;
-  justification: string;
+  /** Empty when none was given (people are not asked, ADR 0024). */
+  justification?: string;
   changes?: FieldChange[];
   className?: string;
 };
@@ -45,7 +46,9 @@ export function HistoryItem({
             <span>{change.to}</span>
           </p>
         ))}
-        <p className="text-xs leading-relaxed text-muted-foreground">{justification}</p>
+        {justification && (
+          <p className="text-xs leading-relaxed text-muted-foreground">{justification}</p>
+        )}
       </div>
     </article>
   );

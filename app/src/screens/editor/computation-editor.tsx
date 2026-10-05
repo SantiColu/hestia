@@ -73,7 +73,7 @@ export function ComputationEditor({
       const answer = await unwrap(
         api.POST("/project/cells/{cell_id}/update", {
           params: { path: { cell_id: cellId } },
-          body: { justification: "" },
+          body: {},
         }),
       );
       setView(answer.view);

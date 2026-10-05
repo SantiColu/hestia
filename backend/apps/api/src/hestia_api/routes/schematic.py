@@ -87,7 +87,7 @@ def duplicate_system(
 def delete_system(
     system_id: str, body: WriteRequest, workspace: WorkspaceDep, author: AuthorDep
 ) -> MutationResult:
-    """Delete a system, its cells and their links. Requires a justification."""
+    """Delete a system, its cells and their links. An agent must justify it."""
     return workspace.apply(
         Operation.DELETE_SYSTEM,
         author,
@@ -126,7 +126,7 @@ def rename_cell(
 def delete_cell(
     cell_id: str, body: WriteRequest, workspace: WorkspaceDep, author: AuthorDep
 ) -> MutationResult:
-    """Delete a cell and its links (an emptied system is deleted). Requires a justification."""
+    """Delete a cell and its links (an emptied system is deleted). An agent must justify it."""
     return workspace.apply(
         Operation.DELETE_CELL,
         author,

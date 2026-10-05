@@ -138,11 +138,11 @@ export function useEditActions() {
   const { view, mutate } = useProject();
   const undo = useCallback(() => {
     if (!view?.document.can_undo) return;
-    void mutate(() => unwrap(api.POST("/project/undo", { body: { justification: "" } })));
+    void mutate(() => unwrap(api.POST("/project/undo", { body: {} })));
   }, [view, mutate]);
   const redo = useCallback(() => {
     if (!view?.document.can_redo) return;
-    void mutate(() => unwrap(api.POST("/project/redo", { body: { justification: "" } })));
+    void mutate(() => unwrap(api.POST("/project/redo", { body: {} })));
   }, [view, mutate]);
   return useMemo(() => ({ undo, redo }), [undo, redo]);
 }

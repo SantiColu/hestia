@@ -6,7 +6,7 @@ Estructura de pantallas de la app de escritorio. Modelo de dominio: [ADR 0009](a
 
 - Basado en el **Project Schematic de Ansys Workbench**: el esquemático de sistemas y celdas es la pantalla principal.
 - Todo es editable siempre (sin gates). Un cambio desactualiza lo dependiente y la UI lo muestra al instante.
-- Humanos y agentes se ven igual en autoría e historial. Toda escritura pide justificación (`ConfirmChangeDialog`).
+- Humanos y agentes se ven igual en autoría e historial. A las personas nunca se les pide justificación (ADR 0024): las escrituras se ejecutan directo y se revierten con Deshacer.
 - Denso y técnico: valores en mono con unidad, color solo con significado (estado, selección, hot/cold).
 
 ## Pantallas
@@ -51,11 +51,11 @@ Pestañas tipo IDE bajo la barra superior (frames «Workspace · pestañas» y �
 - Si la celda se elimina (deshacer, un agente), su pestaña se cierra con un aviso en Mensajes. Las pestañas abiertas son estado de la UI (se recuerdan por proyecto en local, no van al `.hestia`).
 - Ctrl+W cierra la pestaña; Cerrar proyecto pasa a Ctrl+Shift+W.
 
-**Edición: borrador + Aplicar.** Lo editado en la pestaña es un borrador: el backend lo valida en seco mientras se escribe (errores por campo; la UI no decide) y los campos cambiados muestran el valor aplicado. **Aplicar…** abre el diálogo con el diff, las celdas que se desactualizan y la justificación; entra como un solo cambio en el historial (un deshacer, una desactualización). Se puede aplicar con errores: en una etapa formulario la celda queda Fallida hasta corregirlos. Los agentes hacen lo mismo con una tool MCP (sección o artefacto + justificación). Dos niveles de «sin guardar»: el punto de la pestaña (borrador sin aplicar) y el de la barra superior (proyecto sin guardar en el archivo).
+**Edición: borrador + Aplicar.** Lo editado en la pestaña es un borrador: el backend lo valida en seco mientras se escribe (errores por campo; la UI no decide) y los campos cambiados muestran el valor aplicado. **Aplicar** aplica el borrador sin diálogo; entra como un solo cambio en el historial (un deshacer, una desactualización). Se puede aplicar con errores: en una etapa formulario la celda queda Fallida hasta corregirlos. Los agentes hacen lo mismo con una tool MCP (artefacto + justificación obligatoria). Dos niveles de «sin guardar»: el punto de la pestaña (borrador sin aplicar) y el de la barra superior (proyecto sin guardar en el archivo).
 
 ### Diálogos
 
-Confirmar cambio (diff + justificación) · Abrir/Guardar nativos · Proyecto bloqueado por otra instancia (lock) · Eliminar sistema/celda.
+Abrir/Guardar nativos · Proyecto bloqueado por otra instancia (lock) · Renombrar · Borrador sin aplicar.
 
 ## Interacciones
 
@@ -73,13 +73,13 @@ Mismo estilo que Archivo (ícono, etiqueta y atajo). Actúa sobre la selección 
 | --- | --- | --- |
 | Deshacer «operación» | Ctrl+Z | La etiqueta nombra lo que revierte (`undo_label`, p. ej. «Deshacer renombrar sistema»); el resumen completo va en el tooltip. |
 | Rehacer «operación» | Ctrl+Shift+Z / Ctrl+Y | Ídem con `redo_label`. |
-| Cortar | Ctrl+X | Pide la justificación (obligatoria), copia y elimina. Cancelar no copia ni elimina. |
+| Cortar | Ctrl+X | Copia y elimina; si no pudo copiar, no elimina. |
 | Copiar | Ctrl+C | Pide el fragmento a la API y lo deja en el portapapeles del sistema. No cambia el proyecto. |
 | Pegar | Ctrl+V | Con el teclado pega donde está el cursor si está sobre el lienzo; desde el menú, desplazado respecto del original. Las celdas sueltas van al sistema seleccionado (o al de la celda seleccionada, o al del menú contextual). Deshabilitado si el portapapeles no tiene un fragmento; con el teclado, avisa en Mensajes. |
 | Duplicar | Ctrl+D | Sistema: `duplicate_system` (conserva vínculos entrantes). Celda: copia y pega en su sistema. |
 | Renombrar | F2 | Diálogo de renombrar del sistema o la celda. |
 | Deseleccionar | Esc | Limpia la selección. |
-| Eliminar | Supr | Con justificación obligatoria (`ConfirmChangeDialog`). |
+| Eliminar | Supr | Elimina directo; se revierte con Deshacer. |
 
 Los atajos de edición no se interceptan en campos de texto, diálogos ni menús abiertos (cortar, copiar, pegar y deshacer de texto siguen siendo nativos), ni Ctrl+C / Ctrl+X cuando hay texto seleccionado en la página. Lo pegado queda seleccionado.
 
@@ -90,7 +90,7 @@ Detalle en [ADR 0014](adr/0014-portapapeles-de-esquematico.md). El fragmento es 
 ## Decisiones cerradas
 
 - **Actividad de agentes / Stefan:** el dock derecho es solo el chat del Agente (2026-09-29; reemplaza las pestañas Propiedades/Agentes del 2026-09-28).
-- **Editor de celda:** pestañas tipo IDE con Workflow fijo; edición por borrador + Aplicar con justificación; dock derecho solo Agente (2026-09-29; reemplaza «pantalla completa con breadcrumb» y la pestaña Propiedades del 2026-09-28).
+- **Editor de celda:** pestañas tipo IDE con Workflow fijo; edición por borrador + Aplicar (sin justificación desde 2026-10-05, ADR 0024); dock derecho solo Agente (2026-09-29; reemplaza «pantalla completa con breadcrumb» y la pestaña Propiedades del 2026-09-28).
 
 ## Estado de la implementación (2026-09-29)
 
@@ -101,7 +101,7 @@ Implementado:
 - **Inicio:** logotipo, Nuevo y Abrir, y recientes (archivo, carpeta, última apertura; los que ya no existen se marcan como «archivo no encontrado»; quitar de recientes aparece al pasar el mouse). Sin recientes: la marca como plano de construcción. Pie con el estado de la API y la versión.
 - **Barra superior:** menú Archivo (Nuevo Ctrl+N, Abrir Ctrl+O, Recientes, Guardar Ctrl+S, Guardar como Ctrl+Shift+S, Cerrar proyecto Ctrl+Shift+W) y Editar (ver [Menú Editar y atajos](#menú-editar-y-atajos)); Ver, Proyecto y Ayuda deshabilitados; nombre del archivo, ● de cambios sin guardar y botón guardar solo con cambios; herramientas futuras y Actualizar todo visibles y deshabilitados.
 - **Pestañas** (`DocTab`, `DocTab/Active`): Workflow fija; doble clic en una celda abre su pestaña (o la trae al frente) con ícono de estado, nombre de la celda, sistema y punto de acento si hay borrador sin aplicar; Ctrl+W o la ✕ la cierran (con borrador, pregunta). Se recuerdan por proyecto en `localStorage`. Si la celda desaparece, la pestaña se cierra con un aviso en Mensajes. Los atajos de edición del esquemático solo actúan en Workflow.
-- **Editor de Misión** (frames «Workspace · Misión (…)»): columna centrada de 760 px con encabezado (celda, sistema y estado; «Borrador con errores» si el borrador tiene problemas) y secciones con `SectionLabel`. El formulario sale del JSON Schema del artefacto (`get_artifact_schema`, extensiones `x-` del ADR 0019): los campos consecutivos se reparten en filas de hasta 4 columnas parejas (6 → 3 + 3); los selectores y el texto libre ocupan su propia fila. Unidades de presentación (km, °, años), fecha como `aaaa-mm-dd` y hora local con `hh:mm`; caras de radiador como etiquetas en la caja y un menú para elegirlas. El borrador vive en la UI y se valida en seco con *debounce* (300 ms). Un campo cambiado lleva punto y borde de acento y debajo el valor aplicado (`Field/Number/Modified`); uno con error, borde y mensaje en rojo (`Field/Number/Error`); los defaults de biblioteca sin tocar muestran su fuente («default · ECSS-E-ST-31C»). Los errores se resumen arriba por sección («General: vida útil. Envolvente: masa.»). Con borrador (o nunca aplicado) aparece la barra inferior: punto, «N cambios sin aplicar · secciones» (o «· N errores»), Descartar y Aplicar…. Aplicar abre ConfirmChangeDialog con las celdas que desactualiza (`outdates` de la API), el diff por ruta («envelope.mass 350 → 380 kg») y la justificación.
+- **Editor de Misión** (frames «Workspace · Misión (…)»): columna centrada de 760 px con encabezado (celda, sistema y estado; «Borrador con errores» si el borrador tiene problemas) y secciones con `SectionLabel`. El formulario sale del JSON Schema del artefacto (`get_artifact_schema`, extensiones `x-` del ADR 0019): los campos consecutivos se reparten en filas de hasta 4 columnas parejas (6 → 3 + 3); los selectores y el texto libre ocupan su propia fila. Unidades de presentación (km, °, años), fecha como `aaaa-mm-dd` y hora local con `hh:mm`; caras de radiador como etiquetas en la caja y un menú para elegirlas. El borrador vive en la UI y se valida en seco con *debounce* (300 ms). Un campo cambiado lleva punto y borde de acento y debajo el valor aplicado (`Field/Number/Modified`); uno con error, borde y mensaje en rojo (`Field/Number/Error`); los defaults de biblioteca sin tocar muestran su fuente («default · ECSS-E-ST-31C»). Los errores se resumen arriba por sección («General: vida útil. Envolvente: masa.»). Con borrador (o nunca aplicado) aparece la barra inferior: punto, «N cambios sin aplicar · secciones» (o «· N errores»), Descartar y Aplicar, que aplica directo.
 - **Etapa de cálculo (Entorno)** (frames «Workspace · Entorno (…)»): encabezado a todo el ancho con celda, sistema, lo que lee de su contexto («usa Misión · Fase 0 · base»), estado y Actualizar (secundario); debajo, pestañas subrayadas Parámetros · Resultados · Órbita 3D.
   - **Resultados:** cuatro métricas con detalle (β, eclipse máximo, irradiancia, período), un gráfico de β (nominal y envolvente) sobre la duración del eclipse con un solo eje de tiempo, y los flujos incidentes por cara con selectores compactos de condición y modo de actitud y Promedio · Pico (mín. – máx. por componente); debajo, rangos y condiciones.
   - **Órbita 3D:** barra con Global · Local, condición, modo y la ayuda de la cámara; la escena en un marco con su título y la leyenda (global) o la escala de flujo (local); la línea de tiempo con velocidad (×0.5 por defecto: una órbita por minuto) y la lectura del instante (β, sol/eclipse, cara con más flujo total). En las dos vistas se arrastra para rotar y la rueda acerca; la local orbita alrededor del satélite con la vertical local arriba. El satélite es una caja con las proporciones de la envolvente de la Misión del contexto (fuera de escala respecto de la Tierra; un cubo si faltan las dimensiones), también en la vista previa. La local rotula los vectores (Sol, Velocidad, Nadir) y cada cara que mira a la cámara con su flujo incidente total del instante. La órbita se dibuja como arco entre muestras (interpolación de dibujo, sin física).
@@ -112,9 +112,9 @@ Implementado:
 - **Mensajes:** los vínculos descartados al migrar un archivo viejo aparecen como avisos.
 - **Toolbox:** fases y etapas por nombre (incluye Equipos en Fase 0). Arrastrar al lienzo crea el sistema (plantilla o celda suelta) donde se suelta; soltar sobre una celda ramifica. Durante el arrastre solo se resaltan las celdas que la API (`branch-targets`) da como válidas.
 - **Esquemático (React Flow):** sistemas con sus celdas, estado de cada celda como ícono y vínculos ortogonales entre sistemas (los vínculos dentro de un sistema no se dibujan: el bloque ya los expresa); control de zoom abajo a la izquierda; selección de sistema o celda; mover sistemas; vincular arrastrando de la salida (derecha) a la entrada (izquierda) de otra celda, con destinos válidos según la API (`link-targets`). Menú contextual de sistema (renombrar, agregar etapa, actualizar deshabilitado, cortar, copiar, pegar, duplicar, eliminar) y de celda (renombrar, actualizar deshabilitado, ramificar con opciones de la API, desvincular, cortar, copiar, pegar, duplicar, eliminar).
-- **Justificación:** eliminar, cortar y desvincular la exigen (`ConfirmChangeDialog`); renombrar la ofrece opcional; crear, ramificar, mover, vincular, duplicar, pegar y deshacer van sin justificación.
+- **Justificación:** la UI no la pide en ninguna escritura (ADR 0024); el historial la muestra cuando un agente la dio.
 - **Errores de render:** la ruta raíz tiene `errorComponent`: un error muestra un mensaje con «Recargar» en lugar de dejar la ventana en blanco.
-- **Diálogos:** cambios sin guardar (al crear, abrir, cerrar proyecto o cerrar la ventana de escritorio), proyecto bloqueado por otra instancia (cancelar o abrir de todos modos), renombrar, confirmar cambio.
+- **Diálogos:** cambios sin guardar (al crear, abrir, cerrar proyecto o cerrar la ventana de escritorio), proyecto bloqueado por otra instancia (cancelar o abrir de todos modos), renombrar, borrador sin aplicar.
 - **Dock derecho:** pestañas Propiedades y Agentes, vacías (el chat del Agente, ADR 0018, es otra tanda).
 - **Panel inferior:** Mensajes (eventos del proyecto de cualquier actor, por SSE, y errores) e Historial (autor, resumen y justificación); Corridas deshabilitada.
 

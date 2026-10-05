@@ -48,7 +48,7 @@ def test_dry_validation_changes_nothing(opened: TestClient) -> None:
 def test_apply_undo_redo(opened: TestClient) -> None:
     cells = _phase0(opened)
     url = f"/project/cells/{cells['mission']}/artifact"
-    missing = opened.put(url, json={"artifact": DRAFT, "justification": ""})
+    missing = opened.put(url, json={"artifact": DRAFT, "justification": ""}, headers=AGENT)
     assert missing.status_code == 422
     assert missing.json()["code"] == "justification_required"
 

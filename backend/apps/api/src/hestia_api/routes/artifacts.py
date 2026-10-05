@@ -37,7 +37,7 @@ def apply_cell_artifact(
 ) -> ApplyArtifactResult:
     """Replace the cell's artifact with the draft in one change of the history (one undo).
 
-    Requires a justification. Problems are allowed: a form cell is then failed (a computation
+    An agent must justify it. Problems are allowed: a form cell is then failed (a computation
     cell fails when updated). Only the fields that changed get new provenance; everything
     downstream (and a computation cell itself) becomes outdated if the content changed.
     `change` is null if the content is the same as the applied one.

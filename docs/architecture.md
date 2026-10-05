@@ -8,7 +8,7 @@
 4. **Los agentes no calculan.** Todo número físico sale de `hestia_core`, determinístico y testeado.
 5. **Un solo contrato.** pydantic → OpenAPI (`shared/openapi.json`) → cliente TS (UI) y tools (MCP).
 6. **Esquemático tipo Workbench.** Celdas (etapas instanciadas) agrupadas en sistemas y conectadas por vínculos tipados, con estado y procedencia; cambios aguas arriba desactualizan lo dependiente. Sin gates: todo es editable. Ver [ADR 0009](adr/0009-esquematico-de-proyecto.md) y [workflow-fases-0-1.md](workflow-fases-0-1.md).
-7. **Autoría y justificación.** Todo cambio registra autor (humano o agente, sin distinción en la UI) y justificación, con historial y deshacer.
+7. **Autoría y justificación.** Todo cambio registra autor (humano o agente, sin distinción en la UI) y justificación, con historial y deshacer. La justificación se exige solo a los agentes ([ADR 0024](adr/0024-justificacion-solo-para-agentes.md)).
 
 ## Capas
 
@@ -59,7 +59,7 @@ El backend es dueño del estado. Cada proyecto es **un archivo SQLite** (`.hesti
 ## Contrato, autoría y eventos
 
 - `make contract`: FastAPI → `shared/openapi.json` → tipos TS con openapi-typescript y cliente openapi-fetch ([ADR 0013](adr/0013-cliente-ts-openapi-typescript.md)).
-- Autor por headers `X-Hestia-Actor-Kind` / `X-Hestia-Actor`; justificación obligatoria en operaciones destructivas ([ADR 0011](adr/0011-autoria-de-escrituras.md)).
+- Autor por headers `X-Hestia-Actor-Kind` / `X-Hestia-Actor`; justificación obligatoria solo para agentes en operaciones destructivas y al aplicar ([ADR 0024](adr/0024-justificacion-solo-para-agentes.md)).
 - Eventos en tiempo real por SSE en `GET /events` ([ADR 0012](adr/0012-eventos-en-tiempo-real-sse.md)).
 - Paridad API ↔ MCP: `mcp/tests/test_parity.py` compara las tools con `shared/openapi.json`.
 

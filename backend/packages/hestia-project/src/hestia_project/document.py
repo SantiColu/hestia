@@ -16,6 +16,7 @@ from hestia_project.forms import PENDING_CHANGE
 from hestia_project.history import (
     JUSTIFICATION_REQUIRED,
     OPERATION_LABELS,
+    ActorKind,
     Author,
     Change,
     ChangeRecord,
@@ -127,7 +128,11 @@ class ProjectDocument:
         Exceptions of ``fn`` (including ``artifacts.NoChange``) leave the project untouched.
         """
         justification = justification.strip()
-        if operation in JUSTIFICATION_REQUIRED and not justification:
+        if (
+            author.kind is ActorKind.AGENT
+            and operation in JUSTIFICATION_REQUIRED
+            and not justification
+        ):
             raise JustificationRequiredError("Esta operación exige una justificación.")
         working = self.project.model_copy(deep=True)
         outcome = fn(working)

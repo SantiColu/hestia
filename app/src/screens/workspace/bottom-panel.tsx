@@ -66,7 +66,7 @@ export function BottomPanel() {
               author={change.author.name}
               action={change.summary}
               time={timeFormat.format(new Date(change.timestamp))}
-              justification={change.justification || "Sin justificación."}
+              justification={change.justification}
               className="border-b border-border"
             />
           ))}

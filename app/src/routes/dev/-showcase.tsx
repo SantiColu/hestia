@@ -28,13 +28,11 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { NumberField } from "@/components/forms/number-field";
 import { TextField } from "@/components/forms/text-field";
 import { CompactSelect } from "@/components/forms/compact-select";
 import { SelectField } from "@/components/forms/select-field";
-import { JustificationField } from "@/components/forms/justification-field";
 import { CheckboxField, SwitchField } from "@/components/forms/choice-fields";
 import { Segmented } from "@/components/forms/segmented";
 import { StageStatusBadge } from "@/components/feedback/stage-status";
@@ -54,7 +52,6 @@ import { ActorAvatar } from "@/components/data/actor-avatar";
 import { EmptyState } from "@/components/data/empty-state";
 import { HistoryItem } from "@/components/workflow/history-item";
 import { ProvenanceRow } from "@/components/workflow/provenance-row";
-import { ConfirmChangeDialog } from "@/components/overlays/confirm-change-dialog";
 
 // Sample data only: this page never talks to the API.
 const CASES = [
@@ -170,7 +167,6 @@ export function Showcase() {
             error="Fuera de rango: 0 – 1"
           />
         </div>
-        <JustificationField className="max-w-md" />
         <Row>
           <CheckboxField label="Incluir modo seguro" defaultChecked />
           <CheckboxField label="Incluir transitorios" />
@@ -364,16 +360,6 @@ export function Showcase() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <ConfirmChangeDialog
-            trigger={
-              <DialogTrigger render={<Button variant="secondary" />}>
-                Abrir confirmación
-              </DialogTrigger>
-            }
-            summary="Este cambio desactualiza 3 celdas aguas abajo (Concepto TCS, Solución, Márgenes)."
-            changes={[{ field: "radiator_area_m2", from: "0.42", to: "0.48" }]}
-            onConfirm={() => undefined}
-          />
         </Row>
       </Section>
     </main>

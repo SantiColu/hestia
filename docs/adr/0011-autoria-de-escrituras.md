@@ -1,6 +1,6 @@
 # 0011. Autoría y justificación de las escrituras
 
-- **Estado:** propuesto
+- **Estado:** reemplazado por 0024
 - **Fecha:** 2026-09-28
 
 ## Contexto

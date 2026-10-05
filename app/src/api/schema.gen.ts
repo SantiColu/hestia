@@ -123,7 +123,7 @@ export interface paths {
     post?: never;
     /**
      * Delete Cell
-     * @description Delete a cell and its links (an emptied system is deleted). Requires a justification.
+     * @description Delete a cell and its links (an emptied system is deleted). An agent must justify it.
      */
     delete: operations["delete_cell"];
     options?: never;
@@ -150,7 +150,7 @@ export interface paths {
      * Apply Cell Artifact
      * @description Replace the cell's artifact with the draft in one change of the history (one undo).
      *
-     *     Requires a justification. Problems are allowed: a form cell is then failed (a computation
+     *     An agent must justify it. Problems are allowed: a form cell is then failed (a computation
      *     cell fails when updated). Only the fields that changed get new provenance; everything
      *     downstream (and a computation cell itself) becomes outdated if the content changed.
      *     `change` is null if the content is the same as the applied one.
@@ -620,7 +620,7 @@ export interface paths {
     post?: never;
     /**
      * Delete System
-     * @description Delete a system, its cells and their links. Requires a justification.
+     * @description Delete a system, its cells and their links. An agent must justify it.
      */
     delete: operations["delete_system"];
     options?: never;
@@ -767,9 +767,10 @@ export interface components {
     AddCellRequest: {
       /**
        * Justification
-       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
        */
-      justification: string;
+      justification?: string;
       /** Name */
       name?: string | null;
       stage: components["schemas"]["StageType"];
@@ -790,7 +791,7 @@ export interface components {
     };
     /**
      * ApplyArtifactRequest
-     * @description Replace the cell's artifact with the draft. The justification is required.
+     * @description Replace the cell's artifact with the draft. An agent must justify it.
      */
     ApplyArtifactRequest: {
       /** Artifact */
@@ -798,9 +799,10 @@ export interface components {
         components["schemas"]["MissionArtifact"] | components["schemas"]["EnvironmentParameters"];
       /**
        * Justification
-       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
        */
-      justification: string;
+      justification?: string;
     };
     /** ApplyArtifactResult */
     ApplyArtifactResult: {
@@ -876,9 +878,10 @@ export interface components {
     BranchRequest: {
       /**
        * Justification
-       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
        */
-      justification: string;
+      justification?: string;
       /** Name */
       name?: string | null;
       /** @description Canvas position. Placed automatically when omitted. */
@@ -1018,7 +1021,7 @@ export interface components {
        * Discard Unsaved
        * @default false
        */
-      discard_unsaved: boolean;
+      discard_unsaved?: boolean;
     };
     /**
      * Condition
@@ -1094,9 +1097,10 @@ export interface components {
     CreateSystemRequest: {
       /**
        * Justification
-       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
        */
-      justification: string;
+      justification?: string;
       /** Name */
       name?: string | null;
       /** @description Canvas position. Placed automatically when omitted. */
@@ -1111,7 +1115,7 @@ export interface components {
        * @description ΔT.
        * @default 5
        */
-      acceptance_margin: number | null;
+      acceptance_margin?: number | null;
       /**
        * Potencia para heaters
        * @description Promedio orbital disponible.
@@ -1122,7 +1126,7 @@ export interface components {
        * @description Sobre el de aceptación (ΔT).
        * @default 5
        */
-      qualification_margin: number | null;
+      qualification_margin?: number | null;
       /**
        * Caras permitidas para radiador
        * @description Caras donde se permite ubicar radiadores. Vacío: sin restricción.
@@ -1135,7 +1139,7 @@ export interface components {
        * @description Incertidumbre de las predicciones (ΔT).
        * @default 10
        */
-      uncertainty_margin: number | null;
+      uncertainty_margin?: number | null;
     };
     /**
      * CustomCondition
@@ -1200,7 +1204,7 @@ export interface components {
        * @description Irradiancia solar a 1 UA. La de cada fecha sale de la distancia Tierra-Sol.
        * @default 1361
        */
-      solar_constant: number | null;
+      solar_constant?: number | null;
     };
     /** DesignValuesUsed */
     DesignValuesUsed: {
@@ -1262,9 +1266,10 @@ export interface components {
     DuplicateSystemRequest: {
       /**
        * Justification
-       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
        */
-      justification: string;
+      justification?: string;
       position?: components["schemas"]["Position"] | null;
     };
     /**
@@ -1308,7 +1313,7 @@ export interface components {
        * Schema Version
        * @default 2
        */
-      schema_version: number;
+      schema_version?: number;
     };
     /**
      * EnvironmentSummary
@@ -1335,7 +1340,7 @@ export interface components {
        * Schema Version
        * @default 1
        */
-      schema_version: number;
+      schema_version?: number;
     };
     /**
      * EventType
@@ -1443,14 +1448,14 @@ export interface components {
        * @default hestia.fragment
        * @constant
        */
-      kind: "hestia.fragment";
+      kind?: "hestia.fragment";
       /** Links */
       links?: components["schemas"]["FragmentLink"][];
       /**
        * Schema Version
        * @default 2
        */
-      schema_version: number;
+      schema_version?: number;
       /** Source Project Id */
       source_project_id: string;
       /** Systems */
@@ -1600,9 +1605,10 @@ export interface components {
     LinkRequest: {
       /**
        * Justification
-       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
        */
-      justification: string;
+      justification?: string;
       /** Source Cell Id */
       source_cell_id: string;
       /** Target Cell Id */
@@ -1622,7 +1628,7 @@ export interface components {
        * Schema Version
        * @default 2
        */
-      schema_version: number;
+      schema_version?: number;
     };
     /**
      * MissionSeries
@@ -1652,9 +1658,10 @@ export interface components {
     MoveSystemRequest: {
       /**
        * Justification
-       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
        */
-      justification: string;
+      justification?: string;
       position: components["schemas"]["Position"];
     };
     /** MutationResult */
@@ -1669,7 +1676,7 @@ export interface components {
        * @description Replace an open project even if it has unsaved changes.
        * @default false
        */
-      discard_unsaved: boolean;
+      discard_unsaved?: boolean;
       /** Name */
       name?: string | null;
     };
@@ -1679,13 +1686,13 @@ export interface components {
        * Discard Unsaved
        * @default false
        */
-      discard_unsaved: boolean;
+      discard_unsaved?: boolean;
       /**
        * Force
        * @description Take over the file even if another instance holds its lock.
        * @default false
        */
-      force: boolean;
+      force?: boolean;
       /**
        * Path
        * @description Absolute path of the .hestia file.
@@ -1738,7 +1745,7 @@ export interface components {
        * Tipo de órbita
        * @default sso
        */
-      type: components["schemas"]["OrbitType"] | null;
+      type?: components["schemas"]["OrbitType"] | null;
     };
     /**
      * OrbitPreview
@@ -1894,9 +1901,10 @@ export interface components {
       fragment: components["schemas"]["Fragment-Input"];
       /**
        * Justification
-       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
        */
-      justification: string;
+      justification?: string;
       /** @description Canvas position of the fragment's top-left system. When omitted, systems are shifted from the originals. */
       position?: components["schemas"]["Position"] | null;
       /**
@@ -2084,9 +2092,10 @@ export interface components {
     RenameRequest: {
       /**
        * Justification
-       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
        */
-      justification: string;
+      justification?: string;
       /** Name */
       name: string;
     };
@@ -2096,19 +2105,19 @@ export interface components {
        * Modelo de sombra
        * @default cylindrical
        */
-      eclipse_model: components["schemas"]["EclipseModel"] | null;
+      eclipse_model?: components["schemas"]["EclipseModel"] | null;
       /**
        * Paso a lo largo de la misión
        * @description Paso de las series de β, eclipse e irradiancia.
        * @default 86400
        */
-      mission_step: number | null;
+      mission_step?: number | null;
       /**
        * Puntos por órbita
        * @description Muestras de los perfiles orbitales.
        * @default 120
        */
-      orbit_samples: number | null;
+      orbit_samples?: number | null;
     };
     /** SaveAsRequest */
     SaveAsRequest: {
@@ -2221,7 +2230,7 @@ export interface components {
        * @description Why the cell is updated. Optional; stored with the author.
        * @default
        */
-      justification: string;
+      justification?: string;
     };
     /** UpdateCellResult */
     UpdateCellResult: {
@@ -2238,9 +2247,10 @@ export interface components {
     WriteRequest: {
       /**
        * Justification
-       * @description Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.
+       * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
+       * @default
        */
-      justification: string;
+      justification?: string;
     };
   };
   responses: never;

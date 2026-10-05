@@ -59,11 +59,18 @@ def test_failed_operation_changes_nothing() -> None:
     assert len(doc.history) == 1
 
 
-def test_destructive_operations_require_justification() -> None:
+def test_agents_justify_destructive_operations() -> None:
     doc = _with_phase0()
     with pytest.raises(JustificationRequiredError):
-        doc.apply(Operation.DELETE_SYSTEM, HUMAN, "  ", lambda p: delete_system(p, p.systems[0].id))
+        doc.apply(Operation.DELETE_SYSTEM, AGENT, "  ", lambda p: delete_system(p, p.systems[0].id))
     assert len(doc.project.systems) == 1
+
+
+def test_humans_never_need_a_justification() -> None:
+    doc = _with_phase0()
+    doc.apply(Operation.DELETE_SYSTEM, HUMAN, "", lambda p: delete_system(p, p.systems[0].id))
+    assert doc.project.systems == []
+    assert doc.changes()[-1].justification == ""
 
 
 def test_undo_redo_roundtrip() -> None:

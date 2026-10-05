@@ -12,7 +12,8 @@
       "AddCellRequest": {
         "properties": {
           "justification": {
-            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
             "title": "Justification",
             "type": "string"
           },
@@ -32,7 +33,6 @@
           }
         },
         "required": [
-          "justification",
           "stage"
         ],
         "title": "AddCellRequest",
@@ -64,7 +64,7 @@
         "type": "object"
       },
       "ApplyArtifactRequest": {
-        "description": "Replace the cell's artifact with the draft. The justification is required.",
+        "description": "Replace the cell's artifact with the draft. An agent must justify it.",
         "properties": {
           "artifact": {
             "anyOf": [
@@ -78,13 +78,13 @@
             "title": "Artifact"
           },
           "justification": {
-            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
             "title": "Justification",
             "type": "string"
           }
         },
         "required": [
-          "justification",
           "artifact"
         ],
         "title": "ApplyArtifactRequest",
@@ -315,7 +315,8 @@
         "description": "Create a system from a template or stage, fed by the cell in the path.",
         "properties": {
           "justification": {
-            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
             "title": "Justification",
             "type": "string"
           },
@@ -362,9 +363,6 @@
             ]
           }
         },
-        "required": [
-          "justification"
-        ],
         "title": "BranchRequest",
         "type": "object"
       },
@@ -917,7 +915,8 @@
         "description": "Create a system from a template (``template``) or with a single cell (``stage``).",
         "properties": {
           "justification": {
-            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
             "title": "Justification",
             "type": "string"
           },
@@ -964,9 +963,6 @@
             ]
           }
         },
-        "required": [
-          "justification"
-        ],
         "title": "CreateSystemRequest",
         "type": "object"
       },
@@ -1285,6 +1281,12 @@
             "title": "Altitud al fin de vida",
             "x-display-unit": "km",
             "x-placeholder": "sin decaimiento",
+            "x-show-if": {
+              "orbit.type": [
+                "sso",
+                "keplerian"
+              ]
+            },
             "x-unit": "m"
           },
           "geo_max_inclination": {
@@ -1300,6 +1302,11 @@
             "title": "Inclinación máxima en GEO",
             "x-display-unit": "°",
             "x-placeholder": "0",
+            "x-show-if": {
+              "orbit.type": [
+                "geo"
+              ]
+            },
             "x-unit": "rad"
           },
           "ltan_dispersion": {
@@ -1315,6 +1322,11 @@
             "title": "Deriva de la hora del nodo",
             "x-display-unit": "min",
             "x-placeholder": "0",
+            "x-show-if": {
+              "orbit.type": [
+                "sso"
+              ]
+            },
             "x-unit": "s"
           }
         },
@@ -1425,7 +1437,8 @@
       "DuplicateSystemRequest": {
         "properties": {
           "justification": {
-            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
             "title": "Justification",
             "type": "string"
           },
@@ -1440,9 +1453,6 @@
             ]
           }
         },
-        "required": [
-          "justification"
-        ],
         "title": "DuplicateSystemRequest",
         "type": "object"
       },
@@ -2234,7 +2244,8 @@
       "LinkRequest": {
         "properties": {
           "justification": {
-            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
             "title": "Justification",
             "type": "string"
           },
@@ -2248,7 +2259,6 @@
           }
         },
         "required": [
-          "justification",
           "source_cell_id",
           "target_cell_id"
         ],
@@ -2371,7 +2381,8 @@
       "MoveSystemRequest": {
         "properties": {
           "justification": {
-            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
             "title": "Justification",
             "type": "string"
           },
@@ -2380,7 +2391,6 @@
           }
         },
         "required": [
-          "justification",
           "position"
         ],
         "title": "MoveSystemRequest",
@@ -2485,6 +2495,9 @@
             ],
             "description": "Órbita circular.",
             "title": "Altitud",
+            "x-carry-from": [
+              "perigee_altitude"
+            ],
             "x-display-unit": "km",
             "x-show-if": {
               "type": [
@@ -2559,6 +2572,9 @@
               }
             ],
             "title": "Altitud del perigeo",
+            "x-carry-from": [
+              "altitude"
+            ],
             "x-display-unit": "km",
             "x-show-if": {
               "type": [
@@ -3009,7 +3025,8 @@
             "description": "A fragment returned by copy (any project)."
           },
           "justification": {
-            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
             "title": "Justification",
             "type": "string"
           },
@@ -3038,7 +3055,6 @@
           }
         },
         "required": [
-          "justification",
           "fragment"
         ],
         "title": "PasteRequest",
@@ -3475,7 +3491,8 @@
       "RenameRequest": {
         "properties": {
           "justification": {
-            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
             "title": "Justification",
             "type": "string"
           },
@@ -3485,7 +3502,6 @@
           }
         },
         "required": [
-          "justification",
           "name"
         ],
         "title": "RenameRequest",
@@ -3831,14 +3847,12 @@
       "WriteRequest": {
         "properties": {
           "justification": {
-            "description": "Why the change is made. Stored in the history with the author. Required (non-empty) for deletions and unlinking.",
+            "default": "",
+            "description": "Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).",
             "title": "Justification",
             "type": "string"
           }
         },
-        "required": [
-          "justification"
-        ],
         "title": "WriteRequest",
         "type": "object"
       }
@@ -4114,7 +4128,7 @@
     },
     "/project/cells/{cell_id}": {
       "delete": {
-        "description": "Delete a cell and its links (an emptied system is deleted). Requires a justification.",
+        "description": "Delete a cell and its links (an emptied system is deleted). An agent must justify it.",
         "operationId": "delete_cell",
         "parameters": [
           {
@@ -4406,7 +4420,7 @@
         ]
       },
       "put": {
-        "description": "Replace the cell's artifact with the draft in one change of the history (one undo).\n\nRequires a justification. Problems are allowed: a form cell is then failed (a computation\ncell fails when updated). Only the fields that changed get new provenance; everything\ndownstream (and a computation cell itself) becomes outdated if the content changed.\n`change` is null if the content is the same as the applied one.",
+        "description": "Replace the cell's artifact with the draft in one change of the history (one undo).\n\nAn agent must justify it. Problems are allowed: a form cell is then failed (a computation\ncell fails when updated). Only the fields that changed get new provenance; everything\ndownstream (and a computation cell itself) becomes outdated if the content changed.\n`change` is null if the content is the same as the applied one.",
         "operationId": "apply_cell_artifact",
         "parameters": [
           {
@@ -6307,7 +6321,7 @@
     },
     "/project/systems/{system_id}": {
       "delete": {
-        "description": "Delete a system, its cells and their links. Requires a justification.",
+        "description": "Delete a system, its cells and their links. An agent must justify it.",
         "operationId": "delete_system",
         "parameters": [
           {

@@ -86,7 +86,7 @@ Las dos operaciones son parte del mismo borrador y se aplican juntas.
   En las columnas de modo, el valor es la disipación; vacío u `off` significan apagado.
 - Las unidades se normalizan con pint (°C → K como temperatura absoluta). Los modos que no existen se crean.
 - La API recibe el archivo y devuelve el borrador con sus problemas, sin cambiar el proyecto (lo mismo como tool MCP).
-- El resultado es un **borrador**, no se aplica solo: el usuario lo revisa y lo aplica con justificación. La procedencia de lo importado queda como `imported`.
+- El resultado es un **borrador**, no se aplica solo: el usuario lo revisa y lo aplica. La procedencia de lo importado queda como `imported`.
 - Los errores de la planilla (columna desconocida, unidad inválida, valor no numérico) se informan por fila y columna, sin importar nada parcial.
 
 ## Abierto

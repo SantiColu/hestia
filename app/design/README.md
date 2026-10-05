@@ -40,12 +40,12 @@ Oscuro, minimalista, de ingeniería. Sin gradientes, glow ni decoración. El col
 | Grupo      | Componentes                                                                                                                                                                           |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Buttons    | `Button/{Primary,Secondary,Ghost,Danger,Icon}` y variantes `/sm`                                                                                                                      |
-| Forms      | `Field/{Number,Number/Error,Number/Modified,Select,Text,Justification}`, `Checkbox/{On,Off}`, `Toggle/{On,Off}`, `Segment/{Active,Default}`                                           |
+| Forms      | `Field/{Number,Number/Error,Number/Modified,Select,Text}`, `Checkbox/{On,Off}`, `Toggle/{On,Off}`, `Segment/{Active,Default}`                                                         |
 | Feedback   | `Status/{UpToDate,Outdated,Failed,NeverRun,Running}`, `Tag/{Hot,Cold,Neutral}`, `Alert/{Info,Warning,Error,Success}`, `Tooltip`                                                       |
 | Navigation | `Tab/{Active,Default}`, `SectionLabel`, `NavItem`, `NavItem/Active`, `Breadcrumb`, `DocTab`, `DocTab/Active` (pestaña de documento: estado, celda, sistema, borrador, cerrar)         |
 | Data       | `Table/{HeaderCell,Cell}`, `Metric`, `KeyValue`, `Avatar`, `EmptyState`                                                                                                               |
 | Workflow   | `SystemBlock`, `SystemCell`, `SystemCell/{Selected,Outdated,DropTarget}`, `Link/{Straight,Elbow}`, `ToolboxGroup`, `ToolboxItem`, `ToolboxItem/Hover`, `HistoryItem`, `ProvenanceRow` |
-| Overlays   | `Menu`, `MenuItem`, `MenuItem/Danger`, `MenuDivider`, `Dialog` (confirmación con justificación)                                                                                       |
+| Overlays   | `Menu`, `MenuItem`, `MenuItem/Danger`, `MenuDivider`, `Dialog` (confirmación: título, descripción, Cancelar y acción)                                                                 |
 | Brand      | `Brand/Mark`, `Brand/Logo`, `Brand/Icon` (32 px, ajustado al píxel, para tamaños < 24 px)                                                                                             |
 
 **Esquemático** (ADR 0009):
@@ -64,5 +64,5 @@ Convenciones de uso:
 
 - Deshabilitado (funciones futuras): `opacity: 0.4` en la instancia; en menús, atajo reemplazado por «pronto».
 
-- Toda acción de escritura pasa por `Field/Justification` (principio 7: autor + justificación).
+- Las escrituras de la UI no piden justificación (ADR 0024): no hay campo ni diálogo de justificación.
 - Humano y agente se muestran igual en `HistoryItem`.

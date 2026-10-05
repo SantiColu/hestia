@@ -1,5 +1,5 @@
 {
-  "version": "2.19",
+  "version": "2.20",
   "children": [
     {
       "type": "frame",
@@ -804,91 +804,6 @@
                   "content": "Aplicado: 550 km",
                   "fontFamily": "$font-mono",
                   "fontSize": 11,
-                  "fontWeight": "normal"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "type": "frame",
-          "id": "jEoUA",
-          "name": "Justification",
-          "gap": 24,
-          "children": [
-            {
-              "type": "frame",
-              "id": "Lp5P8",
-              "name": "Field/Justification",
-              "reusable": true,
-              "width": 464,
-              "layout": "vertical",
-              "gap": 6,
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "Rqu36",
-                  "name": "LabelRow",
-                  "gap": 4,
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "t9JWK",
-                      "name": "Label",
-                      "fill": "$text-muted",
-                      "content": "Justificación",
-                      "fontFamily": "$font-sans",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "text",
-                      "id": "CJtTW",
-                      "name": "Required",
-                      "fill": "$accent",
-                      "content": "*",
-                      "fontFamily": "$font-sans",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "SxHs8",
-                  "name": "Input",
-                  "width": "fill_container",
-                  "height": 80,
-                  "fill": "$bg",
-                  "cornerRadius": "$radius",
-                  "stroke": "$border-strong",
-                  "strokeWidth": 1,
-                  "layout": "vertical",
-                  "padding": 10,
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "R1yRQ",
-                      "name": "Placeholder",
-                      "fill": "$text-subtle",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "Por qué se hace este cambio…",
-                      "fontFamily": "$font-sans",
-                      "fontSize": 13,
-                      "fontWeight": "normal"
-                    }
-                  ]
-                },
-                {
-                  "type": "text",
-                  "id": "Y8LGL1",
-                  "name": "Help",
-                  "fill": "$text-subtle",
-                  "content": "Queda en el historial junto con el autor. Obligatoria para todo cambio.",
-                  "fontFamily": "$font-sans",
-                  "fontSize": 12,
                   "fontWeight": "normal"
                 }
               ]
@@ -3903,7 +3818,7 @@
                       "id": "GSk4i",
                       "name": "Title",
                       "fill": "$text",
-                      "content": "Confirmar cambio",
+                      "content": "Valores sin aplicar",
                       "fontFamily": "$font-sans",
                       "fontSize": 15,
                       "fontWeight": "600"
@@ -3944,52 +3859,11 @@
                       "fill": "$text-muted",
                       "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "content": "Este cambio desactualiza 3 celdas aguas abajo (Concepto TCS, Solución, Márgenes).",
+                      "content": "Con la opción elegida dejan de aplicar campos con valores sin aplicar: Altitud del perigeo e Inclinación. Si continuás, se borran.",
                       "lineHeight": 1.45,
                       "fontFamily": "$font-sans",
                       "fontSize": 13,
                       "fontWeight": "normal"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "XgakW",
-                      "name": "Diff",
-                      "width": "fill_container",
-                      "fill": "$bg",
-                      "cornerRadius": "$radius",
-                      "stroke": "$border",
-                      "strokeWidth": 1,
-                      "layout": "vertical",
-                      "padding": [
-                        4,
-                        12
-                      ],
-                      "children": [
-                        {
-                          "id": "CnJtp",
-                          "type": "ref",
-                          "ref": "cTW6a",
-                          "name": "Change",
-                          "width": "fill_container",
-                          "strokeWidth": 0,
-                          "descendants": {
-                            "RWTLg": {
-                              "content": "radiator_area_m2",
-                              "fontFamily": "$font-mono"
-                            },
-                            "lIVV8": {
-                              "content": "0.42 → 0.48"
-                            }
-                          }
-                        }
-                      ]
-                    },
-                    {
-                      "id": "Jx8Ut",
-                      "type": "ref",
-                      "ref": "Lp5P8",
-                      "name": "Justification",
-                      "width": "fill_container"
                     }
                   ]
                 },
@@ -4030,10 +3904,11 @@
                       "name": "Confirm",
                       "descendants": {
                         "dSmUX": {
-                          "icon": "check"
+                          "icon": "check",
+                          "enabled": false
                         },
                         "k4ylJz": {
-                          "content": "Aplicar cambio"
+                          "content": "Borrar y cambiar"
                         }
                       }
                     }

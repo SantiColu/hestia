@@ -84,10 +84,13 @@ def test_link_validation_and_targets(opened: TestClient) -> None:
     assert good.status_code == 200
     link_id = good.json()["change"]["created_ids"][0]
 
-    no_reason = opened.request("DELETE", f"/project/links/{link_id}", json={"justification": ""})
+    no_reason = opened.request(
+        "DELETE", f"/project/links/{link_id}", json={"justification": ""}, headers=AGENT
+    )
     assert no_reason.status_code == 422
     assert no_reason.json()["code"] == "justification_required"
-    ok = opened.request("DELETE", f"/project/links/{link_id}", json={"justification": "wrong"})
+    # Humans are never asked for a justification (ADR 0024).
+    ok = opened.request("DELETE", f"/project/links/{link_id}", json={"justification": ""})
     assert ok.status_code == 200
 
 
@@ -163,7 +166,7 @@ def test_rename_move_add_duplicate_delete(opened: TestClient) -> None:
 
     assert (
         opened.request(
-            "DELETE", f"/project/cells/{cell_id}", json={"justification": ""}
+            "DELETE", f"/project/cells/{cell_id}", json={"justification": ""}, headers=AGENT
         ).status_code
         == 422
     )

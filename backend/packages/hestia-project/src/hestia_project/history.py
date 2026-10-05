@@ -44,8 +44,8 @@ class Operation(StrEnum):
 JUSTIFICATION_REQUIRED: frozenset[Operation] = frozenset(
     {Operation.DELETE_SYSTEM, Operation.DELETE_CELL, Operation.UNLINK, Operation.APPLY_ARTIFACT}
 )
-"""Destructive operations and applying an artifact (ADR 0017): an empty justification is
-rejected. Elsewhere it may be empty (e.g. updating a computation cell, ADR 0021)."""
+"""Destructive operations and applying an artifact: an agent's empty justification is rejected
+(ADR 0024). Elsewhere, and always for humans, it may be empty."""
 
 OPERATION_LABELS: dict[Operation, str] = {
     Operation.CREATE_SYSTEM: "crear sistema",

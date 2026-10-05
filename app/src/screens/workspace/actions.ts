@@ -16,9 +16,9 @@ import { useWorkspaceUi, type Target } from "./context";
 export type PasteOptions = { position?: Position; targetSystemId?: string };
 
 /**
- * Schematic writes. Small operations (create, branch, move, rename, link, duplicate, paste)
- * send an empty or optional justification; deleting, cutting and unlinking always ask for one
- * (ADR 0011). Copy and paste go through the system clipboard as a fragment (ADR 0014).
+ * Schematic writes. People are never asked for a justification (ADR 0024): every write runs
+ * right away and is undone from the history. Copy and paste go through the system clipboard
+ * as a fragment (ADR 0014).
  */
 export function useSchematicActions() {
   const { view, catalog, mutate, notify, fail } = useProject();
@@ -46,7 +46,7 @@ export function useSchematicActions() {
       mutate(() =>
         unwrap(
           api.POST("/project/systems", {
-            body: { ...blueprint, position: position ?? null, justification: "" },
+            body: { ...blueprint, position: position ?? null },
           }),
         ),
       ),
@@ -59,7 +59,7 @@ export function useSchematicActions() {
         unwrap(
           api.POST("/project/cells/{cell_id}/branch", {
             params: { path: { cell_id: cellId } },
-            body: { ...blueprint, justification: "" },
+            body: blueprint,
           }),
         ),
       ),
@@ -72,7 +72,7 @@ export function useSchematicActions() {
         unwrap(
           api.POST("/project/systems/{system_id}/cells", {
             params: { path: { system_id: systemId } },
-            body: { stage, justification: "" },
+            body: { stage },
           }),
         ),
       ),
@@ -85,7 +85,7 @@ export function useSchematicActions() {
         unwrap(
           api.POST("/project/systems/{system_id}/move", {
             params: { path: { system_id: systemId } },
-            body: { position, justification: "" },
+            body: { position },
           }),
         ),
       ),
@@ -97,7 +97,7 @@ export function useSchematicActions() {
       mutate(() =>
         unwrap(
           api.POST("/project/links", {
-            body: { source_cell_id: sourceCellId, target_cell_id: targetCellId, justification: "" },
+            body: { source_cell_id: sourceCellId, target_cell_id: targetCellId },
           }),
         ),
       ),
@@ -107,13 +107,13 @@ export function useSchematicActions() {
   const renameSystem = useCallback(
     async (systemId: string) => {
       const current = findSystem(project, systemId)?.name ?? "";
-      const answer = await dialogs.askRename({ title: "Renombrar sistema", current });
-      if (!answer || answer.name === current) return;
+      const name = await dialogs.askRename({ title: "Renombrar sistema", current });
+      if (!name || name === current) return;
       await mutate(() =>
         unwrap(
           api.PATCH("/project/systems/{system_id}", {
             params: { path: { system_id: systemId } },
-            body: answer,
+            body: { name },
           }),
         ),
       );
@@ -124,13 +124,13 @@ export function useSchematicActions() {
   const renameCell = useCallback(
     async (cellId: string) => {
       const current = cellName(cellId);
-      const answer = await dialogs.askRename({ title: "Renombrar celda", current });
-      if (!answer || answer.name === current) return;
+      const name = await dialogs.askRename({ title: "Renombrar celda", current });
+      if (!name || name === current) return;
       await mutate(() =>
         unwrap(
           api.PATCH("/project/cells/{cell_id}", {
             params: { path: { cell_id: cellId } },
-            body: answer,
+            body: { name },
           }),
         ),
       );
@@ -144,7 +144,7 @@ export function useSchematicActions() {
         unwrap(
           api.POST("/project/systems/{system_id}/duplicate", {
             params: { path: { system_id: systemId } },
-            body: { justification: "" },
+            body: {},
           }),
         ),
       ),
@@ -159,42 +159,20 @@ export function useSchematicActions() {
     [project, cellName],
   );
 
-  /** Ask for the mandatory justification to remove `target`. Null when cancelled. */
-  const confirmRemoval = useCallback(
-    (target: Target, verb: "Eliminar" | "Cortar") =>
-      dialogs.askJustification(
-        target.kind === "system"
-          ? {
-              title: `${verb} sistema`,
-              summary:
-                "Se eliminan sus celdas y vínculos; lo que dependa de ellas queda desactualizado.",
-              changes: [{ field: "sistema", from: targetName(target), to: "—" }],
-              confirmLabel: verb,
-            }
-          : {
-              title: `${verb} celda`,
-              summary: "Se eliminan sus vínculos; lo que dependa de ella queda desactualizado.",
-              changes: [{ field: "celda", from: targetName(target), to: "—" }],
-              confirmLabel: verb,
-            },
-      ),
-    [dialogs, targetName],
-  );
-
   const removeWith = useCallback(
-    (target: Target, justification: string) =>
+    (target: Target) =>
       mutate(() =>
         target.kind === "system"
           ? unwrap(
               api.DELETE("/project/systems/{system_id}", {
                 params: { path: { system_id: target.id } },
-                body: { justification },
+                body: {},
               }),
             )
           : unwrap(
               api.DELETE("/project/cells/{cell_id}", {
                 params: { path: { cell_id: target.id } },
-                body: { justification },
+                body: {},
               }),
             ),
       ),
@@ -203,12 +181,10 @@ export function useSchematicActions() {
 
   const remove = useCallback(
     async (target: Target) => {
-      const justification = await confirmRemoval(target, "Eliminar");
-      if (justification === null) return;
-      const result = await removeWith(target, justification);
+      const result = await removeWith(target);
       if (result) select(null);
     },
-    [confirmRemoval, removeWith, select],
+    [removeWith, select],
   );
 
   const deleteSystem = useCallback(
@@ -255,16 +231,14 @@ export function useSchematicActions() {
     [copyFragment, setCanPaste, notify, targetName, fail],
   );
 
-  /** Copy, then delete: the justification is asked first, so cancelling changes nothing. */
+  /** Copy, then delete; nothing is deleted if copying failed. */
   const cut = useCallback(
     async (target: Target) => {
-      const justification = await confirmRemoval(target, "Cortar");
-      if (justification === null) return;
       if (!(await copy(target))) return;
-      const result = await removeWith(target, justification);
+      const result = await removeWith(target);
       if (result) select(null);
     },
-    [confirmRemoval, copy, removeWith, select],
+    [copy, removeWith, select],
   );
 
   const pasteFragment = useCallback(
@@ -278,7 +252,6 @@ export function useSchematicActions() {
               fragment,
               position: options.position ?? null,
               target_system_id: options.targetSystemId ?? null,
-              justification: "",
             },
           }),
         );
@@ -311,30 +284,16 @@ export function useSchematicActions() {
   );
 
   const unlink = useCallback(
-    async (target: Link) => {
-      const justification = await dialogs.askJustification({
-        title: "Desvincular",
-        summary: "La celda de destino y todo lo que depende de ella queda desactualizado.",
-        changes: [
-          {
-            field: "vínculo",
-            from: `${cellName(target.source_cell_id)} → ${cellName(target.target_cell_id)}`,
-            to: "—",
-          },
-        ],
-        confirmLabel: "Desvincular",
-      });
-      if (justification === null) return;
-      await mutate(() =>
+    (target: Link) =>
+      mutate(() =>
         unwrap(
           api.DELETE("/project/links/{link_id}", {
             params: { path: { link_id: target.id } },
-            body: { justification },
+            body: {},
           }),
         ),
-      );
-    },
-    [cellName, dialogs, mutate],
+      ),
+    [mutate],
   );
 
   return useMemo(

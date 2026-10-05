@@ -28,9 +28,6 @@ import { changedLeaves, problemsBySection, switchOption, type JsonSchema } from 
 import { useCellContext } from "./use-cell-context";
 import { SchemaForm } from "./schema-form";
 
-/** Downstream cells named in the apply summary before "y N más". */
-const MAX_NAMED_CELLS = 3;
-
 /** Body of the generic artifact endpoints (ADR 0019): a form artifact or a computation's
  * parameters. The API validates it against the cell's stage. */
 type Artifact = MissionArtifact | EnvironmentParameters;
@@ -273,48 +270,14 @@ export function FormEditor({
     ? "Actualizar falla hasta corregirlos."
     : "la celda queda Fallida hasta corregirlos.";
 
-  /** Impact of applying: the downstream cells it outdates (from the API) and the errors. */
-  const applySummary = () => {
-    const outdated = cellArtifact.outdates.map((id) => findCell(view.project, id)?.name ?? id);
-    return [
-      outdated.length > 0
-        ? `Desactualiza las celdas aguas abajo: ${joinList(outdated, MAX_NAMED_CELLS)}.`
-        : "No desactualiza ninguna celda aguas abajo.",
-      problems.length > 0 && `Con ${errorCount}: ${errorConsequence}`,
-    ]
-      .filter(Boolean)
-      .join(" ");
-  };
-
-  /** Ask for the justification and apply the draft, or the untouched defaults (first apply). */
+  /** Apply the draft, or the untouched defaults (first apply). Undone from the history. */
   const apply = async () => {
-    const justification = await dialogs.askJustification(
-      draft
-        ? {
-            title: `Aplicar cambios · ${title.name}`,
-            summary: applySummary(),
-            changes: changes.map((c) => ({
-              field: c.path,
-              from: c.from,
-              to: c.to,
-              value: c.change,
-            })),
-            confirmLabel: "Aplicar",
-          }
-        : {
-            title: `Aplicar · ${title.name}`,
-            summary: "Se aplica el contenido actual (valores por defecto) y se valida.",
-            changes: [],
-            confirmLabel: "Aplicar",
-          },
-    );
-    if (justification === null) return;
     setApplying(true);
     try {
       const result = await unwrap(
         api.PUT("/project/cells/{cell_id}/artifact", {
           params: { path: { cell_id: cellId } },
-          body: { artifact: asArtifact(draft ?? applied), justification },
+          body: { artifact: asArtifact(draft ?? applied) },
         }),
       );
       setView(result.view);
@@ -399,7 +362,7 @@ export function FormEditor({
               <Undo2 data-icon="inline-start" /> Descartar
             </Button>
             <Button disabled={applying} onClick={() => void apply()}>
-              <Check data-icon="inline-start" /> Aplicar…
+              <Check data-icon="inline-start" /> Aplicar
             </Button>
           </div>
         </footer>

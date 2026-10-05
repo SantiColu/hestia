@@ -10,30 +10,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TextField } from "@/components/forms/text-field";
-import { ConfirmChangeDialog } from "@/components/overlays/confirm-change-dialog";
-import type { FieldChange } from "@/components/workflow/history-item";
 
 export type UnsavedChoice = "save" | "discard" | "cancel";
 
-type ConfirmRequest = {
-  title: string;
-  summary?: string;
-  changes: FieldChange[];
-  confirmLabel?: string;
-};
-
 type RenameRequest = { title: string; current: string };
 type YesNoRequest = { title: string; description: string; confirmLabel: string };
-export type RenameAnswer = { name: string; justification: string };
 
 type DialogsValue = {
   askUnsaved: (fileLabel: string) => Promise<UnsavedChoice>;
   /** Resolves true when the user decides to take over the lock. */
   askLocked: (message: string) => Promise<boolean>;
-  /** Mandatory justification (ConfirmChangeDialog). Null when cancelled. */
-  askJustification: (request: ConfirmRequest) => Promise<string | null>;
-  /** New name plus an optional justification. Null when cancelled. */
-  askRename: (request: RenameRequest) => Promise<RenameAnswer | null>;
+  /** The new name. Null when cancelled. */
+  askRename: (request: RenameRequest) => Promise<string | null>;
   /** A yes/no question (e.g. discard unapplied drafts). Resolves true on confirm. */
   askConfirm: (request: YesNoRequest) => Promise<boolean>;
 };
@@ -41,8 +29,7 @@ type DialogsValue = {
 type Pending =
   | { kind: "unsaved"; fileLabel: string; resolve: (choice: UnsavedChoice) => void }
   | { kind: "locked"; message: string; resolve: (force: boolean) => void }
-  | { kind: "confirm"; request: ConfirmRequest; resolve: (justification: string | null) => void }
-  | { kind: "rename"; request: RenameRequest; resolve: (answer: RenameAnswer | null) => void }
+  | { kind: "rename"; request: RenameRequest; resolve: (name: string | null) => void }
   | { kind: "yesno"; request: YesNoRequest; resolve: (confirmed: boolean) => void };
 
 const DialogsContext = createContext<DialogsValue | null>(null);
@@ -61,16 +48,9 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
       new Promise<boolean>((resolve) => setPending({ kind: "locked", message, resolve })),
     [],
   );
-  const askJustification = useCallback(
-    (request: ConfirmRequest) =>
-      new Promise<string | null>((resolve) => setPending({ kind: "confirm", request, resolve })),
-    [],
-  );
   const askRename = useCallback(
     (request: RenameRequest) =>
-      new Promise<RenameAnswer | null>((resolve) =>
-        setPending({ kind: "rename", request, resolve }),
-      ),
+      new Promise<string | null>((resolve) => setPending({ kind: "rename", request, resolve })),
     [],
   );
 
@@ -81,8 +61,8 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ askUnsaved, askLocked, askJustification, askRename, askConfirm }),
-    [askUnsaved, askLocked, askJustification, askRename, askConfirm],
+    () => ({ askUnsaved, askLocked, askRename, askConfirm }),
+    [askUnsaved, askLocked, askRename, askConfirm],
   );
 
   const close = () => setPending(null);
@@ -108,31 +88,12 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
           }}
         />
       )}
-      {pending?.kind === "confirm" && (
-        <ConfirmChangeDialog
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              close();
-              pending.resolve(null);
-            }
-          }}
-          title={pending.request.title}
-          summary={pending.request.summary}
-          changes={pending.request.changes}
-          confirmLabel={pending.request.confirmLabel}
-          onConfirm={(justification) => {
-            close();
-            pending.resolve(justification);
-          }}
-        />
-      )}
       {pending?.kind === "rename" && (
         <RenameDialog
           request={pending.request}
-          onAnswer={(answer) => {
+          onAnswer={(name) => {
             close();
-            pending.resolve(answer);
+            pending.resolve(name);
           }}
         />
       )}
@@ -225,12 +186,11 @@ function RenameDialog({
   onAnswer,
 }: {
   request: RenameRequest;
-  onAnswer: (answer: RenameAnswer | null) => void;
+  onAnswer: (name: string | null) => void;
 }) {
   const [name, setName] = useState(request.current);
-  const [justification, setJustification] = useState("");
   const submit = () => {
-    if (name.trim()) onAnswer({ name: name.trim(), justification: justification.trim() });
+    if (name.trim()) onAnswer(name.trim());
   };
   return (
     <Dialog open onOpenChange={(open) => !open && onAnswer(null)}>
@@ -250,11 +210,6 @@ function RenameDialog({
             value={name}
             autoFocus
             onChange={(event) => setName(event.target.value)}
-          />
-          <TextField
-            label="Justificación (opcional)"
-            value={justification}
-            onChange={(event) => setJustification(event.target.value)}
           />
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onAnswer(null)}>

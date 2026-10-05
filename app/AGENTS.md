@@ -12,7 +12,7 @@ Interfaz de Hestia: React + Vite + TanStack Router, TypeScript estricto, Tailwin
 - Atajos de edición (`shortcuts.ts`): nunca interceptar en campos de texto, diálogos ni menús abiertos.
 - Nunca mostrar números de etapa (0.1, 1.3…): etapas y celdas van por nombre.
 - Sin IA (ADR 0015): prohibido importar o depender de SDKs de IA (`ai`, `@ai-sdk/*`, `openai`, `@anthropic-ai/*`, `langchain`…); lo verifican ESLint (`no-restricted-imports`) y `scripts/check-no-ai.mjs` en `pnpm lint`.
-- Humano y agente se muestran igual en historial y autoría. Toda escritura pide justificación.
+- Humano y agente se muestran igual en historial y autoría. La UI nunca pide justificación (ADR 0024): las escrituras se ejecutan directo y se revierten con Deshacer.
 
 ## Estructura
 

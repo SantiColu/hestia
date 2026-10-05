@@ -18,7 +18,7 @@ Define la órbita y los modos de actitud y los traduce en la geometría (ángulo
 
 ## Parámetros
 
-Se editan como un formulario (borrador, validación en seco, Aplicar con justificación; ADR 0021). Los defaults de biblioteca quedan marcados como tales.
+Se editan como un formulario (borrador, validación en seco, Aplicar; ADR 0021). Los defaults de biblioteca quedan marcados como tales.
 
 ### 1. Órbita (`orbit`)
 

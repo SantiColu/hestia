@@ -26,7 +26,7 @@
 
 ## Cambios
 
-- Toda escritura (UI o MCP) registra autor y justificación.
+- Toda escritura (UI o MCP) registra autor; los agentes además la justifican (ADR 0024).
 - Todo cálculo físico nuevo lleva test contra referencia citada, con tolerancia explícita.
 - Decisiones de arquitectura → ADR en `docs/adr/`.
 
