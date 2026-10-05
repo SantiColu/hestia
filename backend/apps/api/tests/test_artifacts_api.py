@@ -20,6 +20,7 @@ def _phase0(client: TestClient) -> dict[str, str]:
 def test_read_defaults(opened: TestClient) -> None:
     cells = _phase0(opened)
     body = opened.get(f"/project/cells/{cells['mission']}/artifact").json()
+    assert body["derived"] is None  # the mission has no derived values
     assert body["status"] == "never_run" and body["applied"] is False
     assert body["artifact"]["criteria"]["uncertainty_margin"] == 10.0
     assert body["provenance"]["criteria.uncertainty_margin"]["source"] == "default"
@@ -40,6 +41,7 @@ def test_dry_validation_changes_nothing(opened: TestClient) -> None:
             "message": "La masa tiene que ser mayor que 0.",
         }
     ]
+    assert body["derived"] is None
     assert len(opened.get("/project/history").json()) == 1
     session = opened.get("/session").json()["project"]
     assert session["document"]["revision"] == 1

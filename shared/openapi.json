@@ -498,6 +498,18 @@
           "context": {
             "$ref": "#/components/schemas/CellContext"
           },
+          "derived": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived"
+          },
           "outdates": {
             "items": {
               "type": "string"
@@ -535,7 +547,8 @@
           "problems",
           "provenance",
           "context",
-          "outdates"
+          "outdates",
+          "derived"
         ],
         "title": "CellArtifact",
         "type": "object"
@@ -3899,6 +3912,18 @@
       },
       "ValidationResult": {
         "properties": {
+          "derived": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived"
+          },
           "problems": {
             "items": {
               "$ref": "#/components/schemas/Problem"
@@ -3908,7 +3933,8 @@
           }
         },
         "required": [
-          "problems"
+          "problems",
+          "derived"
         ],
         "title": "ValidationResult",
         "type": "object"
@@ -4601,7 +4627,7 @@
     },
     "/project/cells/{cell_id}/artifact/validate": {
       "post": {
-        "description": "Dry run: the problems of a draft. Changes nothing (no history, no status).",
+        "description": "Dry run: the problems and derived values of a draft. Changes nothing (no history, no\nstatus).",
         "operationId": "validate_cell_artifact",
         "parameters": [
           {

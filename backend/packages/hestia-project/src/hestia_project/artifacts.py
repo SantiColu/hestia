@@ -8,7 +8,9 @@ computation stage, applying different parameters also outdates the cell itself (
 result) and never sets its status from the problems: that is what updating does.
 """
 
-from typing import Any
+import re
+from collections.abc import Iterator, Mapping
+from typing import Any, cast
 
 from pydantic import BaseModel, ValidationError
 
@@ -72,11 +74,16 @@ class CellArtifact(Schema):
     results and, for a computation stage, the cell itself), in project order. Preview for the
     confirmation; applying the same content or the first apply of the defaults outdates
     nothing."""
+    derived: dict[str, Any] | None
+    """Values the backend computes from the applied artifact (e.g. totals). Null for stages
+    without derived values."""
 
 
 class ValidationResult(Schema):
     problems: list[Problem]
     """Empty: the draft is valid."""
+    derived: dict[str, Any] | None
+    """Values the backend computes from the draft, as ``CellArtifact.derived``."""
 
 
 def _form_cell(project: Project, cell_id: str) -> tuple[Cell, FormSpec, FormState]:
@@ -132,6 +139,10 @@ def artifact_problems(project: Project, cell: Cell) -> list[Problem]:
     return spec.validate(spec.model.model_validate(state.artifact), form_context(project, cell.id))
 
 
+def _derived(spec: FormSpec, artifact: BaseModel) -> dict[str, Any] | None:
+    return spec.derive(artifact) if spec.derive is not None else None
+
+
 def read_artifact(project: Project, cell_id: str) -> CellArtifact:
     cell, spec, state = _form_cell(project, cell_id)
     artifact = spec.model.model_validate(state.artifact)
@@ -146,27 +157,32 @@ def read_artifact(project: Project, cell_id: str) -> CellArtifact:
         provenance=state.provenance,
         context=cell_context(project, cell.id),
         outdates=would_invalidate(project, [cell.id]),
+        derived=_derived(spec, artifact),
     )
 
 
-def validate_draft(project: Project, cell_id: str, draft: BaseModel) -> list[Problem]:
-    """Problems of a draft for the cell's stage. Does not change the project."""
+def validate_draft(project: Project, cell_id: str, draft: BaseModel) -> ValidationResult:
+    """Problems and derived values of a draft for the cell's stage. Does not change the
+    project."""
     cell, spec, _ = _form_cell(project, cell_id)
-    return spec.validate(_coerce(spec, draft), form_context(project, cell.id))
+    artifact = _coerce(spec, draft)
+    return ValidationResult(
+        problems=spec.validate(artifact, form_context(project, cell.id)),
+        derived=_derived(spec, artifact),
+    )
 
 
 def apply_artifact(project: Project, cell_id: str, draft: BaseModel) -> Outcome:
     """Replace the cell's artifact with ``draft``.
 
     Problems are allowed: a form cell is then failed; a computation cell keeps its status
-    (updating it fails while its parameters have problems). Items of id'd lists keep the ids
-    they had; new, unknown or repeated ids are replaced with backend ids. Raises ``NoChange``
-    if the content is the same and the cell was applied before.
+    (updating it fails while its parameters have problems). Ids of list items follow
+    ``assign_ids``. Raises ``NoChange`` if the content is the same and the cell was applied
+    before.
     """
     cell, spec, state = _form_cell(project, cell_id)
     data = _coerce(spec, draft).model_dump(mode="json")
-    for path, prefix in spec.id_prefixes.items():
-        _assign_ids(data, state.artifact, path, prefix)
+    assign_ids(data, state.artifact, spec.id_prefixes)
     content_changed = data != state.artifact
     first_apply = not is_applied(cell, state)
     if not content_changed and not first_apply:
@@ -194,17 +210,45 @@ def apply_artifact(project: Project, cell_id: str, draft: BaseModel) -> Outcome:
     )
 
 
-def _assign_ids(data: dict[str, Any], old: dict[str, Any], path: str, prefix: str) -> None:
-    items: list[dict[str, Any]] = data.get(path) or []
-    old_items: list[dict[str, Any]] = old.get(path) or []
-    known: set[str] = {str(item["id"]) for item in old_items if item.get("id")}
-    used: set[str] = set()
-    for item in items:
-        item_id = item.get("id")
-        if not isinstance(item_id, str) or item_id not in known or item_id in used:
-            item_id = new_id(prefix)
-            item["id"] = item_id
-        used.add(item_id)
+def assign_ids(data: dict[str, Any], old: dict[str, Any], prefixes: Mapping[str, str]) -> None:
+    """Give every item of the id'd lists of ``data`` (list path → prefix) a unique id (ADR 0019,
+    0025), in place.
+
+    An item keeps its id if it is known (in ``old``, the applied artifact) or proposed by the
+    client with the list's format (``<prefix>_<hex>``), and no earlier item of that list in the
+    whole artifact has it. Otherwise it gets a new backend id. References to a replaced id are
+    not rewritten: the validation reports them.
+    """
+    for path, prefix in prefixes.items():
+        known = {item.get("id") for item in _list_items(old, path)}
+        proposed = re.compile(rf"{re.escape(prefix)}_[0-9a-f]+")
+        used: set[str] = set()
+        for item in _list_items(data, path):
+            item_id = item.get("id")
+            if not (
+                isinstance(item_id, str)
+                and (item_id in known or proposed.fullmatch(item_id))
+                and item_id not in used
+            ):
+                item_id = new_id(prefix)
+                item["id"] = item_id
+            used.add(item_id)
+
+
+def _list_items(data: dict[str, Any], path: str) -> Iterator[dict[str, Any]]:
+    """Items of the list at ``path``; ``items[].modes`` walks the modes of every item."""
+    head, _, rest = path.partition("[].")
+    items = data.get(head)
+    if not isinstance(items, list):
+        return
+    for item in cast(list[Any], items):
+        if not isinstance(item, dict):
+            continue
+        item = cast(dict[str, Any], item)
+        if rest:
+            yield from _list_items(item, rest)
+        else:
+            yield item
 
 
 def _provenance(state: FormState, data: dict[str, Any]) -> tuple[dict[str, FieldProvenance], int]:

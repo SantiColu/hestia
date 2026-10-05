@@ -174,7 +174,8 @@ export interface paths {
     put?: never;
     /**
      * Validate Cell Artifact
-     * @description Dry run: the problems of a draft. Changes nothing (no history, no status).
+     * @description Dry run: the problems and derived values of a draft. Changes nothing (no history, no
+     *     status).
      */
     post: operations["validate_cell_artifact"];
     delete?: never;
@@ -974,6 +975,10 @@ export interface components {
       /** Cell Id */
       cell_id: string;
       context: components["schemas"]["CellContext"];
+      /** Derived */
+      derived: {
+        [key: string]: unknown;
+      } | null;
       /** Outdates */
       outdates: string[];
       /** Problems */
@@ -2316,6 +2321,10 @@ export interface components {
     };
     /** ValidationResult */
     ValidationResult: {
+      /** Derived */
+      derived: {
+        [key: string]: unknown;
+      } | null;
       /** Problems */
       problems: components["schemas"]["Problem"][];
     };

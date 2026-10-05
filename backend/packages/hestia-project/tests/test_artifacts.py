@@ -12,6 +12,7 @@ from hestia_project.artifacts import (
     CellArtifact,
     NoChange,
     apply_artifact,
+    assign_ids,
     read_artifact,
     validate_draft,
 )
@@ -106,14 +107,23 @@ def test_dry_validation_changes_nothing() -> None:
     mission = cell_of(doc.project, S.MISSION)
     problems = validate_draft(
         doc.project, mission.id, draft(envelope={"size_x": 0, "size_y": 1.0, "size_z": 1.0})
-    )
+    ).problems
     assert [(p.path, p.code) for p in problems] == [
         ("envelope.size_x", ProblemCode.MIN),
         ("envelope.mass", ProblemCode.REQUIRED),
     ]
-    assert validate_draft(doc.project, mission.id, draft()) == []
+    assert validate_draft(doc.project, mission.id, draft()).problems == []
     assert doc.project == before
     assert doc.revision == 1
+
+
+def test_stages_without_derived_values_return_none() -> None:
+    doc = doc_with_phase0()
+    for stage in (S.MISSION, S.ENVIRONMENT):
+        cell = cell_of(doc.project, stage)
+        assert read_artifact(doc.project, cell.id).derived is None
+        draft_of = read_artifact(doc.project, cell.id).artifact
+        assert validate_draft(doc.project, cell.id, draft_of).derived is None
 
 
 # ---------------------------------------------------------------- apply
@@ -304,3 +314,36 @@ def test_version_2_files_get_default_artifacts(tmp_path: Path) -> None:
     # Environment parameters (ADR 0021) get their defaults too.
     environment = cell_of(loaded.project, S.ENVIRONMENT)
     assert environment.form is not None and environment.status is CellStatus.NEVER_RUN
+
+
+# ---------------------------------------------------------------- ids of list items (ADR 0025)
+
+NESTED_PREFIXES = {"items": "item", "items[].modes": "imode"}
+
+
+def test_assign_ids_keeps_known_and_valid_proposed_ids_in_nested_lists() -> None:
+    old: dict[str, Any] = {"items": [{"id": "item_old", "modes": [{"id": "imode_old"}]}]}
+    data: dict[str, Any] = {
+        "items": [
+            {"id": "item_old", "modes": [{"id": "imode_old"}, {"id": "imode_beef"}]},
+            {"id": "item_cafe", "modes": [{"id": None}, {"id": "imode_beef"}]},
+            {"modes": [{"id": "item_abc"}]},
+        ]
+    }
+    assign_ids(data, old, NESTED_PREFIXES)
+    first, second, third = data["items"]
+    assert first["id"] == "item_old"  # known, even without the hex format
+    assert [m["id"] for m in first["modes"]] == ["imode_old", "imode_beef"]
+    assert second["id"] == "item_cafe"  # proposed by the client
+    generated = [second["modes"][0]["id"], second["modes"][1]["id"], third["modes"][0]["id"]]
+    # Missing, repeated in the artifact (even under another item) or of another list: replaced.
+    assert all(i.startswith("imode_") for i in generated)
+    assert len({*generated, "imode_old", "imode_beef"}) == 5
+    assert third["id"].startswith("item_")
+
+
+def test_assign_ids_skips_lists_that_are_absent() -> None:
+    data: dict[str, Any] = {"items": [{"name": "sin modos"}]}
+    assign_ids(data, {}, NESTED_PREFIXES)
+    assert data["items"][0]["id"].startswith("item_")
+    assert "modes" not in data["items"][0]

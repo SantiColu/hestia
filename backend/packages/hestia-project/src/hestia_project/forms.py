@@ -44,9 +44,13 @@ class FormSpec:
     defaults: Callable[[], BaseModel]
     validate: Callable[[Any, FormContext], list[Problem]]
     id_prefixes: dict[str, str] = field(default_factory=dict[str, str])
-    """Lists whose items get a backend id (list path → id prefix)."""
+    """Lists whose items have an id (list path → id prefix). A nested list is reached through
+    the items of its parent: ``items[].modes`` (ADR 0025)."""
     upgrade: Callable[[dict[str, Any]], dict[str, Any]] | None = None
     """Artifact of any older version (JSON) → current version. None: a single version."""
+    derive: Callable[[Any], dict[str, Any]] | None = None
+    """Values the backend computes from the artifact (e.g. totals), returned when reading it and
+    validating a draft. None: the stage has no derived values."""
 
 
 def _validate_environment(parameters: EnvironmentParameters, context: FormContext) -> list[Problem]:

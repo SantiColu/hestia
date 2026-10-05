@@ -106,7 +106,7 @@ def test_parameters_are_a_form_with_the_orbit_and_the_attitude() -> None:
         dispersion={"ltan_dispersion": 600},
         sampling={"mission_step": 2 * 365.25 * 86_400},
     )
-    problems = validate_draft(doc.project, env.id, draft)
+    problems = validate_draft(doc.project, env.id, draft).problems
     assert [(p.path, p.code) for p in problems] == [
         ("dispersion.ltan_dispersion", ProblemCode.NOT_ALLOWED),
         ("sampling.mission_step", ProblemCode.MAX),
@@ -165,6 +165,24 @@ def test_list_items_get_backend_ids_that_stay() -> None:
     update(doc)
     summary = read_result(doc.project, doc.results, env_id).environment
     assert summary is not None and summary.conditions[-1].id == condition_id
+
+
+def test_proposed_ids_are_kept_when_valid_and_unique() -> None:
+    doc = phase0()
+    env_id = cell_of(doc.project, S.ENVIRONMENT).id
+    modes = [
+        {**NADIR, "id": "mode_c0ffee"},
+        {**NADIR, "id": "mode_c0ffee", "name": "Repetido"},
+        {**NADIR, "id": "Mode-1", "name": "Mal formado"},
+        {**NADIR, "id": "cond_abc", "name": "Otro prefijo"},
+    ]
+    apply_parameters(doc, parameters(attitude_modes=modes))
+    applied = read_artifact(doc.project, env_id).artifact
+    assert isinstance(applied, EnvironmentParameters)
+    ids = [m.id for m in applied.attitude_modes]
+    assert ids[0] == "mode_c0ffee"
+    assert all(i is not None and i.startswith("mode_") for i in ids)
+    assert len(set(ids)) == len(ids)
 
 
 def test_an_eccentric_orbit_fails_the_update() -> None:

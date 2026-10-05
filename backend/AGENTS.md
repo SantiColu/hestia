@@ -55,7 +55,7 @@ uv run uvicorn hestia_api.main:app --reload   # http://localhost:8000/health
 | `catalog` | Tipos de etapa (clase, requisitos de contexto, orden, implementada), plantillas «Fase 0» y «Fase 1» con sus vínculos |
 | `model` | `Project` (con `SCHEMA_VERSION`), `System`, `Cell`, `Link`, estados, procedencia |
 | `schematic` | Operaciones del esquemático, contexto resuelto (ADR 0016), las cinco reglas de vínculo, propagación de `outdated` |
-| `forms`, `artifacts` | Registro de formularios (etapas formulario y parámetros de etapas de cálculo) y leer / validar en seco / aplicar su artefacto con procedencia por campo (ADR 0017, 0019) |
+| `forms`, `artifacts` | Registro de formularios (etapas formulario y parámetros de etapas de cálculo: modelo, defaults, validación, prefijos de id —también de listas anidadas, `items[].modes`— y derivados opcionales) y leer / validar en seco / aplicar su artefacto con procedencia por campo (ADR 0017, 0019). Leer y validar devuelven los derivados de la etapa (`derived`, null si no tiene); aplicar conserva los ids propuestos por el cliente con formato válido (`assign_ids`, ADR 0025) |
 | `computations` | Registro de etapas de cálculo, Actualizar, estados, procedencia, lectura del resultado y de los perfiles (ADR 0021, 0022) y vista previa de la órbita de un borrador (ADR 0023) |
 | `migration` | Subir proyectos de versiones anteriores (vínculos reevaluados, órbita y actitud de Misión a Entorno, avisos) |
 | `clipboard` | Fragmentos versionados para copiar y pegar sistemas y celdas (ADR 0014) |

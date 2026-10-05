@@ -371,14 +371,15 @@ async def get_cell_artifact(cell_id: str) -> Json:
     """The applied artifact of a form cell (mission) or the applied parameters of a computation
     cell (environment: design values, dispersion, sampling, custom conditions): values in SI
     units, validation problems ({path, code, message}), per-field provenance ({source,
-    change_id}), status and context. Start from this artifact to build a draft."""
+    change_id}), status, context and `derived`: values the backend computes from the artifact
+    (null for stages without them). Start from this artifact to build a draft."""
     return await call("get_cell_artifact", path={"cell_id": cell_id})
 
 
 @_tool("validate_cell_artifact")
 async def validate_cell_artifact(cell_id: str, artifact: Json) -> Json:
-    """Dry run: the problems a draft artifact would have. Changes nothing. The draft is the
-    whole artifact (possibly incomplete), as returned by get_cell_artifact."""
+    """Dry run: the problems and `derived` values a draft artifact would have. Changes nothing.
+    The draft is the whole artifact (possibly incomplete), as returned by get_cell_artifact."""
     return await call(
         "validate_cell_artifact", path={"cell_id": cell_id}, json={"artifact": artifact}
     )
@@ -390,7 +391,11 @@ async def apply_cell_artifact(cell_id: str, artifact: Json, justification: str) 
     one undoable change. The justification is required. Problems are allowed (a form cell is
     then failed); everything downstream (and a computation cell itself) becomes outdated if the
     content changed; `change` is null if nothing changed. Keep the ids of existing list items
-    (attitude_modes[].id, custom_conditions[].id); new items get ids."""
+    (attitude_modes[].id, custom_conditions[].id). A new item may carry an id you propose, as
+    `<prefix>_<hex>` with its list's prefix (e.g. `mode_1a2b`), so other fields of the same
+    draft can reference it; it is kept if no other item of that list has it. Items without a
+    valid unique id get one from the backend (a reference to a replaced id is reported as a
+    problem, never rewritten)."""
     return await call(
         "apply_cell_artifact",
         path={"cell_id": cell_id},
