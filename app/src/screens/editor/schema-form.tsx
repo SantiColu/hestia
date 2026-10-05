@@ -7,6 +7,12 @@ import { FieldFootnote, FieldLabel } from "@/components/forms/field-label";
 import { NumberField } from "@/components/forms/number-field";
 import { Segmented } from "@/components/forms/segmented";
 import { SelectField } from "@/components/forms/select-field";
+import {
+  TableSelect,
+  TableTextInput,
+  tableCellClass,
+  tableHeadClass,
+} from "@/components/forms/table-inputs";
 import { TextField } from "@/components/forms/text-field";
 import { SectionLabel } from "@/components/navigation/section-label";
 import { Button } from "@/components/ui/button";
@@ -27,7 +33,15 @@ import {
 import { isIsoDate } from "@/lib/format";
 import { fromDisplay, toDisplay } from "@/lib/units";
 import { cn } from "@/lib/utils";
-import { applies, field, formatValue, resolve, type Field, type JsonSchema } from "./schema";
+import {
+  applies,
+  enumOptions,
+  field,
+  formatValue,
+  resolve,
+  type Field,
+  type JsonSchema,
+} from "./schema";
 
 /**
  * A form generated from the JSON Schema of an artifact (ADR 0017, `workspace.pen` frames
@@ -73,11 +87,6 @@ export function SchemaForm(ctx: FormContext) {
       </section>
     );
   });
-}
-
-function enumOptions(f: Field): { value: string; label: string }[] {
-  const labels = f.meta["x-enum-labels"] ?? {};
-  return (f.node.enum ?? []).map((value) => ({ value, label: labels[value] ?? value }));
 }
 
 /** Fields that take a whole row: option selectors and free text. */
@@ -338,10 +347,6 @@ function ChoicesField({
 
 // ---------------------------------------------------------------- table
 
-const cellClass = "h-8 border-b border-border px-2.5";
-const cellInput =
-  "h-full w-full bg-transparent text-xs outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset aria-invalid:ring-1 aria-invalid:ring-error aria-invalid:ring-inset";
-
 /** Width of an option column: short codes (axes) or labels (directions). */
 function columnWidth(f: Field): string {
   const labels = enumOptions(f).map((o) => o.label.length);
@@ -373,22 +378,16 @@ function TableField({ ctx, path, f }: { ctx: FormContext; path: JsonPath; f: Fie
       >
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-surface-2 text-left">
+            <tr className="bg-surface-2">
               {columns.map(([name, meta]) => {
                 const cf = field(meta, ctx.root);
                 return (
-                  <th
-                    key={name}
-                    className={cn(
-                      "h-7 border-b border-border px-2.5 text-2xs font-medium text-subtle-foreground",
-                      cf.node.enum && columnWidth(cf),
-                    )}
-                  >
+                  <th key={name} className={cn(tableHeadClass, cf.node.enum && columnWidth(cf))}>
                     {meta["x-column-title"] ?? meta.title ?? name}
                   </th>
                 );
               })}
-              <th className="h-7 w-11 border-b border-border" />
+              <th className={cn(tableHeadClass, "w-11")} />
             </tr>
           </thead>
           <tbody className="[&>tr:last-child>td]:border-b-0">
@@ -397,49 +396,27 @@ function TableField({ ctx, path, f }: { ctx: FormContext; path: JsonPath; f: Fie
                 {columns.map(([name, meta]) => {
                   const cellPath = [...path, row, name];
                   const cf = field(meta, ctx.root);
-                  const value = getAt(ctx.current, cellPath) ?? null;
-                  const errors = problemsAt(ctx, cellPath);
-                  const invalid = errors.length > 0 || undefined;
-                  const title = errors.map((p) => p.message).join(" ") || undefined;
-                  const label = meta.title ?? name;
-                  const set = (next: string) => ctx.onChange(cellPath, next === "" ? null : next);
+                  const value = getAt(ctx.current, cellPath);
+                  const error = problemsAt(ctx, cellPath)
+                    .map((p) => p.message)
+                    .join(" ");
+                  const common = {
+                    label: meta.title ?? name,
+                    error: error || undefined,
+                    value: typeof value === "string" ? value : null,
+                    onChange: (next: string | null) => ctx.onChange(cellPath, next),
+                  };
                   return (
-                    <td key={name} className={cn(cellClass, "px-0")}>
+                    <td key={name} className={cn(tableCellClass, "px-0")}>
                       {cf.node.enum ? (
-                        <select
-                          aria-label={label}
-                          aria-invalid={invalid}
-                          title={title}
-                          className={cn(
-                            cellInput,
-                            "cursor-pointer appearance-none px-2.5 font-mono [&>option]:bg-surface",
-                            value === null && "text-subtle-foreground",
-                          )}
-                          value={typeof value === "string" ? value : ""}
-                          onChange={(e) => set(e.target.value)}
-                        >
-                          <option value="">—</option>
-                          {enumOptions(cf).map((o) => (
-                            <option key={o.value} value={o.value}>
-                              {o.label}
-                            </option>
-                          ))}
-                        </select>
+                        <TableSelect {...common} options={enumOptions(cf)} className="font-mono" />
                       ) : (
-                        <input
-                          aria-label={label}
-                          aria-invalid={invalid}
-                          title={title}
-                          placeholder="—"
-                          className={cn(cellInput, "px-2.5 placeholder:text-subtle-foreground")}
-                          value={typeof value === "string" ? value : ""}
-                          onChange={(e) => set(e.target.value)}
-                        />
+                        <TableTextInput {...common} />
                       )}
                     </td>
                   );
                 })}
-                <td className={cn(cellClass, "px-0 text-center")}>
+                <td className={cn(tableCellClass, "px-0 text-center")}>
                   <Button
                     size="icon-sm"
                     variant="ghost"

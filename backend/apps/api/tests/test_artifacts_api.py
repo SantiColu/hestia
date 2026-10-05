@@ -78,10 +78,9 @@ def test_apply_undo_redo(opened: TestClient) -> None:
 
 def test_not_implemented_stages(opened: TestClient) -> None:
     cells = _phase0(opened)
-    for stage in ("equipment", "global_balance"):
-        response = opened.get(f"/project/cells/{cells[stage]}/artifact")
-        assert response.status_code == 422
-        assert response.json()["code"] == "stage_not_implemented"
+    response = opened.get(f"/project/cells/{cells['global_balance']}/artifact")
+    assert response.status_code == 422
+    assert response.json()["code"] == "stage_not_implemented"
     assert opened.get("/project/cells/nope/artifact").status_code == 404
 
 
@@ -92,6 +91,6 @@ def test_artifact_schema(client: TestClient) -> None:
     environment = client.get("/catalog/stages/environment/artifact-schema").json()
     orbit = environment["$defs"]["Orbit"]["properties"]
     assert orbit["altitude"]["x-unit"] == "m" and orbit["altitude"]["x-display-unit"] == "km"
-    response = client.get("/catalog/stages/equipment/artifact-schema")
+    response = client.get("/catalog/stages/global_balance/artifact-schema")
     assert response.status_code == 422
     assert response.json()["code"] == "stage_not_implemented"

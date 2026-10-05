@@ -87,10 +87,12 @@ async def get_catalog() -> Json:
 
 @_tool("get_artifact_schema")
 async def get_artifact_schema(stage: StageType) -> Json:
-    """JSON Schema of the artifact of a form stage (`mission`) or of the parameters of a
-    computation stage (`environment`): fields, enums, SI unit (`x-unit`) of each physical field,
-    library defaults (`x-default`, `x-default-source`) and which fields apply to each orbit type
-    (`x-show-if`). Values are always in SI units and kelvin."""
+    """JSON Schema of the artifact of a form stage (`mission`, `equipment`) or of the parameters
+    of a computation stage (`environment`): fields, enums with their labels (`x-enum-labels`),
+    SI unit (`x-unit`) of each physical field, library defaults (`x-default`,
+    `x-default-source`), which fields apply to each orbit type (`x-show-if`) and the prefix of
+    the ids you may propose for new list items (`x-id-prefix`). Values are always in SI units
+    and kelvin."""
     return await call("get_artifact_schema", path={"stage": stage})
 
 
@@ -368,9 +370,9 @@ async def unlink_cells(link_id: str, justification: str) -> Json:
 
 @_tool("get_cell_artifact")
 async def get_cell_artifact(cell_id: str) -> Json:
-    """The applied artifact of a form cell (mission) or the applied parameters of a computation
-    cell (environment: design values, dispersion, sampling, custom conditions): values in SI
-    units, validation problems ({path, code, message}), per-field provenance ({source,
+    """The applied artifact of a form cell (mission, equipment) or the applied parameters of a
+    computation cell (environment: design values, dispersion, sampling, custom conditions):
+    values in SI units, validation problems ({path, code, message}), per-field provenance ({source,
     change_id}), status, context and `derived`: values the backend computes from the artifact
     (null for stages without them). Start from this artifact to build a draft."""
     return await call("get_cell_artifact", path={"cell_id": cell_id})

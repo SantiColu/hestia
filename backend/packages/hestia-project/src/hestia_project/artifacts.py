@@ -15,6 +15,7 @@ from typing import Any, cast
 from pydantic import BaseModel, ValidationError
 
 from hestia_core.environment.parameters import EnvironmentParameters
+from hestia_core.equipment import EquipmentArtifact
 from hestia_core.forms import Problem
 from hestia_core.mission import MissionArtifact
 from hestia_project.base import Schema
@@ -43,8 +44,8 @@ from hestia_project.schematic import (
     would_invalidate,
 )
 
-Artifact = MissionArtifact | EnvironmentParameters
-"""Artifact of a form stage or parameters of a computation stage. Both models forbid unknown
+Artifact = MissionArtifact | EquipmentArtifact | EnvironmentParameters
+"""Artifact of a form stage or parameters of a computation stage. The models forbid unknown
 fields, so a JSON body resolves to the right one; the backend then validates it against the
 model of the cell's stage."""
 
@@ -146,7 +147,7 @@ def _derived(spec: FormSpec, artifact: BaseModel) -> dict[str, Any] | None:
 def read_artifact(project: Project, cell_id: str) -> CellArtifact:
     cell, spec, state = _form_cell(project, cell_id)
     artifact = spec.model.model_validate(state.artifact)
-    assert isinstance(artifact, MissionArtifact | EnvironmentParameters)
+    assert isinstance(artifact, MissionArtifact | EquipmentArtifact | EnvironmentParameters)
     return CellArtifact(
         cell_id=cell.id,
         stage=cell.stage,

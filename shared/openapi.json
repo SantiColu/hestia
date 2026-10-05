@@ -72,6 +72,9 @@
                 "$ref": "#/components/schemas/MissionArtifact"
               },
               {
+                "$ref": "#/components/schemas/EquipmentArtifact"
+              },
+              {
                 "$ref": "#/components/schemas/EnvironmentParameters"
               }
             ],
@@ -124,6 +127,9 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/MissionArtifact"
+              },
+              {
+                "$ref": "#/components/schemas/EquipmentArtifact"
               },
               {
                 "$ref": "#/components/schemas/EnvironmentParameters"
@@ -484,6 +490,9 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/MissionArtifact"
+              },
+              {
+                "$ref": "#/components/schemas/EquipmentArtifact"
               },
               {
                 "$ref": "#/components/schemas/EnvironmentParameters"
@@ -1686,6 +1695,35 @@
         "title": "EnvironmentSummary",
         "type": "object"
       },
+      "EquipmentArtifact": {
+        "additionalProperties": false,
+        "description": "Artifact of the equipment stage: the items with their modes and the operating modes.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/Item"
+            },
+            "title": "Equipos",
+            "type": "array",
+            "x-add-label": "Agregar equipo"
+          },
+          "operating_modes": {
+            "items": {
+              "$ref": "#/components/schemas/OperatingMode"
+            },
+            "title": "Modos operativos",
+            "type": "array",
+            "x-add-label": "Agregar modo operativo"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          }
+        },
+        "title": "EquipmentArtifact",
+        "type": "object"
+      },
       "EventType": {
         "enum": [
           "connected",
@@ -2257,6 +2295,237 @@
         "title": "General",
         "type": "object"
       },
+      "Item": {
+        "description": "An item of equipment (``quantity`` identical items, always in the same mode).",
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Proposed by the client (`<prefix>_<hex>`) or generated when applied. Immutable.",
+            "title": "Id",
+            "x-id-prefix": "item"
+          },
+          "location": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Location"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cara donde va montado, o interno.",
+            "title": "Ubicación",
+            "x-enum-labels": {
+              "+X": "+X",
+              "+Y": "+Y",
+              "+Z": "+Z",
+              "-X": "-X",
+              "-Y": "-Y",
+              "-Z": "-Z",
+              "internal": "Interno"
+            }
+          },
+          "mass": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Por ítem.",
+            "title": "Masa",
+            "x-display-unit": "kg",
+            "x-unit": "kg"
+          },
+          "modes": {
+            "description": "Modos propios del equipo (encendido). Apagado está siempre disponible.",
+            "items": {
+              "$ref": "#/components/schemas/ItemMode"
+            },
+            "title": "Modos",
+            "type": "array",
+            "x-add-label": "Agregar modo"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre",
+            "x-placeholder": "Rueda de reacción"
+          },
+          "non_operating_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Apagado. Opcional: con la mínima no operativa.",
+            "title": "Temperatura no operativa máxima",
+            "x-column-title": "T no op. máx",
+            "x-display-unit": "°C",
+            "x-unit": "K"
+          },
+          "non_operating_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Apagado. Opcional: con la máxima no operativa.",
+            "title": "Temperatura no operativa mínima",
+            "x-column-title": "T no op. mín",
+            "x-display-unit": "°C",
+            "x-unit": "K"
+          },
+          "operating_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperatura operativa máxima",
+            "x-column-title": "T op. máx",
+            "x-display-unit": "°C",
+            "x-unit": "K"
+          },
+          "operating_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperatura operativa mínima",
+            "x-column-title": "T op. mín",
+            "x-display-unit": "°C",
+            "x-unit": "K"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 1,
+            "description": "Ítems idénticos, siempre en el mismo modo.",
+            "title": "Cantidad",
+            "x-column-title": "Cant."
+          },
+          "subsystem": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Subsystem"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subsistema",
+            "x-enum-labels": {
+              "aocs": "Control de actitud",
+              "obdh": "Computadora de a bordo",
+              "other": "Otro",
+              "payload": "Carga útil",
+              "power": "Potencia",
+              "propulsion": "Propulsión",
+              "structure": "Estructura",
+              "thermal": "Térmico",
+              "ttc": "Comunicaciones"
+            }
+          },
+          "switch_on_min": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Opcional.",
+            "title": "Temperatura mínima de encendido",
+            "x-column-title": "T encendido mín",
+            "x-display-unit": "°C",
+            "x-unit": "K"
+          }
+        },
+        "title": "Item",
+        "type": "object"
+      },
+      "ItemMode": {
+        "description": "A mode of an item's own (on): its dissipation, per item.",
+        "properties": {
+          "dissipation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Disipación media en este modo, por ítem.",
+            "title": "Disipación",
+            "x-display-unit": "W",
+            "x-unit": "W"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Proposed by the client (`<prefix>_<hex>`) or generated when applied. Immutable.",
+            "title": "Id",
+            "x-id-prefix": "imode"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre",
+            "x-placeholder": "Nominal"
+          }
+        },
+        "title": "ItemMode",
+        "type": "object"
+      },
       "Link": {
         "description": "Passes the context of ``source_cell_id`` (the cell and everything upstream of it) on to\n``target_cell_id`` (ADR 0016).",
         "properties": {
@@ -2304,6 +2573,20 @@
         ],
         "title": "LinkRequest",
         "type": "object"
+      },
+      "Location": {
+        "description": "Where an item is mounted: a face of the body (``mission.Face``) or inside it.",
+        "enum": [
+          "+X",
+          "-X",
+          "+Y",
+          "-Y",
+          "+Z",
+          "-Z",
+          "internal"
+        ],
+        "title": "Location",
+        "type": "string"
       },
       "MissionArtifact": {
         "additionalProperties": false,
@@ -2521,6 +2804,67 @@
           "path"
         ],
         "title": "OpenProjectRequest",
+        "type": "object"
+      },
+      "OperatingMode": {
+        "description": "A configuration of the whole satellite: the mode of every item, or Off (``null``).",
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Proposed by the client (`<prefix>_<hex>`) or generated when applied. Immutable.",
+            "title": "Id",
+            "x-id-prefix": "opmode"
+          },
+          "max_duration": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío: puede durar indefinidamente (estacionario).",
+            "title": "Duración máxima",
+            "x-display-unit": "h",
+            "x-unit": "s"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nombre",
+            "x-placeholder": "Adquisición"
+          },
+          "states": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "description": "Id de cada equipo → id de uno de sus modos, o null (Apagado).",
+            "title": "Estados",
+            "type": "object"
+          }
+        },
+        "title": "OperatingMode",
         "type": "object"
       },
       "Operation": {
@@ -3742,6 +4086,21 @@
           "sensitivity"
         ],
         "title": "StageType",
+        "type": "string"
+      },
+      "Subsystem": {
+        "enum": [
+          "payload",
+          "power",
+          "obdh",
+          "ttc",
+          "aocs",
+          "propulsion",
+          "thermal",
+          "structure",
+          "other"
+        ],
+        "title": "Subsystem",
         "type": "string"
       },
       "System": {

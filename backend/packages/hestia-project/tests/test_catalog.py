@@ -36,9 +36,12 @@ def test_classes() -> None:
     forms = {s for s, spec in STAGES.items() if spec.kind is StageKind.FORM}
     assert roots == forms == {S.MISSION, S.EQUIPMENT}
     assert all(STAGES[s].requires == () for s in roots)
-    # Mission (form) and environment (computation) are implemented; equipment is registered
-    # without a form.
-    assert {s for s, spec in STAGES.items() if spec.implemented} == {S.MISSION, S.ENVIRONMENT}
+    # Mission and equipment (forms) and environment (computation) are implemented.
+    assert {s for s, spec in STAGES.items() if spec.implemented} == {
+        S.MISSION,
+        S.ENVIRONMENT,
+        S.EQUIPMENT,
+    }
 
 
 def test_requirements_follow_the_doc_table() -> None:
@@ -89,5 +92,5 @@ def test_catalog_lists_everything() -> None:
     assert {t.id for t in data.templates} == set(TemplateId)
     assert [p.template for p in data.phases] == [TemplateId.PHASE_0, TemplateId.PHASE_1]
     equipment = next(s for s in data.stages if s.stage is S.EQUIPMENT)
-    assert equipment.root and equipment.kind is StageKind.FORM and not equipment.implemented
+    assert equipment.root and equipment.kind is StageKind.FORM and equipment.implemented
     assert equipment.order == 2

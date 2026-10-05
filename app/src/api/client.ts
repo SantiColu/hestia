@@ -21,6 +21,10 @@ export type Change = Schemas["Change"];
 export type EnvironmentCondition = Schemas["Condition"];
 export type EnvironmentParameters = Schemas["EnvironmentParameters"];
 export type EnvironmentSummary = Schemas["EnvironmentSummary"];
+export type EquipmentArtifact = Schemas["EquipmentArtifact"];
+export type EquipmentItem = Schemas["Item"];
+export type ItemMode = Schemas["ItemMode"];
+export type OperatingMode = Schemas["OperatingMode"];
 export type FaceFluxes = Schemas["FaceFluxes"];
 export type Fragment = Schemas["Fragment-Output"];
 export type Link = Schemas["Link"];
@@ -40,6 +44,7 @@ export type StageType = Schemas["StageType"];
 export type System = Schemas["System"];
 export type TemplateId = Schemas["TemplateId"];
 export type UpdateCellResult = Schemas["UpdateCellResult"];
+export type ValidationResult = Schemas["ValidationResult"];
 
 /** An error answered by the API. `code` is stable (e.g. `project_locked`). */
 export class ApiError extends Error {

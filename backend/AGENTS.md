@@ -6,7 +6,7 @@ uv workspace (Python 3.12). Toda la lógica de dominio de Hestia vive acá.
 
 | Paquete | Ruta | Contiene | Puede importar |
 |---|---|---|---|
-| `hestia_core` | `packages/hestia-core` | Física pura, modelos de artefactos (pydantic) y su validación (`mission`, `forms`, `orbits`), física del entorno (`sun`, `eclipse`, `view_factors`, `attitude`), etapa Entorno (`environment`: órbita y modos de actitud, parámetros, resultado, Protocol `EnvironmentProvider` y proveedor analítico), Protocols de proveedores externos | nada de Hestia |
+| `hestia_core` | `packages/hestia-core` | Física pura, modelos de artefactos (pydantic) y su validación (`mission`, `equipment`, `forms`, `orbits`), física del entorno (`sun`, `eclipse`, `view_factors`, `attitude`), etapa Entorno (`environment`: órbita y modos de actitud, parámetros, resultado, Protocol `EnvironmentProvider` y proveedor analítico), Protocols de proveedores externos | nada de Hestia |
 | `hestia_adapters` | `packages/hestia-adapters` | Implementaciones de los Protocols de core (Orekit, pyViewFactor, SciPy…) | `hestia_core` |
 | `hestia_project` | `packages/hestia-project` | Grafo de etapas, estados, procedencia, historial/deshacer, persistencia | `hestia_core` |
 | `hestia_api` | `apps/api` | FastAPI: rutas, DTOs, composición de dependencias | todos |
