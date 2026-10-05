@@ -65,7 +65,7 @@ export function TableTextInput({
   );
 }
 
-/** A number inside a table cell (mono, right-aligned, "en-US" decimals). Empty is `null`. */
+/** A number inside a table cell (mono, "en-US" decimals). Empty is `null`. */
 export function TableNumberInput({
   value,
   onValueChange,
@@ -88,7 +88,7 @@ export function TableNumberInput({
         placeholder="—"
         className={cn(
           inputClass,
-          "text-right font-mono tabular-nums placeholder:font-sans",
+          "font-mono tabular-nums placeholder:font-sans",
           state.className,
           props.className,
         )}

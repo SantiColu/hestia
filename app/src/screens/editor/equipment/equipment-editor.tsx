@@ -66,10 +66,7 @@ export function EquipmentEditor({
             <SectionLabel>{schema.properties?.items?.title}</SectionLabel>
             <ItemsTable form={form} artifact={artifact} onEdit={onEdit} />
           </section>
-          <section className="flex flex-col gap-3.5">
-            <SectionLabel>{schema.properties?.operating_modes?.title}</SectionLabel>
-            <OperatingModes form={form} artifact={artifact} onEdit={onEdit} />
-          </section>
+          <OperatingModes form={form} artifact={artifact} onEdit={onEdit} />
         </div>
       </div>
       {(draft.draft !== null || !cellArtifact.applied) && (

@@ -23,12 +23,12 @@ export function SegmentMeter({
     <span
       role="img"
       aria-label={`${lit} de ${SEGMENTS}`}
-      className={cn("inline-flex shrink-0 items-center gap-0.5", className)}
+      className={cn("inline-flex shrink-0 items-center gap-px", className)}
     >
       {Array.from({ length: SEGMENTS }, (_, i) => (
         <span
           key={i}
-          className={cn("h-2.5 w-1 rounded-xs", i < lit ? "bg-hot" : "bg-border-strong")}
+          className={cn("h-3 w-1 rounded-xs", i < lit ? "bg-hot" : "bg-border-strong")}
         />
       ))}
     </span>

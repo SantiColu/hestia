@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import type { EquipmentArtifact, EquipmentItem, OperatingMode } from "@/api/client";
 import { Segmented } from "@/components/forms/segmented";
 import { tableCellClass, tableHeadClass } from "@/components/forms/table-inputs";
+import { SectionLabel } from "@/components/navigation/section-label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { EquipmentForm } from "./cells";
@@ -19,7 +20,19 @@ const ROWS: { value: Rows; label: string }[] = [
   { value: "modes", label: "Modos" },
 ];
 
-const rowHeadClass = cn(tableCellClass, "max-w-60 bg-surface-2 text-left text-xs font-normal");
+/** A column of the matrix (an operating mode, or an item when transposed). */
+const columnClass = "w-45 border-l";
+/** The narrow empty column that closes the rows of the matrix, as in the design. */
+const endColumnClass = "w-11 border-l";
+/** Padding of a cell holding a `ModeHeader` (name and total in two lines). */
+const modeHeadPadding = "pt-1 pr-1 pb-1.5";
+/** Row header of an item: its name with the quantity. */
+const itemHeadClass = cn(tableCellClass, "min-w-60 px-3 text-left text-ui font-normal");
+/** Row header of a shaded row: the duration, and the operating modes when transposed. */
+const shadedHeadClass = cn(
+  tableCellClass,
+  "min-w-45 bg-surface-2 text-left text-xs font-normal text-muted-foreground",
+);
 
 type MatrixProps = {
   form: EquipmentForm;
@@ -64,24 +77,26 @@ export function OperatingModes({
   };
 
   return (
-    <div className="flex flex-col gap-3.5">
-      <div className="flex items-center gap-6">
-        <p className="flex-1 text-xs text-subtle-foreground">
-          Cada modo operativo es una configuración del satélite: elegí en qué modo está cada equipo.
-          Apagado disipa 0 W y se verifica con los límites no operativos. Σ es la disipación total
-          del modo (cantidad × W por ítem); sus barras lo comparan con el modo que más disipa, y las
-          de cada celda, con la mayor disipación por ítem de la tabla.
-        </p>
-        <span className="flex items-center gap-2 text-xs text-muted-foreground">
-          Filas:
-          <Segmented
-            aria-label="Filas de la matriz"
-            options={ROWS}
-            value={rows}
-            onValueChange={setRows}
-          />
-        </span>
+    <section className="flex flex-col gap-3.5">
+      <div className="flex items-center gap-3">
+        <SectionLabel className="flex-1">
+          {form.schema.root.properties?.operating_modes?.title}
+        </SectionLabel>
+        <span className="text-xs text-subtle-foreground">Filas</span>
+        <Segmented
+          aria-label="Filas de la matriz"
+          options={ROWS}
+          value={rows}
+          onValueChange={setRows}
+          className="border-0 bg-surface-2"
+        />
       </div>
+      <p className="text-xs text-subtle-foreground">
+        Cada modo operativo es una configuración del satélite: en qué modo está cada equipo. Apagado
+        usa los límites no operativos. Σ: disipación total del modo (cantidad × disipación, la
+        calcula el backend); sus barras comparan los modos entre sí. Las barras de cada celda
+        comparan la disipación por ítem con la mayor de la tabla.
+      </p>
       <div className="overflow-x-auto rounded-lg border border-border">
         {rows === "items" ? <ByItems {...matrix} /> : <ByModes {...matrix} />}
       </div>
@@ -97,7 +112,7 @@ export function OperatingModes({
         <Plus data-icon="inline-start" />{" "}
         {form.schema.root.properties?.operating_modes?.["x-add-label"]}
       </Button>
-    </div>
+    </section>
   );
 }
 
@@ -107,13 +122,14 @@ function durationTitle(form: EquipmentForm): string {
 
 /** Items in rows, operating modes in columns: duration first, delete last. */
 function ByItems({ form, artifact, items, modes, renaming, onRenaming, onEdit }: MatrixProps) {
+  const endCell = <td className={cn(tableCellClass, endColumnClass)} />;
   return (
-    <table className="w-full border-collapse [&_tr:last-child>*]:border-b-0">
+    <table className="w-full border-collapse [&>tbody>tr:last-child>*]:border-b-0">
       <thead>
         <tr className="bg-surface-2">
-          <th className={cn(tableHeadClass, "w-60")}>Equipo</th>
+          <th className={tableHeadClass}>Equipo \ Modo operativo</th>
           {modes.map((mode, k) => (
-            <th key={mode.id ?? k} className={cn(tableHeadClass, "border-l")}>
+            <th key={mode.id ?? k} className={cn(tableHeadClass, columnClass, modeHeadPadding)}>
               <ModeHeader
                 form={form}
                 mode={mode}
@@ -123,20 +139,22 @@ function ByItems({ form, artifact, items, modes, renaming, onRenaming, onEdit }:
               />
             </th>
           ))}
+          <th className={cn(tableHeadClass, endColumnClass)} />
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <th className={rowHeadClass}>{durationTitle(form)}</th>
+        <tr className="bg-surface-2">
+          <th className={shadedHeadClass}>{durationTitle(form)}</th>
           {modes.map((mode, k) => (
             <td key={mode.id ?? k} className={cn(tableCellClass, "border-l px-0")}>
               <DurationCell form={form} mode={mode} index={k} />
             </td>
           ))}
+          {endCell}
         </tr>
         {items.map((item, i) => (
           <tr key={item.id ?? i}>
-            <th className={rowHeadClass}>
+            <th className={itemHeadClass}>
               <ItemHeader item={item} index={i} />
             </th>
             {modes.map((mode, k) => (
@@ -144,15 +162,17 @@ function ByItems({ form, artifact, items, modes, renaming, onRenaming, onEdit }:
                 <StateCell form={form} item={item} itemIndex={i} mode={mode} modeIndex={k} />
               </td>
             ))}
+            {endCell}
           </tr>
         ))}
         <tr>
-          <th className={rowHeadClass} />
+          <th className={tableCellClass} />
           {modes.map((mode, k) => (
             <td key={mode.id ?? k} className={cn(tableCellClass, "border-l text-center")}>
               <DeleteModeButton artifact={artifact} mode={mode} index={k} onEdit={onEdit} />
             </td>
           ))}
+          {endCell}
         </tr>
       </tbody>
     </table>
@@ -162,23 +182,25 @@ function ByItems({ form, artifact, items, modes, renaming, onRenaming, onEdit }:
 /** Operating modes in rows, items in columns: duration after the name, delete last. */
 function ByModes({ form, artifact, items, modes, renaming, onRenaming, onEdit }: MatrixProps) {
   return (
-    <table className="w-full border-collapse [&_tr:last-child>*]:border-b-0">
+    <table className="w-full border-collapse [&>tbody>tr:last-child>*]:border-b-0">
       <thead>
         <tr className="bg-surface-2">
-          <th className={cn(tableHeadClass, "w-60")}>Modo operativo</th>
-          <th className={cn(tableHeadClass, "w-32 border-l")}>{durationTitle(form)}</th>
+          <th className={cn(tableHeadClass, "w-45")}>Modo operativo \ Equipo</th>
+          <th className={cn(tableHeadClass, "w-32 border-l whitespace-nowrap")}>
+            {durationTitle(form)}
+          </th>
           {items.map((item, i) => (
-            <th key={item.id ?? i} className={cn(tableHeadClass, "border-l")}>
+            <th key={item.id ?? i} className={cn(tableHeadClass, columnClass)}>
               <ItemHeader item={item} index={i} />
             </th>
           ))}
-          <th className={cn(tableHeadClass, "w-11 border-l")} />
+          <th className={cn(tableHeadClass, endColumnClass)} />
         </tr>
       </thead>
       <tbody>
         {modes.map((mode, k) => (
           <tr key={mode.id ?? k}>
-            <th className={rowHeadClass}>
+            <th className={cn(shadedHeadClass, modeHeadPadding)}>
               <ModeHeader
                 form={form}
                 mode={mode}

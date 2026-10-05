@@ -11,15 +11,17 @@ import { columnTitle, fieldOf } from "./equipment-schema";
 import { ItemDetails } from "./item-details";
 import { ProblemLines } from "./problem-lines";
 
-/** Columns of the items table after the expander, with their widths. */
-const COLUMNS: { key: string; className?: string }[] = [
+/** Columns of the items table after the expander, with their widths and whether the value is
+ * mono (numbers and the face codes of the location). Subsystem is wider than in the design: its
+ * labels are full names («Computadora de a bordo»), not codes. */
+const COLUMNS: { key: string; className?: string; mono?: boolean }[] = [
   { key: "name" },
-  { key: "quantity", className: "w-16" },
+  { key: "quantity", className: "w-14" },
   { key: "subsystem", className: "w-44" },
-  { key: "mass", className: "w-24" },
-  { key: "location", className: "w-26" },
-  { key: "operating_min", className: "w-28" },
-  { key: "operating_max", className: "w-28" },
+  { key: "mass", className: "w-20" },
+  { key: "location", className: "w-21", mono: true },
+  { key: "operating_min", className: "w-23" },
+  { key: "operating_max", className: "w-23" },
 ];
 /** Expander + columns + mode count + delete. */
 const COLUMN_COUNT = COLUMNS.length + 3;
@@ -64,7 +66,7 @@ export function ItemsTable({
             <tr className="bg-surface-2">
               <th className={cn(tableHeadClass, "w-8")} />
               {COLUMNS.map(({ key, className }) => (
-                <th key={key} className={cn(tableHeadClass, className)}>
+                <th key={key} className={cn(tableHeadClass, "whitespace-nowrap", className)}>
                   {columnTitle(fieldOf(fields, key))}
                 </th>
               ))}
@@ -132,7 +134,7 @@ function ItemRows({
   const Chevron = open ? ChevronDown : ChevronRight;
   return (
     <>
-      <tr className={cn(open && "bg-surface")}>
+      <tr className={cn(open && "bg-surface-2")}>
         <td className={cn(tableCellClass, "px-0 text-center")}>
           <Button
             size="icon-sm"
@@ -146,7 +148,7 @@ function ItemRows({
             <Chevron />
           </Button>
         </td>
-        {COLUMNS.map(({ key }) => {
+        {COLUMNS.map(({ key, mono }) => {
           const f = fieldOf(fields, key);
           return (
             <td key={key} className={cn(tableCellClass, "px-0")}>
@@ -155,11 +157,12 @@ function ItemRows({
                 f={f}
                 path={["items", index, key]}
                 label={`${f.meta.title ?? key} de ${name}`}
+                className={cn(mono && "font-mono")}
               />
             </td>
           );
         })}
-        <td className={cn(tableCellClass, "text-xs text-muted-foreground")}>
+        <td className={cn(tableCellClass, "text-xs")}>
           {plural(modesOf(item).length, "modo", "modos")}
         </td>
         <td className={cn(tableCellClass, "px-0 text-center")}>
@@ -176,8 +179,8 @@ function ItemRows({
         </td>
       </tr>
       {open && (
-        <tr className="bg-surface">
-          <td colSpan={COLUMN_COUNT} className="border-b border-border px-10 py-4">
+        <tr className="bg-surface-2">
+          <td colSpan={COLUMN_COUNT} className="border-b border-border pt-3.5 pr-4 pb-4 pl-12">
             <ItemDetails form={form} artifact={artifact} index={index} onEdit={onEdit} />
           </td>
         </tr>

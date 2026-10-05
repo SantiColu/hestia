@@ -35,12 +35,14 @@ function optionsOf(item: EquipmentItem): Option[] {
 /** «Nominal  8 W ▮▮▯▯▯»: a mode with its dissipation per item and a meter against the largest
  * of the table; Off has neither. */
 function OptionLabel({ option, maxPerItem }: { option: Option; maxPerItem: number }) {
-  if (option.value === OFF) return <span className="text-subtle-foreground">{option.label}</span>;
+  if (option.value === OFF) {
+    return <span className="font-mono text-subtle-foreground">{option.label}</span>;
+  }
   const watts = option.dissipation;
   return (
-    <span className="flex min-w-0 flex-1 items-center gap-2">
-      <span className="flex-1 truncate">{option.label}</span>
-      <span className="font-mono text-subtle-foreground tabular-nums">
+    <span className="flex min-w-0 flex-1 items-center gap-1">
+      <span className="flex-1 truncate font-mono">{option.label}</span>
+      <span className="font-mono text-muted-foreground tabular-nums">
         {typeof watts === "number" ? fmtUpTo(watts) : "—"} W
       </span>
       <SegmentMeter value={watts ?? 0} max={maxPerItem} />
@@ -94,7 +96,8 @@ export function StateSelect({
         aria-invalid={error ? true : undefined}
         title={error ?? (modified ? `Aplicado: ${labelOf(asOption(applied))}` : undefined)}
         className={cn(
-          "h-8 w-full min-w-36 rounded-none border-0 bg-transparent px-2.5 text-xs dark:bg-transparent",
+          "h-8 w-full min-w-36 gap-1 rounded-none border-0 bg-transparent pr-1.5 pl-2.5 text-xs dark:bg-transparent",
+          "[&_svg]:size-3 [&_svg]:text-subtle-foreground",
           "focus-visible:ring-1 focus-visible:ring-inset aria-invalid:ring-1 aria-invalid:ring-error aria-invalid:ring-inset",
           modified && "ring-1 ring-primary ring-inset",
           selected === OFF && "text-subtle-foreground",

@@ -46,9 +46,14 @@ export function fieldOf(fields: Fields, key: string): Field {
   return fields[key] ?? NO_FIELD;
 }
 
+/** «T op. mín»: the short title of a field (its title if it has none). */
+export function shortTitle(f: Field): string {
+  return f.meta["x-column-title"] ?? f.meta.title ?? "";
+}
+
 /** «T op. mín [°C]»: the short title of a field as a column, with its display unit. */
 export function columnTitle(f: Field): string {
-  const title = f.meta["x-column-title"] ?? f.meta.title ?? "";
+  const title = shortTitle(f);
   const unit = f.meta["x-display-unit"];
   return unit ? `${title} [${unit}]` : title;
 }

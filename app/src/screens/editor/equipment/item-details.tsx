@@ -2,15 +2,18 @@ import { Plus, Trash2 } from "lucide-react";
 import type { EquipmentArtifact } from "@/api/client";
 import { tableCellClass, tableHeadClass } from "@/components/forms/table-inputs";
 import { SegmentMeter } from "@/components/data/segment-meter";
-import { SectionLabel } from "@/components/navigation/section-label";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FieldCell, NumberFieldOf, type EquipmentForm } from "./cells";
 import { addItemMode, itemsOf, modesOf, removeItemMode } from "./edits";
-import { columnTitle, fieldOf } from "./equipment-schema";
+import { columnTitle, fieldOf, shortTitle } from "./equipment-schema";
 
 /** Optional limits of an item, beside its modes. */
 const LIMITS = ["non_operating_min", "non_operating_max", "switch_on_min"] as const;
+
+function DetailTitle({ children }: { children: string }) {
+  return <h3 className="text-xs font-semibold text-muted-foreground">{children}</h3>;
+}
 
 /**
  * The expanded row of an item: its own modes (name and dissipation per item) and its optional
@@ -35,15 +38,15 @@ export function ItemDetails({
   const name = item.name?.trim() || "este equipo";
 
   return (
-    <div className="grid grid-cols-2 items-start gap-10">
-      <div className="flex flex-col gap-2.5">
-        <SectionLabel>{modesField.meta.title}</SectionLabel>
+    <div className="flex items-start gap-8">
+      <div className="flex w-90 shrink-0 flex-col gap-2.5">
+        <DetailTitle>Modos del equipo</DetailTitle>
         <div className="overflow-hidden rounded-lg border border-border bg-background">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-surface-2">
                 <th className={tableHeadClass}>{columnTitle(fieldOf(modeFields, "name"))}</th>
-                <th className={cn(tableHeadClass, "w-44")}>
+                <th className={cn(tableHeadClass, "w-30")}>
                   {columnTitle(fieldOf(modeFields, "dissipation"))}
                 </th>
                 <th className={cn(tableHeadClass, "w-11")} />
@@ -95,31 +98,33 @@ export function ItemDetails({
             </tbody>
           </table>
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-fit"
-            onClick={() => onEdit(addItemMode(artifact, index, form.schema.prefixes))}
-          >
-            <Plus data-icon="inline-start" /> {modesField.meta["x-add-label"]}
-          </Button>
-          <p className="text-xs text-subtle-foreground">
-            Apagado está siempre disponible: 0 W, con los límites no operativos.
-          </p>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-fit"
+          onClick={() => onEdit(addItemMode(artifact, index, form.schema.prefixes))}
+        >
+          <Plus data-icon="inline-start" /> {modesField.meta["x-add-label"]}
+        </Button>
+        <p className="text-2xs text-subtle-foreground">
+          Apagado está siempre disponible: 0 W, con los límites no operativos.
+        </p>
       </div>
-      <div className="flex flex-col gap-2.5">
-        <SectionLabel>Límites opcionales</SectionLabel>
+      <div className="flex min-w-0 flex-1 flex-col gap-2.5">
+        <DetailTitle>Límites opcionales</DetailTitle>
         <div className="grid grid-cols-3 gap-4">
-          {LIMITS.map((key) => (
-            <NumberFieldOf
-              key={key}
-              form={form}
-              f={fieldOf(form.schema.item, key)}
-              path={["items", index, key]}
-            />
-          ))}
+          {LIMITS.map((key) => {
+            const f = fieldOf(form.schema.item, key);
+            return (
+              <NumberFieldOf
+                key={key}
+                form={form}
+                f={f}
+                path={["items", index, key]}
+                label={shortTitle(f)}
+              />
+            );
+          })}
         </div>
       </div>
     </div>

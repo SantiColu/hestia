@@ -49,12 +49,14 @@ export function FieldCell({
   f,
   path,
   label,
+  className,
 }: {
   form: EquipmentForm;
   f: Field;
   path: JsonPath;
   /** Accessible name, e.g. «Masa de Rueda de reacción». */
   label: string;
+  className?: string;
 }) {
   const { value, ...state } = fieldState(form, f, path);
   const set = (next: Json) => form.set(path, next);
@@ -63,6 +65,7 @@ export function FieldCell({
       <TableSelect
         {...state}
         label={label}
+        className={className}
         value={typeof value === "string" ? value : null}
         options={enumOptions(f)}
         onChange={set}
@@ -75,6 +78,7 @@ export function FieldCell({
       <TableNumberInput
         {...state}
         label={label}
+        className={className}
         value={show(value)}
         onValueChange={(next) => set(read(next))}
       />
@@ -84,6 +88,7 @@ export function FieldCell({
     <TableTextInput
       {...state}
       label={label}
+      className={className}
       value={typeof value === "string" ? value : null}
       placeholder={f.meta["x-placeholder"] ?? "—"}
       onChange={set}
@@ -91,22 +96,25 @@ export function FieldCell({
   );
 }
 
-/** A number of the draft as a labeled field (title and display unit from the schema). */
+/** A number of the draft as a labeled field (display unit from the schema; the label is its
+ * title unless given). */
 export function NumberFieldOf({
   form,
   f,
   path,
+  label,
 }: {
   form: EquipmentForm;
   f: Field;
   path: JsonPath;
+  label?: string;
 }) {
   const { value, ...state } = fieldState(form, f, path);
   const { show, read } = displayed(f);
   return (
     <NumberField
       {...state}
-      label={f.meta.title ?? String(path[path.length - 1])}
+      label={label ?? f.meta.title ?? String(path[path.length - 1])}
       unit={f.meta["x-display-unit"]}
       placeholder="—"
       format={{ maximumFractionDigits: 6, useGrouping: false }}

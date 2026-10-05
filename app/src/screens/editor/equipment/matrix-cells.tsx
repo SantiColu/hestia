@@ -14,9 +14,11 @@ import { StateSelect } from "./state-select";
 /** «Rueda de reacción × 4»: the quantity always beside the name (identical items, one mode). */
 export function ItemHeader({ item, index }: { item: EquipmentItem; index: number }) {
   return (
-    <span className="truncate">
-      {itemName(item, index)}{" "}
-      <span className="font-mono text-subtle-foreground">× {item.quantity ?? "—"}</span>
+    <span className="flex min-w-0 items-center gap-2">
+      <span className="truncate">{itemName(item, index)}</span>
+      <span className="shrink-0 font-mono text-xs text-subtle-foreground">
+        × {item.quantity ?? "—"}
+      </span>
     </span>
   );
 }
@@ -40,7 +42,7 @@ export function ModeHeader({
   const error = errorAt(form.problems, formatPath(path));
   const name = operatingModeName(mode, index);
   return (
-    <span className="flex flex-col gap-0.5 py-1">
+    <span className="flex flex-col gap-0.5">
       {editing ? (
         <RenameInput
           label={`Nombre de ${name}`}
@@ -54,7 +56,7 @@ export function ModeHeader({
           <span
             title={error}
             className={cn(
-              "truncate text-xs font-medium text-foreground",
+              "flex-1 truncate text-2xs font-semibold text-muted-foreground",
               !mode.name && "text-subtle-foreground",
               error && "text-error",
             )}
@@ -66,7 +68,7 @@ export function ModeHeader({
             variant="ghost"
             aria-label={`Renombrar ${name}`}
             title="Renombrar"
-            className="text-subtle-foreground"
+            className="size-5.5 text-subtle-foreground"
             onClick={() => onEditing(true)}
           >
             <Pencil />
@@ -82,7 +84,10 @@ export function ModeHeader({
 function ModeTotal({ total, max }: { total: number | null | undefined; max: number }) {
   return (
     <span
-      className="flex items-center gap-2 font-mono text-2xs font-normal text-muted-foreground tabular-nums"
+      className={cn(
+        "flex items-center gap-1.5 font-mono text-2xs font-semibold tabular-nums",
+        typeof total === "number" ? "text-hot" : "text-subtle-foreground",
+      )}
       title={typeof total === "number" ? undefined : "Sin total: faltan datos o hay errores"}
     >
       Σ {typeof total === "number" ? fmtUpTo(total) : "—"} W
@@ -107,7 +112,7 @@ function RenameInput({
   onDone: () => void;
 }) {
   return (
-    <span className="block h-7">
+    <span className="block h-5.5">
       <TableTextInput
         // Renaming starts from the pencil: the name is what the user is about to type.
         autoFocus
