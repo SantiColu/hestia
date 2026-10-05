@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { api, isApiError, unwrap, type ProjectView } from "@/api/client";
+import { api, isApiError, unwrap, type ProjectView, type UpdateCellResult } from "@/api/client";
 import { pickProjectToOpen, pickProjectToSave } from "@/lib/native";
 import { useDialogs } from "./dialogs";
 import { useEditor } from "./editor";
@@ -145,4 +145,37 @@ export function useEditActions() {
     void mutate(() => unwrap(api.POST("/project/redo", { body: {} })));
   }, [view, mutate]);
   return useMemo(() => ({ undo, redo }), [undo, redo]);
+}
+
+/** Update (run) a computation cell with its applied parameters. Says when nothing changed;
+ * null when it failed (reported in Messages). */
+export function useUpdateCell() {
+  const { setView, notify, fail } = useProject();
+  const { drafts } = useEditor();
+  return useCallback(
+    async (cellId: string): Promise<UpdateCellResult | null> => {
+      if (drafts[cellId]) notify("Hay parámetros sin aplicar: Actualizar usa los aplicados.");
+      try {
+        const answer = await unwrap(
+          api.POST("/project/cells/{cell_id}/update", {
+            params: { path: { cell_id: cellId } },
+            body: {},
+          }),
+        );
+        setView(answer.view);
+        if (!answer.change) {
+          notify(
+            answer.result.status === "up_to_date"
+              ? "Sin cambios: la celda ya estaba actualizada."
+              : "Sin cambios: falla por los mismos problemas.",
+          );
+        }
+        return answer;
+      } catch (error) {
+        fail(error);
+        return null;
+      }
+    },
+    [drafts, setView, notify, fail],
+  );
 }

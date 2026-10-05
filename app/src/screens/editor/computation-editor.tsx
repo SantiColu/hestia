@@ -4,7 +4,7 @@ import { api, unwrap, type CellResult, type CellStatus, type ProjectView } from 
 import { StageStatusBadge } from "@/components/feedback/stage-status";
 import { PanelTabs, PanelTabsList, PanelTabsTrigger } from "@/components/navigation/panel-tabs";
 import { Button } from "@/components/ui/button";
-import { useEditor } from "@/project/editor";
+import { useUpdateCell } from "@/project/actions";
 import { useProject } from "@/project/store";
 import { EditorHeader, FormEditor, type Title } from "./cell-editor";
 import { EnvironmentResults } from "./environment-results";
@@ -43,8 +43,8 @@ export function ComputationEditor({
   title: Title;
   view: ProjectView;
 }) {
-  const { fail, notify, setView } = useProject();
-  const { drafts } = useEditor();
+  const { fail } = useProject();
+  const updateCell = useUpdateCell();
   const [section, setSection] = useState<Section>(
     status === "never_run" ? "parameters" : "results",
   );
@@ -67,31 +67,13 @@ export function ComputationEditor({
   }, [cellId, revision, fail]);
 
   const update = useCallback(async () => {
-    if (drafts[cellId]) notify("Hay parámetros sin aplicar: Actualizar usa los aplicados.");
     setUpdating(true);
-    try {
-      const answer = await unwrap(
-        api.POST("/project/cells/{cell_id}/update", {
-          params: { path: { cell_id: cellId } },
-          body: {},
-        }),
-      );
-      setView(answer.view);
-      setResult(answer.result);
-      if (!answer.change) {
-        notify(
-          answer.result.status === "up_to_date"
-            ? "Sin cambios: la celda ya estaba actualizada."
-            : "Sin cambios: falla por los mismos problemas.",
-        );
-      }
-      if (answer.result.status === "up_to_date" && section === "parameters") setSection("results");
-    } catch (error) {
-      fail(error);
-    } finally {
-      setUpdating(false);
-    }
-  }, [cellId, drafts, fail, notify, section, setView]);
+    const answer = await updateCell(cellId);
+    setUpdating(false);
+    if (!answer) return;
+    setResult(answer.result);
+    if (answer.result.status === "up_to_date" && section === "parameters") setSection("results");
+  }, [cellId, updateCell, section]);
 
   const onUpdate = () => void update();
   const state: ResultStateProps = {

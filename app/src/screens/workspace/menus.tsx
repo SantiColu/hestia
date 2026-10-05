@@ -24,6 +24,8 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { useUpdateCell } from "@/project/actions";
+import { isComputation } from "@/project/lookup";
 import { useProject } from "@/project/store";
 import type { SchematicActions } from "./actions";
 import { useWorkspaceUi, type Target } from "./context";
@@ -120,14 +122,16 @@ export function SystemMenu({ system, actions, children }: MenuProps<{ system: Sy
   );
 }
 
-/** Right-click menu of a cell: rename, update (disabled), branch, unlink, clipboard, delete. */
+/** Right-click menu of a cell: rename, update (computation stages), branch, unlink, clipboard,
+ * delete. */
 export function CellMenu({
   cell,
   links,
   actions,
   children,
 }: MenuProps<{ cell: Cell; links: Link[] }>) {
-  const { fail } = useProject();
+  const { catalog, fail } = useProject();
+  const updateCell = useUpdateCell();
   // Branch options come from the API when the menu opens (the workflow decides).
   const [options, setOptions] = useState<Blueprint[] | null>(null);
   const target: Target = { kind: "cell", id: cell.id };
@@ -164,7 +168,10 @@ export function CellMenu({
         <ContextMenuItem onClick={() => void actions.renameCell(cell.id)}>
           <Pencil /> Renombrar <ContextMenuShortcut>F2</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem disabled>
+        <ContextMenuItem
+          disabled={!isComputation(catalog, cell.stage)}
+          onClick={() => void updateCell(cell.id)}
+        >
           <RefreshCw /> Actualizar
         </ContextMenuItem>
         <ContextMenuSub>

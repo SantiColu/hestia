@@ -20,7 +20,7 @@ import { deepEqual, getAt, setAt, type Json, type JsonObject, type JsonPath } fr
 import { cn } from "@/lib/utils";
 import { useDialogs } from "@/project/dialogs";
 import { DRAFT_DEBOUNCE_MS, useEditor } from "@/project/editor";
-import { findCell, findSystem, stageName } from "@/project/lookup";
+import { findCell, findSystem, isComputation, stageInfo, stageName } from "@/project/lookup";
 import { useProject } from "@/project/store";
 import { ComputationEditor } from "./computation-editor";
 import { column } from "./layout";
@@ -60,12 +60,12 @@ export function CellEditor({ cellId, view }: { cellId: string; view: ProjectView
   const { catalog } = useProject();
   const cell = findCell(view.project, cellId);
   if (!cell) return null;
-  const stage = catalog?.stages.find((entry) => entry.stage === cell.stage);
+  const stage = stageInfo(catalog, cell.stage);
   const title = { name: cell.name, system: findSystem(view.project, cell.system_id)?.name ?? "" };
   if (stage?.kind === "form" && stage.implemented) {
     return <FormEditor cellId={cellId} stage={cell.stage} title={title} view={view} />;
   }
-  if (stage?.kind === "computation" && stage.implemented) {
+  if (isComputation(catalog, cell.stage)) {
     return <ComputationEditor cellId={cellId} status={cell.status} title={title} view={view} />;
   }
   return <NotImplemented cellId={cellId} title={title} status={cell.status} view={view} />;
