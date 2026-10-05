@@ -54,7 +54,8 @@ def test_read_defaults(opened: TestClient) -> None:
 def test_dry_validation_reports_problems_by_path(opened: TestClient) -> None:
     cells = _phase0(opened)
     second = WHEEL | {"id": "item_00b1", "name": "rueda de reacción", "mass": -1}
-    draft = DRAFT | {"items": [WHEEL, second]}
+    states = {"item_00a1": "imode_00a2", "item_00b1": None}
+    draft = {"items": [WHEEL, second], "operating_modes": [{"name": "Nominal", "states": states}]}
     body = opened.post(
         f"/project/cells/{cells['equipment']}/artifact/validate", json={"artifact": draft}
     ).json()
@@ -103,3 +104,38 @@ def test_artifact_schema(client: TestClient) -> None:
     assert schema["$defs"]["ItemMode"]["properties"]["dissipation"]["x-unit"] == "W"
     duration = schema["$defs"]["OperatingMode"]["properties"]["max_duration"]
     assert duration["x-display-unit"] == "h"
+
+
+def test_dry_validation_reports_states_by_path(opened: TestClient) -> None:
+    cells = _phase0(opened)
+    states = {"item_00a1": "imode_zz", "item_gone": None}
+    draft = DRAFT | {"operating_modes": [DRAFT["operating_modes"][0] | {"states": states}]}
+    body = opened.post(
+        f"/project/cells/{cells['equipment']}/artifact/validate", json={"artifact": draft}
+    ).json()
+    assert [(p["path"], p["code"]) for p in body["problems"]] == [
+        ("operating_modes[0].states.item_00a1", "invalid_reference"),
+        ("operating_modes[0].states.item_gone", "not_allowed"),
+    ]
+
+
+def test_a_replaced_id_breaks_the_reference_and_is_reported(opened: TestClient) -> None:
+    cells = _phase0(opened)
+    url = f"/project/cells/{cells['equipment']}/artifact"
+    malformed = "Rueda-1"  # not `item_<hex>`: the backend replaces it (ADR 0025)
+    draft: dict[str, Any] = {
+        "items": [WHEEL | {"id": malformed}],
+        "operating_modes": [
+            {"id": "opmode_00a1", "name": "Adquisición", "states": {malformed: "imode_00a2"}}
+        ],
+    }
+    body = opened.put(url, json={"artifact": draft, "justification": "x"}, headers=AGENT).json()
+    cell = body["cell"]
+    new_id = cell["artifact"]["items"][0]["id"]
+    assert new_id.startswith("item_") and new_id != malformed
+    assert cell["artifact"]["operating_modes"][0]["states"] == {malformed: "imode_00a2"}
+    assert cell["status"] == "failed"
+    assert [(p["path"], p["code"]) for p in cell["problems"]] == [
+        (f"operating_modes[0].states.{new_id}", "required"),
+        (f"operating_modes[0].states.{malformed}", "not_allowed"),
+    ]

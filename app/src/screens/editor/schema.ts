@@ -189,7 +189,7 @@ export function changedLeaves(
       const childLabel = [...label, meta.title ?? key];
       const va = getAt(a, [key]);
       const vb = getAt(b, [key]);
-      if (f.node.type === "object") {
+      if (f.node.type === "object" && f.node.properties) {
         walk(f.node, va, vb, childPath, childLabel);
       } else if (
         f.node.type === "array" &&

@@ -11,12 +11,14 @@ import type { EquipmentForm } from "./cells";
 import { asEquipment, toDraft } from "./edits";
 import { equipmentSchema } from "./equipment-schema";
 import { ItemsTable } from "./items-table";
+import { OperatingModes } from "./operating-modes";
 
 /** The editor and its draft bar use the whole width (docs/etapas/equipment.md, «Pantalla»). */
 const BODY = "flex w-full flex-col";
 
 /**
- * Tab of an equipment cell: the items with their own modes (docs/etapas/equipment.md). Its own
+ * Tab of an equipment cell: the items with their own modes and the operating modes as a matrix
+ * (docs/etapas/equipment.md). Its own
  * editor, not the generated form, over the same draft, dry validation and Apply (ADR 0017): the
  * API validates and derives everything; this view only edits the draft and shows what it gets.
  */
@@ -61,6 +63,10 @@ export function EquipmentEditor({
           <section className="flex flex-col gap-3.5">
             <SectionLabel>{schema.properties?.items?.title}</SectionLabel>
             <ItemsTable form={form} artifact={artifact} onEdit={onEdit} />
+          </section>
+          <section className="flex flex-col gap-3.5">
+            <SectionLabel>{schema.properties?.operating_modes?.title}</SectionLabel>
+            <OperatingModes form={form} artifact={artifact} onEdit={onEdit} />
           </section>
         </div>
       </div>

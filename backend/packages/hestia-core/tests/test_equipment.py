@@ -137,3 +137,75 @@ def test_location_is_a_face_or_internal() -> None:
         "-Z",
         "internal",
     }
+
+
+# ---------------------------------------------------------------- operating modes
+
+
+TRANSMITTER: dict[str, Any] = WHEEL | {
+    "id": "item_b1",
+    "name": "Transmisor",
+    "quantity": 1,
+    "modes": [{"id": "imode_b1", "name": "Transmisión", "dissipation": 15.0}],
+}
+
+
+def configured(*modes: dict[str, Any]) -> EquipmentArtifact:
+    return EquipmentArtifact.model_validate(
+        {"items": [WHEEL, TRANSMITTER], "operating_modes": modes}
+    )
+
+
+def operating_mode(states: dict[str, str | None], **fields: Any) -> dict[str, Any]:
+    return {"id": "opmode_1", "name": "Nominal", "states": states} | fields
+
+
+BOTH = {"item_a1": "imode_a2", "item_b1": None}
+
+
+def test_at_least_one_operating_mode_with_unique_names() -> None:
+    assert codes(configured()) == {("operating_modes", C.REQUIRED)}
+    second = operating_mode(BOTH, id="opmode_2", name=" nominal")
+    assert codes(configured(operating_mode(BOTH), second)) == {
+        ("operating_modes[1].name", C.DUPLICATE_NAME)
+    }
+    assert codes(configured(operating_mode(BOTH, name=None))) == {
+        ("operating_modes[0].name", C.REQUIRED)
+    }
+
+
+def test_max_duration_is_optional_and_positive() -> None:
+    assert codes(configured(operating_mode(BOTH, max_duration=3600.0))) == set()
+    assert codes(configured(operating_mode(BOTH, max_duration=0.0))) == {
+        ("operating_modes[0].max_duration", C.MIN)
+    }
+
+
+def test_states_have_exactly_one_entry_per_item() -> None:
+    missing = operating_mode({"item_a1": "imode_a1"})
+    assert codes(configured(missing)) == {("operating_modes[0].states.item_b1", C.REQUIRED)}
+    extra = operating_mode(BOTH | {"item_zz": None})
+    assert codes(configured(extra)) == {("operating_modes[0].states.item_zz", C.NOT_ALLOWED)}
+
+
+def test_each_state_is_off_or_a_mode_of_that_item() -> None:
+    assert codes(configured(operating_mode({"item_a1": None, "item_b1": None}))) == set()
+    other_item = operating_mode({"item_a1": "imode_b1", "item_b1": None})
+    assert codes(configured(other_item)) == {
+        ("operating_modes[0].states.item_a1", C.INVALID_REFERENCE)
+    }
+    unknown = operating_mode({"item_a1": "imode_zz", "item_b1": None})
+    problems = validate_equipment(configured(unknown))
+    assert [(p.path, p.code) for p in problems] == [
+        ("operating_modes[0].states.item_a1", C.INVALID_REFERENCE)
+    ]
+    assert "Rueda de reacción" in problems[0].message
+
+
+def test_items_without_a_usable_id_have_no_state() -> None:
+    # No id (or a repeated one, replaced when applied): no state can reference it yet.
+    twin = TRANSMITTER | {"id": "item_a1", "name": "Gemelo"}
+    value = EquipmentArtifact.model_validate(
+        {"items": [WHEEL, twin], "operating_modes": [operating_mode({"item_a1": None})]}
+    )
+    assert codes(value) == {("operating_modes[0].states", C.REQUIRED)}

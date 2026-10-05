@@ -2364,8 +2364,7 @@
                 "type": "null"
               }
             ],
-            "title": "Nombre",
-            "x-placeholder": "Rueda de reacción"
+            "title": "Nombre"
           },
           "non_operating_max": {
             "anyOf": [
@@ -2519,8 +2518,7 @@
                 "type": "null"
               }
             ],
-            "title": "Nombre",
-            "x-placeholder": "Nominal"
+            "title": "Nombre"
           }
         },
         "title": "ItemMode",
@@ -2845,8 +2843,7 @@
                 "type": "null"
               }
             ],
-            "title": "Nombre",
-            "x-placeholder": "Adquisición"
+            "title": "Nombre"
           },
           "states": {
             "additionalProperties": {
@@ -3553,6 +3550,7 @@
           "parallel",
           "duplicate_name",
           "duplicate",
+          "invalid_reference",
           "missing",
           "context_invalid",
           "eccentricity_out_of_range"

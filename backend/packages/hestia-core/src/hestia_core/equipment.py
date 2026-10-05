@@ -11,6 +11,7 @@ missing or inconsistent and never produces new values. Values are per item: with
 The ``x-`` extensions of the JSON Schema are those of ``hestia_core.mission``.
 """
 
+from dataclasses import dataclass
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -233,6 +234,7 @@ def validate_equipment(artifact: EquipmentArtifact) -> list[Problem]:
     """
     p = Problems()
     _validate_items(p, artifact.items)
+    _validate_operating_modes(p, artifact.items, artifact.operating_modes)
     return p.items
 
 
@@ -323,3 +325,84 @@ def _validate_temperatures(p: Problems, path: str, item: Item) -> None:
             ProblemCode.ORDER,
             "La mínima de encendido no puede ser menor que la mínima no operativa.",
         )
+
+
+def _item_label(item: Item, index: int) -> str:
+    return (item.name or "").strip() or f"Equipo {index + 1}"
+
+
+def _validate_operating_modes(
+    p: Problems, items: list[Item], operating_modes: list[OperatingMode]
+) -> None:
+    """At least one operating mode, unique names, an optional positive duration and exactly one
+    state per item that is Off or one of that item's modes."""
+    if not operating_modes:
+        p.add("operating_modes", ProblemCode.REQUIRED, "Falta al menos un modo operativo.")
+    referable, unreferable = _referable_items(items)
+    seen: set[str] = set()
+    for k, mode in enumerate(operating_modes):
+        path = f"operating_modes[{k}]"
+        p.unique_name(
+            f"{path}.name",
+            mode.name,
+            seen,
+            "el nombre del modo operativo",
+            "Ya hay un modo operativo llamado",
+        )
+        p.positive(f"{path}.max_duration", mode.max_duration, "La duración máxima")
+        _validate_states(p, f"{path}.states", mode.states, referable)
+        for i, item in unreferable:
+            p.add(
+                f"{path}.states",
+                ProblemCode.REQUIRED,
+                f"Falta el modo de «{_item_label(item, i)}»: su id falta o está repetido.",
+            )
+
+
+@dataclass(frozen=True)
+class _Referable:
+    """An item that states can reference: its position and the ids of its referable modes."""
+
+    index: int
+    item: Item
+    mode_ids: frozenset[str]
+
+
+def _referable_items(items: list[Item]) -> tuple[dict[str, _Referable], list[tuple[int, Item]]]:
+    """Items (and modes) by id, and the items no state can reference. Only the first item or mode
+    with an id counts: a missing or repeated id gets a new one when applied (ADR 0025)."""
+    referable: dict[str, _Referable] = {}
+    unreferable: list[tuple[int, Item]] = []
+    seen_modes: set[str] = set()
+    for i, item in enumerate(items):
+        mode_ids = {m.id for m in item.modes if m.id is not None and m.id not in seen_modes}
+        seen_modes |= mode_ids
+        if item.id is None or item.id in referable:
+            unreferable.append((i, item))
+        else:
+            referable[item.id] = _Referable(i, item, frozenset(mode_ids))
+    return referable, unreferable
+
+
+def _validate_states(
+    p: Problems, path: str, states: dict[str, str | None], referable: dict[str, _Referable]
+) -> None:
+    for item_id, entry in referable.items():
+        label = _item_label(entry.item, entry.index)
+        if item_id not in states:
+            p.add(
+                f"{path}.{item_id}",
+                ProblemCode.REQUIRED,
+                f"Falta el modo de «{label}» (o Apagado).",
+            )
+            continue
+        mode_id = states[item_id]
+        if mode_id is not None and mode_id not in entry.mode_ids:
+            p.add(
+                f"{path}.{item_id}",
+                ProblemCode.INVALID_REFERENCE,
+                f"El modo elegido para «{label}» no es uno de sus modos.",
+            )
+    for key in states:
+        if key not in referable:
+            p.add(f"{path}.{key}", ProblemCode.NOT_ALLOWED, f"«{key}» no es un equipo de la lista.")

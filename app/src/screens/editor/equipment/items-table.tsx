@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
-import type { EquipmentArtifact, EquipmentItem, Problem } from "@/api/client";
+import type { EquipmentArtifact, EquipmentItem } from "@/api/client";
 import { tableCellClass, tableHeadClass } from "@/components/forms/table-inputs";
 import { Button } from "@/components/ui/button";
 import { plural } from "@/lib/format";
@@ -9,6 +9,7 @@ import { FieldCell, type EquipmentForm } from "./cells";
 import { addItem, itemName, itemsOf, modesOf, removeItem } from "./edits";
 import { columnTitle, fieldOf } from "./equipment-schema";
 import { ItemDetails } from "./item-details";
+import { ProblemLines } from "./problem-lines";
 
 /** Columns of the items table after the expander, with their widths. */
 const COLUMNS: { key: string; className?: string }[] = [
@@ -93,7 +94,14 @@ export function ItemsTable({
           </tbody>
         </table>
       </div>
-      <ProblemLines problems={form.problems} items={items} />
+      <ProblemLines
+        problems={form.problems}
+        list="items"
+        nameOf={(i) => {
+          const item = items[i];
+          return item && itemName(item, i);
+        }}
+      />
       <Button variant="ghost" className="w-fit" onClick={add}>
         <Plus data-icon="inline-start" /> {form.schema.root.properties?.items?.["x-add-label"]}
       </Button>
@@ -176,23 +184,4 @@ function ItemRows({
       )}
     </>
   );
-}
-
-/** The problems of the items, one line per item: «Rueda de reacción: Falta la masa. …». */
-function ProblemLines({ problems, items }: { problems: Problem[]; items: EquipmentItem[] }) {
-  const lines = new Map<string, string[]>();
-  for (const problem of problems) {
-    const match = /^items(?:\[(\d+)\])?/.exec(problem.path);
-    if (!match) continue;
-    const index = match[1] === undefined ? undefined : Number(match[1]);
-    const item = index === undefined ? undefined : items[index];
-    const prefix = item && index !== undefined ? `${itemName(item, index)}: ` : "";
-    lines.set(prefix, [...(lines.get(prefix) ?? []), problem.message]);
-  }
-  return [...lines].map(([prefix, messages]) => (
-    <p key={prefix} className="-mt-1.5 text-xs text-error">
-      {prefix}
-      {messages.join(" ")}
-    </p>
-  ));
 }

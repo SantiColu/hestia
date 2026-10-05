@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field";
 import { cn } from "@/lib/utils";
 import type { SelectOption } from "./select-field";
@@ -39,16 +40,23 @@ export function TableTextInput({
   value,
   onChange,
   placeholder = "—",
+  autoFocus,
+  onBlur,
+  onKeyDown,
   ...props
-}: TableInputProps & {
-  value: string | null;
-  onChange: (value: string | null) => void;
-  placeholder?: string;
-}) {
+}: TableInputProps &
+  Pick<ComponentProps<"input">, "autoFocus" | "onBlur" | "onKeyDown"> & {
+    value: string | null;
+    onChange: (value: string | null) => void;
+    placeholder?: string;
+  }) {
   const state = stateProps(props);
   return (
     <input
       {...state}
+      autoFocus={autoFocus}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
       placeholder={placeholder}
       className={cn(inputClass, state.className, props.className)}
       value={value ?? ""}

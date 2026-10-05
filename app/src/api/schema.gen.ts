@@ -2162,6 +2162,7 @@ export interface components {
       | "parallel"
       | "duplicate_name"
       | "duplicate"
+      | "invalid_reference"
       | "missing"
       | "context_invalid"
       | "eccentricity_out_of_range";
