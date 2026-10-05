@@ -34,7 +34,7 @@ export function Toolbox() {
     });
 
   return (
-    <aside className="flex w-58 shrink-0 flex-col border-r border-border bg-surface">
+    <aside className="flex w-58 shrink-0 flex-col border-r border-border bg-surface select-none">
       <header className="flex h-9 shrink-0 items-center border-b border-border px-3">
         <h2 className="text-ui font-semibold">Toolbox</h2>
       </header>
