@@ -5,10 +5,10 @@ BACKEND := backend
 MCP := mcp
 APP := app
 
-.PHONY: help setup dev desktop dev-api dev-app test lint format contract
+.PHONY: help setup dev desktop desktop-app dev-api dev-app test lint format contract
 
 help: ## List available commands
-	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
+	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
 setup: ## Install dependencies for backend, mcp and app
 	cd $(BACKEND) && uv sync
@@ -20,6 +20,9 @@ dev: ## Run API (:8000) and UI (:5173) together
 
 desktop: ## Run API (:8000) and the desktop shell (Tauri, starts Vite itself)
 	@trap 'kill 0' EXIT; $(MAKE) --no-print-directory dev-api & (cd $(APP) && pnpm tauri dev) & wait
+
+desktop-app: ## Run only the desktop shell, against the API and UI of a running `make dev`
+	cd $(APP) && pnpm tauri dev --config '{"build":{"beforeDevCommand":""}}'
 
 dev-api: ## Run only the API
 	cd $(BACKEND) && uv run uvicorn hestia_api.main:app --reload --port 8000
