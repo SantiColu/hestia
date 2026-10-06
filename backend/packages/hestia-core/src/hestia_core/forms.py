@@ -20,6 +20,9 @@ class ProblemCode(StrEnum):
     PARALLEL = "parallel"
     DUPLICATE_NAME = "duplicate_name"
     DUPLICATE = "duplicate"
+    INVALID_REFERENCE = "invalid_reference"
+    """A reference to another item of the artifact that does not exist (or no longer does, e.g.
+    an id replaced when applied, ADR 0025)."""
     MISSING = "missing"
     """A required stage type is absent from the cell's context (update of a computation)."""
     CONTEXT_INVALID = "context_invalid"

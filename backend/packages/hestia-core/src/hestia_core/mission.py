@@ -24,6 +24,8 @@ JSON Schema extensions read by the UI to build the form (presentation only):
 - ``x-default-source``: where the library default comes from (e.g. a standard).
 - ``x-column-title``: short title of a field shown as a table column.
 - ``x-add-label``: label of the action that adds an item to a list.
+- ``x-id-prefix``: on the ``id`` of a list item, the prefix of the ids a client may propose
+  for new items (``<prefix>_<hex>``, ADR 0025).
 """
 
 from datetime import date

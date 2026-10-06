@@ -29,6 +29,7 @@ Aplicación de escritorio local (ADR 0008): cada proyecto es un archivo `.hestia
 - `make setup` — instala dependencias de los tres proyectos.
 - `make dev` — levanta API (:8000) y UI (:5173) en el navegador.
 - `make desktop` — levanta API y la app de escritorio (Tauri).
+- `make desktop-app` — solo la app de escritorio, contra la API y la UI de un `make dev` ya corriendo.
 - `make test` — pytest en backend y mcp.
 - `make lint` — ruff, pyright, import-linter, eslint, prettier.
 - `make contract` — regenera `shared/openapi.json` y el cliente TS.

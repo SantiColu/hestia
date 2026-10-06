@@ -6,7 +6,7 @@ uv workspace (Python 3.12). Toda la lógica de dominio de Hestia vive acá.
 
 | Paquete | Ruta | Contiene | Puede importar |
 |---|---|---|---|
-| `hestia_core` | `packages/hestia-core` | Física pura, modelos de artefactos (pydantic) y su validación (`mission`, `forms`, `orbits`), física del entorno (`sun`, `eclipse`, `view_factors`, `attitude`), etapa Entorno (`environment`: órbita y modos de actitud, parámetros, resultado, Protocol `EnvironmentProvider` y proveedor analítico), Protocols de proveedores externos | nada de Hestia |
+| `hestia_core` | `packages/hestia-core` | Física pura, modelos de artefactos (pydantic) y su validación (`mission`, `equipment`, `forms`, `orbits`), física del entorno (`sun`, `eclipse`, `view_factors`, `attitude`), etapa Entorno (`environment`: órbita y modos de actitud, parámetros, resultado, Protocol `EnvironmentProvider` y proveedor analítico), Protocols de proveedores externos | nada de Hestia |
 | `hestia_adapters` | `packages/hestia-adapters` | Implementaciones de los Protocols de core (Orekit, pyViewFactor, SciPy…) | `hestia_core` |
 | `hestia_project` | `packages/hestia-project` | Grafo de etapas, estados, procedencia, historial/deshacer, persistencia | `hestia_core` |
 | `hestia_api` | `apps/api` | FastAPI: rutas, DTOs, composición de dependencias | todos |
@@ -55,7 +55,7 @@ uv run uvicorn hestia_api.main:app --reload   # http://localhost:8000/health
 | `catalog` | Tipos de etapa (clase, requisitos de contexto, orden, implementada), plantillas «Fase 0» y «Fase 1» con sus vínculos |
 | `model` | `Project` (con `SCHEMA_VERSION`), `System`, `Cell`, `Link`, estados, procedencia |
 | `schematic` | Operaciones del esquemático, contexto resuelto (ADR 0016), las cinco reglas de vínculo, propagación de `outdated` |
-| `forms`, `artifacts` | Registro de formularios (etapas formulario y parámetros de etapas de cálculo) y leer / validar en seco / aplicar su artefacto con procedencia por campo (ADR 0017, 0019) |
+| `forms`, `artifacts` | Registro de formularios (etapas formulario y parámetros de etapas de cálculo: modelo, defaults, validación, prefijos de id —también de listas anidadas, `items[].modes`— y derivados opcionales) y leer / validar en seco / aplicar su artefacto con procedencia por campo (ADR 0017, 0019). Leer y validar devuelven los derivados de la etapa (`derived`, null si no tiene); aplicar conserva los ids propuestos por el cliente con formato válido (`assign_ids`, ADR 0025) |
 | `computations` | Registro de etapas de cálculo, Actualizar, estados, procedencia, lectura del resultado y de los perfiles (ADR 0021, 0022) y vista previa de la órbita de un borrador (ADR 0023) |
 | `migration` | Subir proyectos de versiones anteriores (vínculos reevaluados, órbita y actitud de Misión a Entorno, avisos) |
 | `clipboard` | Fragmentos versionados para copiar y pegar sistemas y celdas (ADR 0014) |

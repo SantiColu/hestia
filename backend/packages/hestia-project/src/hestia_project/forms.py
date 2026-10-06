@@ -17,6 +17,16 @@ from hestia_core.environment.parameters import (
     upgrade_environment_parameters,
     validate_environment_parameters,
 )
+from hestia_core.equipment import (
+    ITEM_ID_PREFIX,
+    ITEM_MODE_ID_PREFIX,
+    OPERATING_MODE_ID_PREFIX,
+    EquipmentArtifact,
+    EquipmentDerived,
+    equipment_defaults,
+    equipment_derived,
+    validate_equipment,
+)
 from hestia_core.forms import Problem
 from hestia_core.mission import (
     MissionArtifact,
@@ -33,6 +43,9 @@ PENDING_CHANGE = "__pending__"
 with the id of the change that records the operation."""
 
 
+Derived = EquipmentDerived
+"""Derived values of the stages that have them (a union as more stages add theirs)."""
+
 FormContext = Mapping[StageType, BaseModel]
 """Upstream inputs a form is validated against: the artifacts of the form stages in the cell's
 context, by stage type. Empty for roots and when nothing is linked."""
@@ -44,9 +57,13 @@ class FormSpec:
     defaults: Callable[[], BaseModel]
     validate: Callable[[Any, FormContext], list[Problem]]
     id_prefixes: dict[str, str] = field(default_factory=dict[str, str])
-    """Lists whose items get a backend id (list path → id prefix)."""
+    """Lists whose items have an id (list path → id prefix). A nested list is reached through
+    the items of its parent: ``items[].modes`` (ADR 0025)."""
     upgrade: Callable[[dict[str, Any]], dict[str, Any]] | None = None
     """Artifact of any older version (JSON) → current version. None: a single version."""
+    derive: Callable[[Any], Derived] | None = None
+    """Values the backend computes from the artifact (e.g. totals), returned when reading it and
+    validating a draft. None: the stage has no derived values."""
 
 
 def _validate_environment(parameters: EnvironmentParameters, context: FormContext) -> list[Problem]:
@@ -63,6 +80,17 @@ FORMS: dict[StageType, FormSpec] = {
         validate=lambda artifact, _context: validate_mission(artifact),
         upgrade=upgrade_mission,
     ),
+    StageType.EQUIPMENT: FormSpec(
+        model=EquipmentArtifact,
+        defaults=equipment_defaults,
+        validate=lambda artifact, _context: validate_equipment(artifact),
+        id_prefixes={
+            "items": ITEM_ID_PREFIX,
+            "items[].modes": ITEM_MODE_ID_PREFIX,
+            "operating_modes": OPERATING_MODE_ID_PREFIX,
+        },
+        derive=equipment_derived,
+    ),
     StageType.ENVIRONMENT: FormSpec(
         model=EnvironmentParameters,
         defaults=environment_defaults,
@@ -71,8 +99,8 @@ FORMS: dict[StageType, FormSpec] = {
         upgrade=upgrade_environment_parameters,
     ),
 }
-"""Implemented forms: form stages (``mission``; ``equipment`` has no editor yet) and the
-parameters of computation stages (registered by ``computations``)."""
+"""Implemented forms: form stages (``mission``, ``equipment``) and the parameters of computation
+stages (registered by ``computations``)."""
 
 
 def upgrade_artifact(stage: StageType, data: dict[str, Any]) -> dict[str, Any]:

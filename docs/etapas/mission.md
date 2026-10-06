@@ -12,7 +12,7 @@ La lista de equipos y los modos operativos (qué está encendido y cuánto disip
 
 - **Secciones:** agrupan los campos en el formulario. La clave (`general`, `envelope`…) es la del artefacto.
 - **Unidades:** se guardan en SI y temperaturas en K; la columna indica `interna → UI`. La normalización (pint) distingue temperatura absoluta (°C → K, +273.15) de diferencia de temperatura (ΔT: 5 °C = 5 K).
-- **Listas:** cada elemento tiene un `id` generado por el backend (inmutable) y un `name` editable, único dentro de su lista. Las referencias entre objetos usan el `id`.
+- **Listas:** cada elemento tiene un `id` (inmutable una vez aplicado) y un `name` editable, único dentro de su lista. Las referencias entre objetos usan el `id`. Al aplicar, un ítem conserva su id si ya lo tenía o si el cliente (UI o agente) lo propone con el formato `<prefijo>_<hex>` de su lista y no está repetido en el artefacto; si falta, tiene otro formato o está repetido, el backend genera uno. Una referencia a un id reemplazado queda inválida y la validación la informa ([ADR 0025](../adr/0025-ids-propuestos-por-el-cliente.md), que modifica la regla del ADR 0019). Las listas anidadas (los modos de cada equipo) siguen la misma regla.
 - **Procedencia:** cada valor registra de dónde viene (`entered`, `imported`, `default`) y el cambio que lo fijó (ADR 0017). Los defaults de biblioteca están marcados en cada tabla.
 - **Tiempo:** `time` se guarda como texto `HH:MM` (00:00–23:59). Las duraciones se guardan en s; un año son 365,25 días.
 

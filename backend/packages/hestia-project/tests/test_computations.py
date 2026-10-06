@@ -264,7 +264,7 @@ def test_applying_parameters_outdates_the_cell_itself() -> None:
 def test_parameters_are_validated_against_the_context() -> None:
     doc = doc_with_phase0()
     env = cell_of(doc.project, S.ENVIRONMENT)
-    assert validate_draft(doc.project, env.id, FakeParameters(factor=7)) != []
+    assert validate_draft(doc.project, env.id, FakeParameters(factor=7)).problems != []
     set_factor(doc, 7)  # problems are allowed when applying
     apply(doc, draft())
     update(doc)

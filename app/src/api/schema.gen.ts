@@ -174,7 +174,8 @@ export interface paths {
     put?: never;
     /**
      * Validate Cell Artifact
-     * @description Dry run: the problems of a draft. Changes nothing (no history, no status).
+     * @description Dry run: the problems and derived values of a draft. Changes nothing (no history, no
+     *     status).
      */
     post: operations["validate_cell_artifact"];
     delete?: never;
@@ -837,7 +838,9 @@ export interface components {
     ApplyArtifactRequest: {
       /** Artifact */
       artifact:
-        components["schemas"]["MissionArtifact"] | components["schemas"]["EnvironmentParameters"];
+        | components["schemas"]["MissionArtifact"]
+        | components["schemas"]["EquipmentArtifact"]
+        | components["schemas"]["EnvironmentParameters"];
       /**
        * Justification
        * @description Why the change is made. Stored in the history with the author. Agents must give one (non-empty) to delete, unlink or apply an artifact; humans are never asked (ADR 0024).
@@ -859,7 +862,9 @@ export interface components {
     ArtifactDraft: {
       /** Artifact */
       artifact:
-        components["schemas"]["MissionArtifact"] | components["schemas"]["EnvironmentParameters"];
+        | components["schemas"]["MissionArtifact"]
+        | components["schemas"]["EquipmentArtifact"]
+        | components["schemas"]["EnvironmentParameters"];
     };
     /**
      * AttitudeMode
@@ -970,10 +975,13 @@ export interface components {
       applied: boolean;
       /** Artifact */
       artifact:
-        components["schemas"]["MissionArtifact"] | components["schemas"]["EnvironmentParameters"];
+        | components["schemas"]["MissionArtifact"]
+        | components["schemas"]["EquipmentArtifact"]
+        | components["schemas"]["EnvironmentParameters"];
       /** Cell Id */
       cell_id: string;
       context: components["schemas"]["CellContext"];
+      derived: components["schemas"]["EquipmentDerived"] | null;
       /** Outdates */
       outdates: string[];
       /** Problems */
@@ -1400,6 +1408,29 @@ export interface components {
       schema_version?: number;
     };
     /**
+     * EquipmentArtifact
+     * @description Artifact of the equipment stage: the items with their modes and the operating modes.
+     */
+    EquipmentArtifact: {
+      /** Equipos */
+      items?: components["schemas"]["Item"][];
+      /** Modos operativos */
+      operating_modes?: components["schemas"]["OperatingMode"][];
+      /**
+       * Schema Version
+       * @default 1
+       */
+      schema_version?: number;
+    };
+    /**
+     * EquipmentDerived
+     * @description What the backend derives from the equipment artifact (``docs/etapas/equipment.md``).
+     */
+    EquipmentDerived: {
+      /** Operating Mode Dissipation */
+      operating_mode_dissipation: components["schemas"]["OperatingModeDissipation"][];
+    };
+    /**
      * EventType
      * @enum {string}
      */
@@ -1646,6 +1677,79 @@ export interface components {
       launch_date?: string | null;
     };
     /**
+     * Item
+     * @description An item of equipment (``quantity`` identical items, always in the same mode).
+     */
+    Item: {
+      /**
+       * Id
+       * @description Proposed by the client (`<prefix>_<hex>`) or generated when applied. Immutable.
+       */
+      id?: string | null;
+      /**
+       * Ubicación
+       * @description Cara donde va montado, o interno.
+       */
+      location?: components["schemas"]["Location"] | null;
+      /**
+       * Masa
+       * @description Por ítem.
+       */
+      mass?: number | null;
+      /**
+       * Modos
+       * @description Modos propios del equipo (encendido). Apagado está siempre disponible.
+       */
+      modes?: components["schemas"]["ItemMode"][];
+      /** Nombre */
+      name?: string | null;
+      /**
+       * Temperatura no operativa máxima
+       * @description Apagado. Opcional: con la mínima no operativa.
+       */
+      non_operating_max?: number | null;
+      /**
+       * Temperatura no operativa mínima
+       * @description Apagado. Opcional: con la máxima no operativa.
+       */
+      non_operating_min?: number | null;
+      /** Temperatura operativa máxima */
+      operating_max?: number | null;
+      /** Temperatura operativa mínima */
+      operating_min?: number | null;
+      /**
+       * Cantidad
+       * @description Ítems idénticos, siempre en el mismo modo.
+       * @default 1
+       */
+      quantity?: number | null;
+      /** Subsistema */
+      subsystem?: components["schemas"]["Subsystem"] | null;
+      /**
+       * Temperatura mínima de encendido
+       * @description Opcional.
+       */
+      switch_on_min?: number | null;
+    };
+    /**
+     * ItemMode
+     * @description A mode of an item's own (on): its dissipation, per item.
+     */
+    ItemMode: {
+      /**
+       * Disipación
+       * @description Disipación media en este modo, por ítem.
+       */
+      dissipation?: number | null;
+      /**
+       * Id
+       * @description Proposed by the client (`<prefix>_<hex>`) or generated when applied. Immutable.
+       */
+      id?: string | null;
+      /** Nombre */
+      name?: string | null;
+    };
+    /**
      * Link
      * @description Passes the context of ``source_cell_id`` (the cell and everything upstream of it) on to
      *     ``target_cell_id`` (ADR 0016).
@@ -1671,6 +1775,12 @@ export interface components {
       /** Target Cell Id */
       target_cell_id: string;
     };
+    /**
+     * Location
+     * @description Where an item is mounted: a face of the body (``mission.Face``) or inside it.
+     * @enum {string}
+     */
+    Location: "+X" | "-X" | "+Y" | "-Y" | "+Z" | "-Z" | "internal";
     /**
      * MissionArtifact
      * @description Artifact of the mission stage: mission window, envelope and criteria.
@@ -1766,6 +1876,44 @@ export interface components {
        * @description Absolute path of the .hestia file.
        */
       path: string;
+    };
+    /**
+     * OperatingMode
+     * @description A configuration of the whole satellite: the mode of every item, or Off (``null``).
+     */
+    OperatingMode: {
+      /**
+       * Id
+       * @description Proposed by the client (`<prefix>_<hex>`) or generated when applied. Immutable.
+       */
+      id?: string | null;
+      /**
+       * Duración máxima
+       * @description Vacío: puede durar indefinidamente (estacionario).
+       */
+      max_duration?: number | null;
+      /** Nombre */
+      name?: string | null;
+      /**
+       * Estados
+       * @description Id de cada equipo → id de uno de sus modos, o null (Apagado).
+       */
+      states?: {
+        [key: string]: string | null;
+      };
+    };
+    /**
+     * OperatingModeDissipation
+     * @description Total dissipation of an operating mode.
+     */
+    OperatingModeDissipation: {
+      /**
+       * Dissipation
+       * @description Σ quantity * dissipation of the mode of each item (Off: 0 W). Null when it cannot be added up: a missing or invalid state, or a chosen mode without dissipation.
+       */
+      dissipation: number | null;
+      /** Operating Mode Id */
+      operating_mode_id: string | null;
     };
     /**
      * Operation
@@ -2032,6 +2180,7 @@ export interface components {
       | "parallel"
       | "duplicate_name"
       | "duplicate"
+      | "invalid_reference"
       | "missing"
       | "context_invalid"
       | "eccentricity_out_of_range";
@@ -2246,6 +2395,20 @@ export interface components {
       | "margins"
       | "sensitivity";
     /**
+     * Subsystem
+     * @enum {string}
+     */
+    Subsystem:
+      | "payload"
+      | "power"
+      | "obdh"
+      | "ttc"
+      | "aocs"
+      | "propulsion"
+      | "thermal"
+      | "structure"
+      | "other";
+    /**
      * System
      * @description Named group of cells. ``cell_ids`` keeps display order.
      */
@@ -2316,6 +2479,7 @@ export interface components {
     };
     /** ValidationResult */
     ValidationResult: {
+      derived: components["schemas"]["EquipmentDerived"] | null;
       /** Problems */
       problems: components["schemas"]["Problem"][];
     };

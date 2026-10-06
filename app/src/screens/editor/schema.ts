@@ -35,6 +35,9 @@ export type JsonSchema = {
   "x-default-source"?: string;
   "x-column-title"?: string;
   "x-add-label"?: string;
+  "x-id-prefix"?: string;
+  /** A map (e.g. the states of an operating mode): its values' schema. */
+  additionalProperties?: JsonSchema;
 };
 
 /** A field's own schema (`type`, `enum`…) plus the field-level metadata (title, `x-`). */
@@ -54,6 +57,12 @@ export function resolve(schema: JsonSchema, root: JsonSchema): JsonSchema {
 
 export function field(meta: JsonSchema, root: JsonSchema): Field {
   return { node: resolve(meta, root), meta };
+}
+
+/** Options of an enum field with their `x-enum-labels`. */
+export function enumOptions(f: Field): { value: string; label: string }[] {
+  const labels = f.meta["x-enum-labels"] ?? {};
+  return (f.node.enum ?? []).map((value) => ({ value, label: labels[value] ?? value }));
 }
 
 // ---------------------------------------------------------------- applicable fields
@@ -180,7 +189,7 @@ export function changedLeaves(
       const childLabel = [...label, meta.title ?? key];
       const va = getAt(a, [key]);
       const vb = getAt(b, [key]);
-      if (f.node.type === "object") {
+      if (f.node.type === "object" && f.node.properties) {
         walk(f.node, va, vb, childPath, childLabel);
       } else if (
         f.node.type === "array" &&

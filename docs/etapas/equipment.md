@@ -1,6 +1,6 @@
 # Etapa Equipos (`equipment`): campos
 
-> **Especificación para implementar (2026-10-05).** Etapa decidida ([ADR 0016](../adr/0016-contexto-de-celda-por-cadena.md)) y sin implementar. Reemplaza la versión del 2026-09-29 (disipación por equipo y modo operativo): ahora cada equipo tiene sus propios modos y cada modo operativo del satélite es una configuración que elige el modo de cada equipo. Edición, validación, estado y procedencia: [ADR 0017](../adr/0017-etapas-formulario.md). Ids propuestos por el cliente: [ADR 0025](../adr/0025-ids-propuestos-por-el-cliente.md). Diseño: `app/design/workspace.pen`, frame «Workspace · Equipos (borrador)». Lo marcado *(propuesta)* se decidió sin revisión y puede cambiar. Convenciones y tipos: los de [mission.md](mission.md#convenciones), salvo los ids (ver abajo).
+> **Implementada (2026-10-05):** modelo, validación (equipos, modos y modos operativos), defaults, ids propuestos, disipación total por modo operativo (derivado) y editor (secciones Equipos y Modos operativos, con totales e indicadores). Falta alinear la pantalla al frame de Pencil. Etapa decidida ([ADR 0016](../adr/0016-contexto-de-celda-por-cadena.md)). Reemplaza la versión del 2026-09-29 (disipación por equipo y modo operativo): ahora cada equipo tiene sus propios modos y cada modo operativo del satélite es una configuración que elige el modo de cada equipo. Edición, validación, estado y procedencia: [ADR 0017](../adr/0017-etapas-formulario.md). Ids propuestos por el cliente: [ADR 0025](../adr/0025-ids-propuestos-por-el-cliente.md). Derivados y editor propio: [ADR 0026](../adr/0026-derivados-y-editores-propios-de-formularios.md). Diseño: `app/design/workspace.pen`, frame «Workspace · Equipos (borrador)». Lo marcado *(propuesta)* se decidió sin revisión y puede cambiar. Convenciones y tipos: los de [mission.md](mission.md#convenciones), salvo los ids (ver abajo).
 
 Formulario, como Misión: su artefacto es lo cargado (o, más adelante, importado de la planilla del proyecto), validado. Lo único derivado que devuelve es la disipación total de cada modo operativo (ver [Derivados](#derivados)), calculada en el backend; el rango común de temperatura y el resto de los cálculos viven en `global_balance`. En 1.1 cada equipo se convierte en nodos.
 
@@ -70,16 +70,17 @@ Valores **por ítem**: con `quantity` > 1, cada ítem tiene la masa, la disipaci
 
 - Al menos un equipo y un modo operativo; cada equipo con al menos un modo.
 - Nombres únicos en `items` y en `operating_modes`; nombres de modo únicos dentro de cada equipo.
-- `quantity` ≥ 1; `mass` ≥ 0; `dissipation` ≥ 0.
+- `quantity` ≥ 1; `mass` ≥ 0; `dissipation` ≥ 0; `max_duration`, si está, > 0 *(propuesta: agregada al implementar; una duración nula o negativa no tiene sentido)*.
 - `states` tiene exactamente una entrada por equipo: ni faltan ni sobran (claves que no son equipos del artefacto).
-- Cada valor de `states` es `null` o el id de un modo **de ese equipo**.
+- Cada valor de `states` es `null` o el id de un modo **de ese equipo** (si no, `invalid_reference`).
+- Solo se puede referenciar el primer ítem (o modo) con un id: uno sin id o con un id repetido recibe otro al aplicar, así que su estado se informa como faltante (ADR 0025).
 - `operating_min` < `operating_max`.
 - Límites no operativos: los dos o ninguno; si están, contienen al rango operativo.
 - `switch_on_min` ≤ `operating_max` y, si hay límites no operativos, `switch_on_min` ≥ `non_operating_min`.
 
 ## Derivados
 
-El backend (`hestia_core`, con test) calcula la **disipación total de cada modo operativo**: Σ `quantity` × `dissipation` del modo elegido de cada equipo (Apagado = 0). Se devuelve junto al artefacto al leerlo y al validar un borrador en seco, así la UI la muestra mientras se edita (con el mismo *debounce* de la validación) y los agentes la leen por MCP sin calcular. Es la misma suma que usa `global_balance`. Con referencias inválidas, el total del modo afectado no se informa (o se informa sin esos equipos) *(propuesta)*.
+El backend (`hestia_core`, con test) calcula la **disipación total de cada modo operativo**: Σ `quantity` × `dissipation` del modo elegido de cada equipo (Apagado = 0). Se devuelve junto al artefacto al leerlo y al validar un borrador en seco, así la UI la muestra mientras se edita (con el mismo *debounce* de la validación) y los agentes la leen por MCP sin calcular. Es la misma suma que usa `global_balance`. Con referencias inválidas o datos faltantes (un estado que falta o sobra, un modo que no es de ese equipo, un modo elegido sin disipación, un equipo sin cantidad o sin id utilizable), el modo afectado **no tiene total** (`null`): nunca una suma parcial *(propuesta, decidida al implementar: es la opción conservadora)*. Implementado en `hestia_core.equipment.operating_mode_dissipation`; leer y validar lo devuelven en `derived.operating_mode_dissipation` (`[{operating_mode_id, dissipation}]`, en W, en el orden de `operating_modes`).
 
 ## Comportamiento al editar *(propuesta)*
 

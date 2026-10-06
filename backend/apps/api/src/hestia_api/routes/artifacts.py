@@ -25,10 +25,9 @@ def get_cell_artifact(cell_id: str, workspace: WorkspaceDep) -> CellArtifact:
 def validate_cell_artifact(
     cell_id: str, body: ArtifactDraft, workspace: WorkspaceDep
 ) -> ValidationResult:
-    """Dry run: the problems of a draft. Changes nothing (no history, no status)."""
-    return ValidationResult(
-        problems=workspace.query(lambda p: artifacts.validate_draft(p, cell_id, body.artifact))
-    )
+    """Dry run: the problems and derived values of a draft. Changes nothing (no history, no
+    status)."""
+    return workspace.query(lambda p: artifacts.validate_draft(p, cell_id, body.artifact))
 
 
 @router.put("/{cell_id}/artifact", operation_id="apply_cell_artifact")

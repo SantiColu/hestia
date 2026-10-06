@@ -26,6 +26,7 @@ Requiere [uv](https://docs.astral.sh/uv/), Node.js ≥ 20 con pnpm, [Rust](https
 make setup      # dependencias
 make dev        # API en :8000 y UI en :5173 (navegador)
 make desktop    # API y app de escritorio
+make desktop-app  # solo la app de escritorio, sobre un `make dev` ya corriendo
 make test
 make lint
 ```

@@ -20,6 +20,7 @@ def _phase0(client: TestClient) -> dict[str, str]:
 def test_read_defaults(opened: TestClient) -> None:
     cells = _phase0(opened)
     body = opened.get(f"/project/cells/{cells['mission']}/artifact").json()
+    assert body["derived"] is None  # the mission has no derived values
     assert body["status"] == "never_run" and body["applied"] is False
     assert body["artifact"]["criteria"]["uncertainty_margin"] == 10.0
     assert body["provenance"]["criteria.uncertainty_margin"]["source"] == "default"
@@ -40,6 +41,7 @@ def test_dry_validation_changes_nothing(opened: TestClient) -> None:
             "message": "La masa tiene que ser mayor que 0.",
         }
     ]
+    assert body["derived"] is None
     assert len(opened.get("/project/history").json()) == 1
     session = opened.get("/session").json()["project"]
     assert session["document"]["revision"] == 1
@@ -76,10 +78,9 @@ def test_apply_undo_redo(opened: TestClient) -> None:
 
 def test_not_implemented_stages(opened: TestClient) -> None:
     cells = _phase0(opened)
-    for stage in ("equipment", "global_balance"):
-        response = opened.get(f"/project/cells/{cells[stage]}/artifact")
-        assert response.status_code == 422
-        assert response.json()["code"] == "stage_not_implemented"
+    response = opened.get(f"/project/cells/{cells['global_balance']}/artifact")
+    assert response.status_code == 422
+    assert response.json()["code"] == "stage_not_implemented"
     assert opened.get("/project/cells/nope/artifact").status_code == 404
 
 
@@ -90,6 +91,6 @@ def test_artifact_schema(client: TestClient) -> None:
     environment = client.get("/catalog/stages/environment/artifact-schema").json()
     orbit = environment["$defs"]["Orbit"]["properties"]
     assert orbit["altitude"]["x-unit"] == "m" and orbit["altitude"]["x-display-unit"] == "km"
-    response = client.get("/catalog/stages/equipment/artifact-schema")
+    response = client.get("/catalog/stages/global_balance/artifact-schema")
     assert response.status_code == 422
     assert response.json()["code"] == "stage_not_implemented"

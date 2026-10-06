@@ -87,10 +87,12 @@ async def get_catalog() -> Json:
 
 @_tool("get_artifact_schema")
 async def get_artifact_schema(stage: StageType) -> Json:
-    """JSON Schema of the artifact of a form stage (`mission`) or of the parameters of a
-    computation stage (`environment`): fields, enums, SI unit (`x-unit`) of each physical field,
-    library defaults (`x-default`, `x-default-source`) and which fields apply to each orbit type
-    (`x-show-if`). Values are always in SI units and kelvin."""
+    """JSON Schema of the artifact of a form stage (`mission`, `equipment`) or of the parameters
+    of a computation stage (`environment`): fields, enums with their labels (`x-enum-labels`),
+    SI unit (`x-unit`) of each physical field, library defaults (`x-default`,
+    `x-default-source`), which fields apply to each orbit type (`x-show-if`) and the prefix of
+    the ids you may propose for new list items (`x-id-prefix`). Values are always in SI units
+    and kelvin."""
     return await call("get_artifact_schema", path={"stage": stage})
 
 
@@ -368,17 +370,20 @@ async def unlink_cells(link_id: str, justification: str) -> Json:
 
 @_tool("get_cell_artifact")
 async def get_cell_artifact(cell_id: str) -> Json:
-    """The applied artifact of a form cell (mission) or the applied parameters of a computation
-    cell (environment: design values, dispersion, sampling, custom conditions): values in SI
-    units, validation problems ({path, code, message}), per-field provenance ({source,
-    change_id}), status and context. Start from this artifact to build a draft."""
+    """The applied artifact of a form cell (mission, equipment) or the applied parameters of a
+    computation cell (environment: design values, dispersion, sampling, custom conditions):
+    values in SI units, validation problems ({path, code, message}), per-field provenance ({source,
+    change_id}), status, context and `derived`: values the backend computes from the artifact
+    (equipment: `operating_mode_dissipation`, the total W of each operating mode, null when it
+    cannot be added up; null for stages without derived values). Start from this artifact to
+    build a draft."""
     return await call("get_cell_artifact", path={"cell_id": cell_id})
 
 
 @_tool("validate_cell_artifact")
 async def validate_cell_artifact(cell_id: str, artifact: Json) -> Json:
-    """Dry run: the problems a draft artifact would have. Changes nothing. The draft is the
-    whole artifact (possibly incomplete), as returned by get_cell_artifact."""
+    """Dry run: the problems and `derived` values a draft artifact would have. Changes nothing.
+    The draft is the whole artifact (possibly incomplete), as returned by get_cell_artifact."""
     return await call(
         "validate_cell_artifact", path={"cell_id": cell_id}, json={"artifact": artifact}
     )
@@ -390,7 +395,11 @@ async def apply_cell_artifact(cell_id: str, artifact: Json, justification: str) 
     one undoable change. The justification is required. Problems are allowed (a form cell is
     then failed); everything downstream (and a computation cell itself) becomes outdated if the
     content changed; `change` is null if nothing changed. Keep the ids of existing list items
-    (attitude_modes[].id, custom_conditions[].id); new items get ids."""
+    (attitude_modes[].id, custom_conditions[].id). A new item may carry an id you propose, as
+    `<prefix>_<hex>` with its list's prefix (e.g. `mode_1a2b`), so other fields of the same
+    draft can reference it; it is kept if no other item of that list has it. Items without a
+    valid unique id get one from the backend (a reference to a replaced id is reported as a
+    problem, never rewritten)."""
     return await call(
         "apply_cell_artifact",
         path={"cell_id": cell_id},

@@ -1,60 +1,29 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Check, CircleDashed, Undo2 } from "lucide-react";
-import {
-  api,
-  unwrap,
-  type CellArtifact,
-  type EnvironmentParameters,
-  type MissionArtifact,
-  type Problem,
-  type ProjectView,
-  type StageType,
-} from "@/api/client";
+import { useCallback, useMemo, type ReactNode } from "react";
+import { CircleDashed } from "lucide-react";
+import type { ProjectView, StageType } from "@/api/client";
 import { EmptyState } from "@/components/data/empty-state";
 import { Notice } from "@/components/feedback/notice";
 import { StageStatusBadge, type StageStatus } from "@/components/feedback/stage-status";
 import { SectionLabel } from "@/components/navigation/section-label";
-import { Button } from "@/components/ui/button";
-import { joinList, plural } from "@/lib/format";
+import { joinList } from "@/lib/format";
 import { deepEqual, getAt, setAt, type Json, type JsonObject, type JsonPath } from "@/lib/json";
 import { cn } from "@/lib/utils";
 import { useDialogs } from "@/project/dialogs";
-import { DRAFT_DEBOUNCE_MS, useEditor } from "@/project/editor";
 import { findCell, findSystem, isComputation, stageInfo, stageName } from "@/project/lookup";
 import { useProject } from "@/project/store";
 import { ComputationEditor } from "./computation-editor";
+import { DraftBar, DraftErrors } from "./draft-bar";
+import { EquipmentEditor } from "./equipment/equipment-editor";
 import { column } from "./layout";
-import { changedLeaves, problemsBySection, switchOption, type JsonSchema } from "./schema";
-import { useCellContext } from "./use-cell-context";
+import { changedLeaves, switchOption } from "./schema";
 import { SchemaForm } from "./schema-form";
-
-/** Body of the generic artifact endpoints (ADR 0019): a form artifact or a computation's
- * parameters. The API validates it against the cell's stage. */
-type Artifact = MissionArtifact | EnvironmentParameters;
-
-/** The draft is plain JSON built from the stage's JSON Schema; the API validates its shape. */
-function asArtifact(value: JsonObject): Artifact {
-  return value as unknown as Artifact;
-}
-
-/** Schemas of form artifacts, fetched once per stage. */
-const schemas = new Map<StageType, Promise<JsonSchema>>();
-
-function artifactSchema(stage: StageType): Promise<JsonSchema> {
-  let schema = schemas.get(stage);
-  if (!schema) {
-    schema = unwrap(
-      api.GET("/catalog/stages/{stage}/artifact-schema", { params: { path: { stage } } }),
-    ) as Promise<JsonSchema>;
-    schema.catch(() => schemas.delete(stage));
-    schemas.set(stage, schema);
-  }
-  return schema;
-}
+import { useArtifactDraft, type ArtifactDraft } from "./use-artifact-draft";
+import { useCellContext } from "./use-cell-context";
 
 /**
- * The editor of a cell's tab: a form for implemented form stages, parameters + Update + results
- * for implemented computation stages (ADR 0021), a placeholder otherwise.
+ * The editor of a cell's tab: a form for implemented form stages (equipment has its own),
+ * parameters + Update + results for implemented computation stages (ADR 0021), a placeholder
+ * otherwise.
  */
 export function CellEditor({ cellId, view }: { cellId: string; view: ProjectView }) {
   const { catalog } = useProject();
@@ -63,6 +32,10 @@ export function CellEditor({ cellId, view }: { cellId: string; view: ProjectView
   const stage = stageInfo(catalog, cell.stage);
   const title = { name: cell.name, system: findSystem(view.project, cell.system_id)?.name ?? "" };
   if (stage?.kind === "form" && stage.implemented) {
+    // Equipment has an editor of its own: its matrix does not fit the generated form.
+    if (cell.stage === "equipment") {
+      return <EquipmentEditor cellId={cellId} title={title} view={view} />;
+    }
     return <FormEditor cellId={cellId} stage={cell.stage} title={title} view={view} />;
   }
   if (isComputation(catalog, cell.stage)) {
@@ -140,10 +113,10 @@ function NotImplemented({
 }
 
 /**
- * Draft + dry validation + Apply (ADR 0017). The draft lives in the editor store; the API
- * validates it (debounced) and decides status and provenance. `computation`: the parameters of
- * a computation stage (ADR 0021), shown inside its editor (no header of its own), full width with
- * an optional panel beside the form (`aside`, given the current draft or applied artifact).
+ * A form generated from the stage's JSON Schema, with the draft, dry validation and Apply of
+ * `useArtifactDraft` (ADR 0017). `computation`: the parameters of a computation stage
+ * (ADR 0021), shown inside its editor (no header of its own), full width with an optional panel
+ * beside the form (`aside`, given the current draft or applied artifact).
  */
 export function FormEditor({
   cellId,
@@ -160,65 +133,9 @@ export function FormEditor({
   computation?: boolean;
   aside?: (current: JsonObject, isDraft: boolean) => ReactNode;
 }) {
-  const { fail, notify, setView } = useProject();
-  const { drafts, setDraft } = useEditor();
   const dialogs = useDialogs();
-  const [schema, setSchema] = useState<JsonSchema | null>(null);
-  const [cellArtifact, setCellArtifact] = useState<CellArtifact | null>(null);
-  /** Problems of the latest validated draft (kept while a newer one is being validated). */
-  const [draftProblems, setDraftProblems] = useState<Problem[] | null>(null);
-  const [applying, setApplying] = useState(false);
-  const revision = view.document.revision;
-
-  useEffect(() => {
-    let live = true;
-    artifactSchema(stage)
-      .then((result) => live && setSchema(result))
-      .catch(fail);
-    return () => {
-      live = false;
-    };
-  }, [stage, fail]);
-
-  // The applied artifact; refetched on every project change (undo, another actor).
-  useEffect(() => {
-    let live = true;
-    unwrap(api.GET("/project/cells/{cell_id}/artifact", { params: { path: { cell_id: cellId } } }))
-      .then((result) => live && setCellArtifact(result))
-      .catch(fail);
-    return () => {
-      live = false;
-    };
-  }, [cellId, revision, fail]);
-
-  const applied = useMemo(
-    () => (cellArtifact?.artifact ?? null) as JsonObject | null,
-    [cellArtifact],
-  );
-  const draft = drafts[cellId] ?? null;
-  const current = draft ?? applied;
-
-  // Dry validation of the draft, debounced. Without a draft, the applied problems count.
-  const latestDraft = useRef(draft);
-  useEffect(() => {
-    latestDraft.current = draft;
-    if (!draft) return;
-    const timer = window.setTimeout(() => {
-      unwrap(
-        api.POST("/project/cells/{cell_id}/artifact/validate", {
-          params: { path: { cell_id: cellId } },
-          body: { artifact: asArtifact(draft) },
-        }),
-      )
-        .then(({ problems }) => {
-          if (latestDraft.current === draft) setDraftProblems(problems);
-        })
-        .catch(fail);
-    }, DRAFT_DEBOUNCE_MS);
-    return () => window.clearTimeout(timer);
-  }, [cellId, draft, fail]);
-
-  const problems = draft && draftProblems ? draftProblems : (cellArtifact?.problems ?? []);
+  const form = useArtifactDraft(cellId, stage, view.document.revision);
+  const { schema, cellArtifact, applied, draft, current, problems, change } = form;
 
   const onChange = useCallback(
     (path: JsonPath, value: Json) => {
@@ -229,11 +146,10 @@ export function FormEditor({
       const { next, dropped } = schema
         ? switchOption(schema, current, changed)
         : { next: changed, dropped: [] };
-      const commit = () => setDraft(cellId, deepEqual(next, applied) ? null : next);
       const unapplied = dropped.filter(
         (f) => !deepEqual(getAt(changed, f.path), getAt(applied, f.path) ?? null),
       );
-      if (unapplied.length === 0) return commit();
+      if (unapplied.length === 0) return change(next);
       void dialogs
         .askConfirm({
           title: "Valores sin aplicar",
@@ -242,9 +158,9 @@ export function FormEditor({
           )}. Si continuás, se borran.`,
           confirmLabel: "Borrar y cambiar",
         })
-        .then((confirmed) => confirmed && commit());
+        .then((confirmed) => confirmed && change(next));
     },
-    [current, applied, schema, cellId, setDraft, dialogs],
+    [current, applied, schema, change, dialogs],
   );
 
   const changes = useMemo(
@@ -260,39 +176,8 @@ export function FormEditor({
     [cellArtifact],
   );
 
-  if (!schema || !cellArtifact || !current || !applied) {
-    return <p className="p-6 text-xs text-subtle-foreground">Cargando…</p>;
-  }
+  if (!schema || !cellArtifact || !current || !applied) return <EditorLoading />;
 
-  const errorCount = plural(problems.length, "error", "errores");
-  /** What errors mean for this cell: a form cell fails; a computation cannot update. */
-  const errorConsequence = computation
-    ? "Actualizar falla hasta corregirlos."
-    : "la celda queda Fallida hasta corregirlos.";
-
-  /** Apply the draft, or the untouched defaults (first apply). Undone from the history. */
-  const apply = async () => {
-    setApplying(true);
-    try {
-      const result = await unwrap(
-        api.PUT("/project/cells/{cell_id}/artifact", {
-          params: { path: { cell_id: cellId } },
-          body: { artifact: asArtifact(draft ?? applied) },
-        }),
-      );
-      setView(result.view);
-      setCellArtifact(result.cell);
-      setDraft(cellId, null);
-      setDraftProblems(null);
-      if (!result.change) notify("Sin cambios: el contenido ya estaba aplicado.");
-    } catch (error) {
-      fail(error);
-    } finally {
-      setApplying(false);
-    }
-  };
-
-  const sections = [...new Set(changes.map((c) => c.section))];
   /** Computation parameters use the whole width, as their header does. */
   const body = computation ? "flex w-full flex-col" : column;
 
@@ -304,27 +189,15 @@ export function FormEditor({
             {!computation && (
               <EditorHeader
                 title={title}
-                badge={
-                  draft && problems.length > 0 ? (
-                    <StageStatusBadge status="failed" label="Borrador con errores" />
-                  ) : (
-                    <StageStatusBadge status={cellArtifact.status} />
-                  )
-                }
+                badge={<DraftStatusBadge form={form} status={cellArtifact.status} />}
               />
             )}
-            {problems.length > 0 && (
-              <Notice tone="error" title={`${errorCount} de validación`}>
-                {problemsBySection(
-                  schema,
-                  problems.map((p) => p.path),
-                )}
-                .{" "}
-                {computation || draft
-                  ? `Podés aplicar igual: ${errorConsequence}`
-                  : "La celda queda Fallida hasta corregirlos."}
-              </Notice>
-            )}
+            <DraftErrors
+              schema={schema}
+              problems={problems}
+              hasDraft={draft !== null}
+              computation={computation}
+            />
             <SchemaForm
               root={schema}
               applied={applied}
@@ -338,35 +211,35 @@ export function FormEditor({
         {aside?.(current, draft !== null)}
       </div>
       {(draft !== null || !cellArtifact.applied) && (
-        <footer className="h-13 shrink-0 border-t border-border bg-surface px-6">
-          <div className={cn(body, "h-full flex-row items-center gap-3")}>
-            <span
-              aria-hidden
-              className={cn(
-                "size-1.5 shrink-0 rounded-full",
-                !draft ? "bg-idle" : problems.length > 0 ? "bg-error" : "bg-primary",
-              )}
-            />
-            <span className="flex-1 truncate text-ui text-muted-foreground">
-              {draft
-                ? `${plural(changes.length, "cambio", "cambios")} sin aplicar · ${
-                    problems.length > 0 ? errorCount : sections.join(", ")
-                  }`
-                : "Sin aplicar · valores por defecto"}
-            </span>
-            <Button
-              variant="ghost"
-              disabled={!draft || applying}
-              onClick={() => setDraft(cellId, null)}
-            >
-              <Undo2 data-icon="inline-start" /> Descartar
-            </Button>
-            <Button disabled={applying} onClick={() => void apply()}>
-              <Check data-icon="inline-start" /> Aplicar
-            </Button>
-          </div>
-        </footer>
+        <DraftBar
+          hasDraft={draft !== null}
+          problems={problems}
+          changes={changes}
+          applying={form.applying}
+          onDiscard={form.discard}
+          onApply={() => void form.apply()}
+          className={body}
+        />
       )}
     </div>
+  );
+}
+
+export function EditorLoading() {
+  return <p className="p-6 text-xs text-subtle-foreground">Cargando…</p>;
+}
+
+/** The cell's status, or «Borrador con errores» while the draft has problems. */
+export function DraftStatusBadge({
+  form,
+  status,
+}: {
+  form: Pick<ArtifactDraft, "draft" | "problems">;
+  status: StageStatus;
+}) {
+  return form.draft && form.problems.length > 0 ? (
+    <StageStatusBadge status="failed" label="Borrador con errores" />
+  ) : (
+    <StageStatusBadge status={status} />
   );
 }

@@ -31,7 +31,7 @@ Una por operación de la API (ver `api.OPERATIONS`):
 - Archivo: `get_session`, `new_project`, `open_project`, `save_project`, `save_project_as`, `close_project`, `list_recent_projects`, `remove_recent_project`.
 - Historial: `get_history`, `undo`, `redo`.
 - Esquemático: `create_system`, `rename_system`, `move_system`, `duplicate_system`, `delete_system`, `add_cell`, `rename_cell`, `delete_cell`, `branch_cell`, `list_branch_options`, `list_branch_targets`, `list_link_targets`, `get_cell_context`, `link_cells`, `unlink_cells`.
-- Artefactos de etapas formulario (ADR 0017) y parámetros de etapas de cálculo (ADR 0021): `get_cell_artifact`, `validate_cell_artifact` (en seco) y `apply_cell_artifact` (con justificación).
+- Artefactos de etapas formulario (ADR 0017) y parámetros de etapas de cálculo (ADR 0021): `get_cell_artifact`, `validate_cell_artifact` (en seco) y `apply_cell_artifact` (con justificación). Leer y validar devuelven `derived` (valores que calcula el backend, p. ej. totales); al aplicar, el agente puede proponer los ids de ítems nuevos (ADR 0025).
 - Etapas de cálculo (ADR 0021): `update_cell` (Actualizar; justificación opcional), `get_cell_result` (estado, procedencia y resultado sin perfiles), `get_orbit_profile` (un perfil orbital de Entorno por condición y modo de actitud) y `preview_orbit` (la órbita de un borrador de parámetros de Entorno, sin guardar nada; ADR 0023).
 - Portapapeles (ADR 0014): `copy_to_clipboard` (devuelve el fragmento) y `paste_from_clipboard` (lo recibe; sirve para otro proyecto). Cortar = copiar + `delete_system`/`delete_cell`.
 
