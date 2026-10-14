@@ -1,0 +1,594 @@
+% Typeset version of docs/investigacion/balance-global.md (the Markdown file is the source).
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-noshorthands,es-tabla]{babel}
+\usepackage{newpxtext,newpxmath}
+\usepackage[a4paper,margin=2.4cm,headheight=14pt]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{array,booktabs,xltabular}
+\usepackage{enumitem}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{xurl}
+\usepackage[colorlinks,linkcolor=MidnightBlue,urlcolor=MidnightBlue,citecolor=MidnightBlue]{hyperref}
+
+\definecolor{opinion}{HTML}{A0522D}
+\definecolor{rule}{HTML}{888888}
+
+\setlist{itemsep=2pt,topsep=4pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\renewcommand{\arraystretch}{1.25}
+
+\titleformat{\section}{\Large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{MidnightBlue}}{}{0em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textsc{Hestia} · Balance global}
+\fancyhead[R]{\small Investigación, 2026-10-05}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\op}[1]{\textcolor{opinion}{\textit{(#1)}}}
+\newcommand{\f}[1]{\ref{f:#1}}
+
+\title{\textbf{Balance global} (\code{global\_balance})\\[4pt]\large Concepto para la fase 0}
+\author{Investigación para revisar antes de especificar la etapa}
+\date{2026-10-05}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+\begin{center}
+\fbox{\parbox{0.9\textwidth}{\small\textbf{Estado:} no es especificación ni ADR; nada de esto está implementado. Lo respaldado lleva su referencia entre corchetes, \code{[n, lugar]}, numerada como en las \hyperref[sec:fuentes]{Fuentes}. El criterio propio va marcado \op{opinión}.}}
+\end{center}
+
+\tableofcontents
+
+\section*{Alcance y cómo leer}
+\addcontentsline{toc}{section}{Alcance y cómo leer}
+
+\begin{itemize}
+  \item Una sección por pregunta: primero la recomendación, después la práctica, las alternativas y las fuentes. Al final, la propuesta de parámetros y de resultado (coherente con el ADR 0021), lo que queda abierto y los supuestos para \code{physics-reviewer}.
+  \item \textbf{Respaldo y opinión:} lo respaldado lleva su referencia entre corchetes, \code{[n, lugar]}, numerada como en \hyperref[sec:fuentes]{Fuentes}. El criterio propio va marcado \op{opinión}. Los números de los ejemplos son cálculos propios y lo dicen.
+  \item \textbf{Qué se leyó:} ECSS-E-ST-31C [\f{1}], el curso oficial de ESA sobre esa norma [\f{2}], Gilmore 2.ª ed., caps.~2, 4, 5, 6, 7 y 15 [\f{3}], NASA/TM-2001-211221 [\f{4}], ECSS-E-HB-31-01 partes 7 y 5 [\f{5}, \f{6}], NASA RP-1121 [\f{7}], el experimento en vuelo THERME de CNES [\f{8}] y el resumen de las reglas GOLD de GSFC [\f{9}]. \textbf{Karam no se pudo consultar} en esta sesión: figura en Fuentes como lectura pendiente y no respalda ningún valor.
+  \item «Práctica de la industria» es la documentada en normas, manuales y ejemplos publicados. Los procedimientos internos de cada empresa varían y no están al alcance.
+\end{itemize}
+
+\section*{Resumen}
+\addcontentsline{toc}{section}{Resumen}
+
+\begin{enumerate}
+  \item \textbf{Modelo:} nodo único isotermo, estacionario con flujos promediados en la órbita (inercia infinita) para dimensionar. Es lo que hacen los ejemplos publicados y lo que indica ESA para los casos extremos de la órbita operativa. El transitorio de un nodo (capacidad = masa $\times$ $c_p$ efectivo) sirve para verificar que el promedio vale (constante de tiempo frente al período) y para los eventos de duración acotada. La inercia nula no es una cota creíble para el cuerpo de un satélite mediano: no es caso de diseño.
+  \item \textbf{Casos:} el peor caso depende de las propiedades ópticas, de la cara del radiador, de la disipación y del rango admisible de cada modo, así que no se puede elegir antes. Se \textbf{evalúan todas las combinaciones} compatibles (condición $\times$ actitud $\times$ modo operativo), que en un nodo cuestan milisegundos. El caso caliente es el que exige más área de radiador; el frío, el que exige más potencia de heaters con esa área. Se suman los casos propios del usuario (modo seguro, LEOP).
+  \item \textbf{Ópticas:} radiador con $\alpha$ BOL/EOL y $\varepsilon$ en una cara; MLI ($\varepsilon^*$ y capa externa) en el resto; todo cara por cara con los flujos de Entorno. Caliente con EOL y ambiente máximo; frío con BOL y ambiente mínimo.
+  \item \textbf{Rango y márgenes:} el rango a respetar es \textbf{por modo operativo}: intersección de los límites de diseño de los equipos encendidos (operativos) y apagados (no operativos y de encendido). La incertidumbre achica ese rango hacia adentro; aceptación y calificación van hacia afuera y no dimensionan.
+  \item \textbf{Radiador y heaters:} el área sola no alcanza. Área por cara candidata (fórmula cerrada), potencia de heaters del caso frío con esa área, ventana de área pasiva (dice si hacen falta heaters o un radiador variable) y avisos de área y de presupuesto. La masa del TCS depende de la arquitectura: va en \code{tcs\_concept}.
+  \item \textbf{Para \code{tcs\_concept}:} casos evaluados y dimensionantes, tabla por cara (área, rechazo neto, heaters), ventana pasiva, rangos por modo con equipos limitantes e incompatibles, constante de tiempo, temperaturas de sumidero, avisos y procedencia.
+\end{enumerate}
+
+% ---------------------------------------------------------------------------
+\section{Modelo térmico sin inercia conocida}\label{sec:modelo}
+
+\subsubsection*{Recomendación}
+
+\begin{itemize}
+  \item \textbf{Dimensionar con el estacionario de flujos promediados en la órbita} (inercia infinita). Cada caso es un balance algebraico: disipación media del modo + flujos absorbidos medios = emisión del radiador + fuga por el MLI (fórmulas en la sección~\ref{sec:nodo}).
+  \item \textbf{Informar siempre la constante de tiempo} $\tau = C/G$ del nodo, con $C = m\,c_{p,\mathrm{eff}}$ ($m$ = \code{mass} de Misión) y $G$ la conductancia radiativa linealizada al espacio, y compararla con el período orbital. Si $\tau$ no es mucho mayor que el período, el resultado avisa que el promedio deja de representar al nodo \op{opinión: umbral a fijar, p.~ej. $\tau \ge 5$ períodos}.
+  \item \textbf{Transitorio de un nodo} solo para lo que el promedio no responde:
+  \begin{itemize}
+    \item la oscilación orbital del nodo en los casos dimensionantes (informativa), con los \code{orbit\_profiles} de Entorno;
+    \item eventos de duración acotada: LEOP sin potencia, transiciones sin heaters, modos con \code{max\_duration}. Ahí la capacidad manda.
+  \end{itemize}
+  \item \textbf{Inercia nula:} no como caso de diseño del nodo. Lo que tiene de útil (cuán caliente o fría queda una superficie sin masa en cada cara) se entrega como \textbf{temperatura de sumidero} por cara, promedio y pico, el concepto de ECSS [\f{1}, §3.2.1.22]. Sirve para elegir caras y recubrimientos y, en la fase~1, para piezas externas livianas.
+  \item \textbf{$c_p$ efectivo:} parámetro con default 900\,J/(kg·K) y una banda de $\pm$30\,\% \op{opinión; no hay fuente de un $c_p$ «del satélite», ver abajo}. El dimensionamiento no depende de $C$; la banda solo afecta $\tau$ y los transitorios, que se informan en sus dos extremos.
+\end{itemize}
+
+\subsubsection*{Alternativas}
+
+{\small
+\begin{xltabular}{\textwidth}{@{}P{3.3cm}LL@{}}
+\toprule
+\textbf{Alternativa} & \textbf{A favor} & \textbf{En contra} \\
+\midrule
+\endhead
+Estacionario promediado (inercia $\infty$) & Estándar en diseño conceptual; algebraico y cerrado; usa directamente los promedios por cara de Entorno; no depende de $c_p$ & No ve la oscilación en la órbita ni eventos cortos; pierde validez si $\tau$ se acerca al período (GEO, satélites chicos) \\
+Estacionario instantáneo (inercia 0) & Cota simple con los picos de Entorno & Para el cuerpo de un satélite mediano es irreal: sobreestima la oscilación en órdenes de magnitud y sobredimensiona radiador y heaters \\
+Transitorio de un nodo, $C = m\,c_p$ & Da oscilación, $\tau$ y eventos de duración & Depende de $c_p$ (incierto) y supone toda la masa acoplada al radiador, así que subestima la oscilación del panel real \\
+Las dos cotas (0 e $\infty$) como resultado & Fácil de explicar & La cota 0 no es creíble para el cuerpo y confunde; su información útil está mejor como temperatura de sumidero \\
+\bottomrule
+\end{xltabular}
+}
+
+\subsubsection*{Justificación y fuentes}
+
+\begin{itemize}
+  \item \textbf{ESA:} los casos extremos de la órbita operativa se calculan en estacionario; el transitorio es para lanzamiento, órbita de transferencia, evolución cíclica en la órbita y casos de falla [\f{2}, diap.~115].
+  \item \textbf{Ejemplo publicado de diseño conceptual:} Gilmore dimensiona el radiador de un instrumento con la disipación media orbital máxima y los flujos medios orbitales máximos, y justifica el promedio por la capacidad térmica frente a los pulsos de disipación [\f{3}, cap.~15, p.~557, ec.~15.16]. El caso frío se resuelve con la misma área y los valores mínimos [\f{3}, cap.~15, p.~560, ec.~15.19--15.21].
+  \item \textbf{Inercia:} las oscilaciones cortas del ambiente no afectan a componentes masivos y bien aislados, sí a los livianos expuestos como paneles solares y radiadores desplegables [\f{3}, cap.~2, p.~22]. El hardware tiene constantes de tiempo de minutos a pocos días [\f{3}, cap.~2, p.~25]. La guía de NASA resuelve el problema modelando solo el ciclo luz--sombra con albedo e IR acordes a la constante de tiempo del sistema [\f{4}, §4.2.2].
+  \item \textbf{Orden de magnitud} (cálculo propio, ilustrativo): satélite de 500\,kg con $c_p$ 900\,J/(kg·K) ($C$ = 450\,kJ/K), envolvente de $1{,}2 \times 1{,}2 \times 1{,}5$\,m, radiador de 1,5\,m² con $\varepsilon = 0{,}8$ y MLI con $\varepsilon^* = 0{,}02$ en el resto, a 20\,°C. Da $G \approx 7{,}8$\,W/K y $\tau \approx 16$\,h (11 a 21\,h con $c_p$ entre 600 y 1200), contra un período de $\sim$1,6\,h. Perder 100\,W durante 35\,min de eclipse baja el nodo $\sim$0,5\,K. En LEO el promedio describe bien al nodo; en GEO (período de 24\,h) $\tau$ es comparable al período y el transitorio pasa a importar.
+  \item \textbf{Por qué $C$ sí importa en los eventos de duración:} el ejemplo de Gilmore exige sobrevivir 3,5\,h sin potencia después del lanzamiento y dos órbitas sin potencia al salir del modo seguro [\f{3}, cap.~15, Tabla~15.5]. Eso es un transitorio puro y su resultado escala con $C$.
+  \item \textbf{$c_p$ efectivo:} no se encontró una fuente con el $c_p$ efectivo de un satélite completo \op{dato faltante}. Referencias de materiales: aluminio $\approx 900$\,J/(kg·K) a temperatura ambiente [\f{6}, Fig.~4-1]; compuestos entre $\sim$800 y $\sim$1300\,J/(kg·K) según fibra y matriz [\f{6}, Tabla~5-8]. El propelente líquido (p.~ej. hidracina) tiene un $c_p$ varias veces mayor que el aluminio \op{no verificado en esta investigación}: un satélite con mucho propelente tiene más $C$. El default de 900 y la banda de $\pm$30\,\% son \op{opinión}.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{Armado de casos caliente y frío}\label{sec:casos}
+
+\subsubsection*{Recomendación}
+
+\begin{itemize}
+  \item \textbf{Enumerar, no elegir a priori.} Hestia arma un candidato por cada combinación compatible de:
+  \begin{itemize}
+    \item condición de Entorno (extremas y propias);
+    \item modo de actitud compatible con el modo operativo (tabla de compatibilidad, parámetro; default: todas con todos \op{opinión: no esconde casos});
+    \item modo operativo de Equipos.
+  \end{itemize}
+  \item \textbf{Lado de cada candidato:} caliente = flujos máximos + $\alpha$ EOL; frío = flujos mínimos + $\alpha$ BOL. Con $\varepsilon^*$ se evalúan los dos extremos y se queda el peor. No hace falta cruzar BOL/EOL con mínimo/máximo: lo absorbido crece con los flujos y con $\alpha$, así que el resultado es monótono \op{opinión; a confirmar por \code{physics-reviewer}}.
+  \item \textbf{Cada candidato usa el rango admisible de su modo operativo} (sección~\ref{sec:rango}). Por eso el modo de máxima disipación no es necesariamente el caliente: puede dimensionar otro con un límite superior más bajo.
+  \item \textbf{Qué caso «es» el caliente o el frío:} el que dimensiona, por cara candidata del radiador:
+  \begin{itemize}
+    \item caliente: el que exige \textbf{más área} de radiador;
+    \item frío: con esa área, el que exige \textbf{más potencia de heaters} (o, si ninguno la necesita, el de menor margen al límite inferior).
+  \end{itemize}
+  \item \textbf{Casos propios:} el usuario agrega combinaciones explícitas (condición, actitud, modo operativo, ambiente mínimo o máximo, BOL o EOL) que se evalúan con el área dimensionada y, por defecto, también dimensionan.
+  \item \textbf{Costo:} p.~ej. 6 condiciones $\times$ 3 actitudes $\times$ 6 modos $\times$ 2 lados $\times$ 2 valores de $\varepsilon^*$ $\times$ 6 caras son $\sim$2600 evaluaciones de fórmulas cerradas: milisegundos \op{estimación propia}.
+\end{itemize}
+
+\subsubsection*{Casos estándar de la fase 0}
+
+{\small
+\begin{xltabular}{\textwidth}{@{}P{2.3cm}LP{2.6cm}P{2.9cm}L@{}}
+\toprule
+\textbf{Caso} & \textbf{Qué combina} & \textbf{Rango que se verifica} & \textbf{Fuente} & \textbf{Cómo entra en Hestia} \op{opinión} \\
+\midrule
+\endhead
+Caliente operativo & Ambiente máximo, EOL, modo operativo y actitud que lo exigen & Operativos de los encendidos, no operativos de los apagados & [\f{1}, §4.2.1\,d], [\f{2}, diap.~114] & Automático \\
+Frío operativo & Ambiente mínimo, BOL, menor disipación & Ídem & [\f{1}, §4.2.1\,d], [\f{2}, diap.~114] & Automático \\
+Eclipse más largo & Condición de máximo eclipse & Ídem & [\f{2}, diap.~114] («during a long eclipse»), [\f{1}, §4.1.4\,a.4] & Automático: ya es una condición extrema de Entorno \\
+Supervivencia / modo seguro & Modo operativo «seguro» (pocos equipos encendidos), su actitud, solo heaters de supervivencia & No operativos y de encendido & [\f{3}, cap.~7, p.~230] (heaters de supervivencia con punto de ajuste más bajo), [\f{3}, cap.~15, Tabla~15.5] & Automático: es un modo operativo más de Equipos; su presupuesto de heaters es un tema abierto \\
+LEOP & Separación hasta adquirir actitud y potencia, con poca o ninguna potencia, duración acotada & No operativos y de encendido & [\f{1}, §4.1.3], [\f{2}, diap.~115], [\f{3}, cap.~15, Tabla~15.5] & Caso propio transitorio (temperatura inicial y duración); versión posterior \\
+Fallas (pérdida de actitud, de un heat pipe) & --- & --- & [\f{2}, diap.~115]; el rango calculado de ECSS las excluye [\f{1}, §3.2.1.3] & Fuera de la fase 0 \\
+Tierra y prelanzamiento & Integración, transporte, plataforma & --- & [\f{1}, §4.1.2] & Fuera de alcance (es diseño de GSE) \\
+\bottomrule
+\end{xltabular}
+}
+
+\subsubsection*{Justificación y fuentes}
+
+\begin{itemize}
+  \item \textbf{ECSS:} las fases de la misión se representan con un conjunto coherente de casos de diseño que cubre el rango extremo de condiciones; para los casos de dimensionamiento se usan los peores casos caliente y frío [\f{1}, §4.2.1\,b--d]. El rango calculado sale de «una combinación apropiada de flujos externos, propiedades de materiales y perfiles de disipación», sin casos de falla [\f{1}, §3.2.1.3]. Un caso de diseño es justamente ese conjunto de parámetros [\f{1}, §3.2.1.37].
+  \item \textbf{ESA:} caliente = EOL, irradiancia solar máxima, disipación máxima; frío = BOL, irradiancia mínima, disipación mínima; y advierte que el peor caso puede darse en otro momento, o en un eclipse largo [\f{2}, diap.~114].
+  \item \textbf{Hay que correr combinaciones:} «puede hacer falta una cantidad de corridas para determinar exactamente cuál es la peor combinación de factores, como ángulo $\beta$, modo operativo, actitud y propiedades de superficie» [\f{3}, cap.~15, p.~537].
+  \item \textbf{El peor caso depende de las ópticas:} NASA: «cuál resulta el caso extremo caliente o frío de un sistema depende de la emitancia de sus superficies y de su absortancia solar»; según esa relación, el extremo puede venir del albedo, de la IR o de un caso combinado [\f{4}, §4.2.3]. Gilmore: los acabados de radiador ($\alpha \sim 0{,}2$, $\varepsilon \sim 0{,}8$) son mucho más sensibles a la IR terrestre que al albedo [\f{3}, cap.~2, p.~31]. Entorno ya lo asume: entrega condiciones, no casos (\code{docs/etapas/environment.md}).
+  \item \textbf{Advertencia sobre el ambiente:} Entorno combina albedo máximo con IR máxima (y mínimos con mínimos). Los datos de NASA muestran que albedo e IR están parcialmente correlacionados (albedo alto con IR baja) y dan pares por tiempo de promediado [\f{4}, §4.2.3, Tablas~4.2.3-1 a -3]; Gilmore discute el mismo punto [\f{3}, cap.~2, pp.~30--31]. Sumar los dos máximos es conservador. Corregirlo es tarea de Entorno (ver \hyperref[sec:abierto]{Lo que queda abierto}).
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{Propiedades ópticas}\label{sec:opticas}
+
+\subsubsection*{Recomendación}
+
+\begin{itemize}
+  \item \textbf{Radiador + MLI, cara por cara.} Un radiador de área $A$ en una cara candidata, con $\alpha$ BOL y EOL y una $\varepsilon$; el resto de la envolvente (incluido lo que queda libre de esa cara) cubierto de MLI con $\varepsilon^*$ y una capa externa con $\alpha$ y $\varepsilon$ propias. Cada cara usa sus flujos medios de Entorno (solar, albedo e IR por separado). Elegir recubrimientos cara por cara es arquitectura: es de \code{tcs\_concept} y \code{discretization}.
+  \item \textbf{BOL para el frío, EOL para el caliente} [\f{2}, diap.~59 y 114], con $\varepsilon$ constante: la degradación sube $\alpha$ con poco o ningún efecto sobre $\varepsilon$ [\f{3}, cap.~4, p.~143] (salvo erosión por oxígeno atómico del Teflon en LEO bajo [\f{3}, cap.~4, p.~154]).
+  \item \textbf{$\varepsilon^*$ del MLI como rango} (mínimo y máximo); cada candidato se evalúa en los dos extremos y se queda el peor, porque el signo de su efecto depende de cada cara (una cara al Sol con la capa externa más caliente que el nodo calienta; una fría enfría).
+  \item \textbf{Presets con fuente} que rellenan valores vacíos, como la tabla de albedo e IR de Entorno: el resultado informa el valor usado y su fuente.
+\end{itemize}
+
+\subsection{Modelo de un nodo}\label{sec:nodo}
+
+\textbf{Notación.} Caras $f$ ($+X \ldots -Z$) con área $A_f$ de la envolvente de Misión y $A_\mathrm{tot} = \sum_f A_f$. Flujos incidentes medios de la cara en el caso, de Entorno: $S_f$ (solar), $B_f$ (albedo), $E_f$ (IR). $Q$ es la disipación del modo operativo (la función de Equipos, ADR 0026); $P$, la potencia de heaters; $r$, la cara del radiador; $\delta_{fr}$ vale 1 si $f = r$ y 0 si no. Subíndice $r$: radiador; subíndice $o$: capa externa del MLI.
+
+\begin{align*}
+  \text{Rechazo neto del radiador por m²:} \quad & q_r(T) = \varepsilon_r \sigma T^4 - \alpha_r (S_r + B_r) - \varepsilon_r E_r \\[4pt]
+  \text{Fuga del MLI por m²:} \quad & m_f(T) = \kappa \left[ \varepsilon_o \sigma T^4 - \alpha_o (S_f + B_f) - \varepsilon_o E_f \right],
+    \qquad \kappa = \frac{\varepsilon^*}{\varepsilon_o + \varepsilon^*} \\[4pt]
+  \text{Balance del nodo ($T$ uniforme):} \quad & Q + P = A\, q_r(T) + \sum_f \left( A_f - A\,\delta_{fr} \right) m_f(T)
+\end{align*}
+
+$m_f$ sale de la definición de $\varepsilon^*$ entre el nodo y la capa externa [\f{5}, ec.~6-2] y de suponer la capa externa sin masa y en equilibrio radiativo \op{derivación propia, a revisar}. Como todo es lineal en los flujos y en $\sigma T^4$, el promedio orbital es exacto para un nodo de inercia infinita, y todo se resuelve en forma cerrada (ver sección~\ref{sec:radiador}).
+
+\subsection{Valores típicos}
+
+{\small
+\begin{xltabular}{\textwidth}{@{}P{3.1cm}P{1.7cm}P{1.2cm}LP{2.2cm}@{}}
+\toprule
+\textbf{Recubrimiento} & \textbf{$\alpha$ BOL} & \textbf{$\varepsilon$} & \textbf{$\alpha$ EOL (medido o recomendado)} & \textbf{Fuente} \\
+\midrule
+\endhead
+OSR, espejo de cuarzo 8\,mil & 0,05--0,08 & 0,80 & Sube por contaminación; curva de diseño solo para GEO [\f{3}, Fig.~4.7]. Sin dato LEO en estas fuentes & [\f{3}, Tabla~4.1] \\
+Teflon plateado 5\,mil & 0,05--0,09 & 0,78 & LEO SSO: hasta 0,14 a los 4,5 años ($\Delta\alpha$ +0,02 a +0,04, HELIOS 2A) [\f{8}]. GEO: curva de diseño [\f{3}, Fig.~4.9] & [\f{3}, Tabla~4.1]; 0,08\,/\,0,81 [\f{7}] \\
+Teflon aluminizado (SSM de aluminio) & 0,10--0,16 & 0,78 & LEO SSO: $\Delta\alpha$ hasta +0,12 a los 7 años, $\alpha$ hasta 0,28 (SPOT 5) [\f{8}] & [\f{3}, Tabla~4.1] \\
+Pintura blanca S13G-LO & 0,20--0,25 & 0,85 & Puede pasar de $\sim$0,20 a 0,70 en pocos años [\f{3}, cap.~4, p.~154] & [\f{3}, Tabla~4.1] \\
+Pintura blanca Z93 & 0,17--0,20 & 0,92 & Curva [\f{3}, Fig.~4.10] & [\f{3}, Tabla~4.1]; 0,17\,/\,0,92 [\f{7}] \\
+Pinturas blancas SG121FD y PCBE & 0,19--0,27 (en tierra) & --- & LEO SSO: suben fuerte los 2 primeros años y se estabilizan en 0,43--0,52 [\f{8}] & [\f{8}] \\
+Kapton aluminizado 1\,mil (capa externa de MLI) & 0,38 & 0,67 & LEO SSO: $\Delta\alpha$ +0,09 a +0,10 en 4,5--7 años [\f{8}]. GEO: casi negro tras varios años [\f{3}, Fig.~4.11] & [\f{3}, Tabla~4.1] \\
+Beta cloth (capa externa de MLI) & 0,32 & 0,86 & GEO: degrada mucho [\f{3}, cap.~4, p.~154] & [\f{3}, Tabla~4.1] \\
+MLI, $\varepsilon^*$ efectiva & --- & --- & 0,015--0,030 en aplicaciones de área media; 0,005 en laboratorio; 0,05--0,30 en mantas muy chicas & [\f{3}, cap.~5, p.~165] \\
+\bottomrule
+\end{xltabular}
+}
+
+\begin{itemize}
+  \item Los valores de tabla dependen del sustrato, el proceso y el espesor: ante la duda, medir [\f{2}, diap.~119]; ECSS exige usar propiedades confiables y sus valores degradados [\f{1}, §4.4.1\,d].
+  \item La degradación de la capa externa del MLI pesa poco en el balance, porque por la manta pasa poco calor [\f{3}, cap.~4, p.~154].
+  \item El experimento THERME midió en vuelo tres satélites en SSO (SPOT 5, HELIOS 2A, DEMETER) [\f{8}]: es la mejor referencia encontrada para LEO.
+\end{itemize}
+
+\subsection{Defaults propuestos \normalfont\op{opinión sobre la elección; valores con su fuente}}
+
+\begin{itemize}
+  \item \textbf{Radiador:} Teflon plateado 5\,mil, el único recubrimiento con BOL y EOL LEO respaldados acá. $\alpha$ BOL 0,05 (extremo bajo de [\f{3}], conservador para el frío), $\alpha$ EOL 0,14 [\f{8}], $\varepsilon$ 0,78 [\f{3}]. El $\alpha$ EOL tiene respaldo en LEO SSO hasta $\sim$4,5 años: fuera de eso el resultado avisa. OSR y pinturas blancas, sin $\alpha$ EOL por defecto (obligatorio).
+  \item \textbf{MLI:} $\varepsilon^*$ entre 0,015 y 0,030 [\f{3}]; capa externa de Kapton aluminizado 1\,mil: $\alpha$ BOL 0,38 y $\varepsilon$ 0,67 [\f{3}], $\alpha$ EOL = BOL + 0,10 [\f{8}], con el mismo aviso de alcance.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{Rango común de temperatura y márgenes}\label{sec:rango}
+
+\subsubsection*{Recomendación}
+
+\begin{itemize}
+  \item \textbf{Rango por caso, según el modo operativo} (no la intersección global de todos los equipos):
+
+  {\small
+  \begin{tabular}{@{}P{4.2cm}P{10.5cm}@{}}
+  Equipo encendido en el modo: & $[\,T^\mathrm{op}_\mathrm{min},\ T^\mathrm{op}_\mathrm{max}\,]$ \\
+  Equipo apagado: & mínimo: \code{switch\_on\_min}, o \code{non\_operating\_min}, o \code{operating\_min}; \newline máximo: \code{non\_operating\_max}, o \code{operating\_max} \\
+  Rango de diseño del caso: & $[\,T_{\text{mín},d},\ T_{\text{máx},d}\,]$ = [el mayor de los mínimos, el menor de los máximos] \\
+  Rango admisible del cálculo: & $[\,T_{\text{mín},d} + u,\ T_{\text{máx},d} - u\,]$ \quad ($u$ = \code{uncertainty\_margin} de Misión)
+  \end{tabular}
+  }
+
+  Para los apagados se toma el mínimo de encendido si existe: cualquier equipo apagado puede tener que encenderse (p.~ej. al salir del modo seguro) \op{opinión, conservadora}. Sin límites no operativos se usan los operativos, que según Equipos están contenidos en ellos \op{opinión, conservadora}.
+  \item \textbf{Semántica de los límites de Equipos:} son los \textbf{límites de diseño} de ECSS (el requisito para el TCS). Si un proveedor da límites de calificación, se les restan los márgenes de calificación y de aceptación antes de cargarlos. Conviene escribirlo en \code{docs/etapas/equipment.md}.
+  \item \textbf{De qué lado va cada margen:}
+  \begin{itemize}
+    \item incertidumbre $u$: hacia adentro del rango de diseño; la temperatura calculada $\pm u$ (la predicha) tiene que quedar dentro;
+    \item aceptación y calificación: hacia afuera del rango de diseño; fijan niveles de ensayo y no dimensionan nada en la fase 0. Si se quiere, se informan como rangos implicados por equipo, pero eso es más de \code{margins}.
+  \end{itemize}
+  \item \textbf{Margen de diseño:} el resultado informa lo que sobra entre la predicción y el límite de diseño, en cada caso.
+  \item \textbf{Equipos limitantes e incompatibles:} el resultado dice qué equipo fija el mínimo y el máximo de cada modo, y qué equipos dejan el rango vacío o son incompatibles con la temperatura del nodo. Son los candidatos a control propio (heater, radiador o aislación dedicados) y es la entrada más valiosa para \code{tcs\_concept} \op{opinión}.
+  \item \textbf{Equipos con control propio:} parámetro opcional para sacarlos de la intersección (siguen sumando su disipación) \op{opinión}.
+  \item \textbf{Valor de $u$:} 15\,K para la fase 0 \op{recomendación con respaldo de [\f{2}], ver abajo}; hoy Misión tiene 10\,K por defecto.
+\end{itemize}
+
+\subsubsection*{Justificación y fuentes}
+
+\begin{itemize}
+  \item \textbf{Definiciones} [\f{1}, §3.2.1.1--3.2.1.20, Fig.~3-1]:
+  \begin{itemize}
+    \item \textbf{calculado:} el que da el análisis para el modo operativo, el no operativo y el encendido, en el peor caso;
+    \item \textbf{predicho:} el calculado ampliado por las incertidumbres;
+    \item \textbf{de diseño:} el requisito para el TCS; el calculado más las incertidumbres tiene que quedar dentro;
+    \item \textbf{de aceptación:} el de diseño más el margen de aceptación; es el extremo que el equipo puede alcanzar pero nunca superar;
+    \item \textbf{de calificación:} el de aceptación más el margen de calificación.
+    \item ECSS desaconseja llamar «rango operativo» al de diseño y acepta «límites operativos o no operativos» [\f{1}, §3.2.1.7, nota~2]: los nombres de Equipos ya coinciden.
+  \end{itemize}
+  \item \textbf{Rangos por estado del equipo:} el rango de diseño se especifica para el modo operativo, el no operativo y la condición de encendido de cada equipo [\f{1}, §3.2.1.7]; la temperatura mínima de encendido está definida aparte [\f{1}, §3.2.1.16]. Eso respalda el rango por modo operativo y no la intersección global.
+  \item \textbf{Valores de los márgenes:} ECSS no los fija: los define la autoridad de sistema [\f{1}, §4.2.1\,e--f]. El curso de ESA da «usualmente 5\,°C» para aceptación y para calificación [\f{2}, diap.~69, 121]: confirma los defaults de Misión, que hoy dicen «a verificar contra la norma».
+  \item \textbf{Incertidumbre:}
+  \begin{itemize}
+    \item ECSS: en general no se aplican incertidumbres menores que 10\,K antes del ensayo de balance térmico [\f{1}, §4.5.2.1\,c, nota]. Es un piso, no el valor de fase 0.
+    \item ESA: sin análisis de incertidumbre se recomienda 10\,°C inicial [\f{2}, diap.~69]; valores típicos de $\pm$15\,K en fase 0/A y $\pm$10\,K en fase B/C [\f{2}, diap.~120].
+    \item Gilmore: el margen de incertidumbre usual de 10\,°C equivale aproximadamente a una protección de $2\sigma$ contra exceder la temperatura predicha [\f{3}, cap.~2, pp.~29--30]. Sus criterios de evaluación del TCS piden 11\,°C más allá de las predicciones de un modelo correlacionado con ensayos [\f{3}, cap.~15, Tabla~15.2]. GSFC pide 5\,°C en las fases B/C [\f{9}].
+    \item Un nodo único es el modelo más grueso posible: 15\,K de [\f{2}] es lo coherente \op{opinión}.
+  \end{itemize}
+  \item \textbf{Margen de diseño:} «lo que queda entre el límite de diseño y la predicción; no está definido formalmente en ECSS y puede ser 0» [\f{2}, diap.~66].
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{Radiador y heaters}\label{sec:radiador}
+
+\subsubsection*{Recomendación}
+
+Dimensionar solo el área y avisar si no entra \textbf{no alcanza}: falta la potencia de heaters, la elección de cara y saber si un radiador fijo puede con los dos extremos. Por cada cara candidata (las \code{radiator\_faces} de Misión, o todas), con $T_\mathrm{c} = T_{\text{máx},d} - u$ (caliente) y $T_\mathrm{f} = T_{\text{mín},d} + u$ (frío):
+
+\begin{align*}
+  \text{Área requerida (candidato caliente, $P = 0$):} \quad
+    & A_\mathrm{req} = \frac{Q - \sum_f A_f\, m_f(T_\mathrm{c})}{q_r(T_\mathrm{c}) - m_r(T_\mathrm{c})} \\[6pt]
+  \text{Área pasiva máxima (candidato frío, $P = 0$):} \quad
+    & A_\mathrm{pas} = \frac{Q - \sum_f A_f\, m_f(T_\mathrm{f})}{q_r(T_\mathrm{f}) - m_r(T_\mathrm{f})} \\[6pt]
+  \text{Heaters con el área fijada (candidato frío):} \quad
+    & P = \max\!\Big(0,\ A\big[q_r(T_\mathrm{f}) - m_r(T_\mathrm{f})\big] + \sum_f A_f\, m_f(T_\mathrm{f}) - Q\Big) \\[6pt]
+  \text{Temperatura libre (cerrada):} \quad
+    & \sigma T^4 = \frac{N}{\varepsilon_r A + \kappa\, \varepsilon_o (A_\mathrm{tot} - A)}, \\[2pt]
+    & N = Q + P + A\big(\alpha_r (S_r + B_r) + \varepsilon_r E_r\big) \\
+    & \phantom{N = {}} + \kappa \sum_f (A_f - A\,\delta_{fr}) \big(\alpha_o (S_f + B_f) + \varepsilon_o E_f\big) \\[6pt]
+  \text{Constante de tiempo:} \quad
+    & \tau = \frac{m\, c_{p,\mathrm{eff}}}{G}, \qquad G = 4\sigma T^3 \big[\varepsilon_r A + \kappa\, \varepsilon_o (A_\mathrm{tot} - A)\big]
+\end{align*}
+
+\begin{itemize}
+  \item \textbf{Área de la cara:} el máximo de $A_\mathrm{req}$ sobre los candidatos calientes. Si el denominador es $\le 0$, esa cara no puede rechazar calor a $T_\mathrm{c}$ (no factible); si el numerador es $\le 0$, no hace falta radiador ($A = 0$) \op{casos borde, opinión}.
+  \item \textbf{Heaters:} con esa área, el máximo de $P$ sobre los candidatos fríos, en W de promedio orbital (igual que \code{heater\_power\_budget} de Misión).
+  \item \textbf{Ventana pasiva:} $A_\mathrm{pas}$ mínimo sobre los fríos. Si $A_\mathrm{req} \le A_\mathrm{pas}$, un radiador fijo sin heaters cumple ambos extremos; si no, la razón $A_\mathrm{pas}/A_\mathrm{req}$ mide cuánto falta. Es el indicador de si hace falta control variable (louvers, VCHP) o heaters \op{indicador propuesto, opinión; respaldo físico abajo}.
+  \item \textbf{Cara elegida:} la factible de menor área (desempate por menor potencia de heaters), o la que fije el usuario \op{opinión}. Una sola cara en la primera versión; repartir el radiador entre caras es de \code{tcs\_concept}.
+  \item \textbf{Avisos:} área mayor que la cara; ninguna cara permitida factible; potencia de heaters con margen mayor que el presupuesto; $\alpha$ EOL por defecto fuera de su respaldo (otra órbita o vida mayor).
+  \item \textbf{Margen de heaters:} potencia instalada mínima = $P\,(1 + m_h)$, con $m_h$ = 25\,\% por defecto, comparada con el presupuesto. Ver el tema abierto sobre margen de temperatura o de potencia.
+  \item \textbf{Masa del TCS:} no en el balance. Depende de la arquitectura: un radiador que es un panel estructural casi no suma masa al TCS y uno desplegable llega a $\sim$12\,kg/m² [\f{3}, cap.~6, p.~208]. El balance entrega las áreas de radiador y de MLI; \code{tcs\_concept} estima la masa y la compara con \code{tcs\_mass\_budget}.
+  \item \textbf{Masa de los equipos:} $\sum$ \code{quantity} $\times$ \code{mass} $\le$ \code{mass} de Misión, como aviso. Es la validación cruzada que el ADR 0016 ubica donde se unen las raíces.
+\end{itemize}
+
+\subsubsection*{Justificación y fuentes}
+
+\begin{itemize}
+  \item \textbf{Radiador por el caliente y heaters por el frío con la misma área:} ejemplo de Gilmore [\f{3}, cap.~15, p.~560]. Los radiadores sobredimensionados para las cargas de EOL hacen que el satélite corra más frío los primeros años y a veces necesite heaters [\f{3}, cap.~4, p.~143]: es el caso BOL frío.
+  \item \textbf{Temperatura del radiador:} Gilmore lo dimensiona a 40\,°C para dejar 10\,°C de margen al límite de 50\,°C [\f{3}, cap.~15, p.~560]. Es exactamente $T_\mathrm{c} = T_{\text{máx},d} - u$.
+  \item \textbf{Sanidad:} la mayoría de los radiadores rechaza entre 100 y 350\,W/m² [\f{3}, cap.~6, p.~208]. Sirve como chequeo de los tests, no como aviso \op{opinión}.
+  \item \textbf{Control variable:} los heat pipes de conductancia variable se usan cuando las cargas varían mucho o para minimizar los heaters del caso frío [\f{3}, cap.~6, p.~209]. Eso respalda la ventana pasiva como entrada de \code{tcs\_concept}.
+  \item \textbf{Márgenes de heaters:}
+  \begin{itemize}
+    \item Gilmore: los componentes con control activo necesitan al menos 25\,\% de autoridad de control, equivalente a los 11\,°C de los pasivos [\f{3}, cap.~15, Tabla~15.2].
+    \item En el ejemplo POAM los heaters se dimensionan para 10\,°C de margen al límite inferior \textbf{o} 25\,\% de exceso de capacidad [\f{3}, cap.~15, p.~555].
+    \item GSFC: 5\,°C de margen, salvo los elementos controlados por heaters, con ciclo de trabajo máximo del 70\,\% [\f{9}]; eso equivale a $\sim$43\,\% de exceso.
+  \end{itemize}
+  \item \textbf{Presupuestos:} ECSS pide que la especificación del TCS asigne potencia eléctrica para calentar y masa al TCS [\f{1}, §4.2.1\,g.7 y g.9].
+  \item \textbf{Heaters de supervivencia:} tienen punto de ajuste más bajo que los operativos, para gastar menos [\f{3}, cap.~7, p.~230]. Por eso el modo seguro tiene su propio presupuesto en la práctica (tema abierto).
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{Qué entrega el balance a Concepto TCS}\label{sec:entrega}
+
+\subsubsection*{Recomendación}
+
+{\small
+\begin{xltabular}{\textwidth}{@{}LL@{}}
+\toprule
+\textbf{Salida} & \textbf{Para qué la usa \code{tcs\_concept}} \\
+\midrule
+\endhead
+Casos evaluados, con los dimensionantes marcados (por qué y en qué cara) & Saber qué combinación manda; repetir el trade-off sobre los mismos casos sin recalcular Entorno \\
+Tabla por cara: área requerida, fracción de la cara, rechazo neto en W/m², área pasiva máxima, potencia de heaters y casos que mandan en cada uno & Dónde van los radiadores, si alcanza una cara o hace falta repartir, desplegar o subir la temperatura \\
+Punto de diseño: cara, área, heaters, heaters con margen frente al presupuesto & Línea base de la arquitectura \\
+Ventana pasiva ($A_\mathrm{pas}/A_\mathrm{req}$) & Pasivo puro, heaters o radiador variable (louvers, VCHP) \\
+Rangos por modo: de diseño y admisible, equipos limitantes, equipos incompatibles o con rango vacío & Qué equipos necesitan control propio \\
+Temperaturas libres caliente y fría y margen de diseño por caso & Cuánto sobra o falta en cada extremo \\
+Constante de tiempo, $\tau$/período y oscilación orbital (en los extremos de $C$) & Si hace falta masa térmica, PCM o control activo; alerta en GEO \\
+Temperaturas de sumidero por cara (promedio y pico), con el recubrimiento del radiador y la capa externa & Elegir recubrimientos por cara \\
+Áreas de radiador y de MLI & Masa del TCS frente a \code{tcs\_mass\_budget} \\
+Avisos & Lo que hay que resolver \\
+Procedencia (ADR 0021) & Trazabilidad \\
+\bottomrule
+\end{xltabular}
+}
+
+\textbf{Diseño del cálculo} \op{opinión}: la evaluación de un caso (geometría, flujos, recubrimientos, $Q$, cara y área $\to$ temperaturas, área, potencia) tiene que ser una función de \code{hestia\_core} reutilizable, porque \code{tcs\_concept} va a evaluar alternativas (otro recubrimiento, louvers, otra cara) sobre los casos que el balance marcó como dimensionantes. Eso evita que los dos cálculos diverjan.
+
+% ---------------------------------------------------------------------------
+\section{Propuesta de parámetros}\label{sec:parametros}
+
+Formulario de parámetros como en Entorno (ADR 0021): borrador, validación en seco, Aplicar, defaults de biblioteca con procedencia. Un valor vacío con preset significa «el del preset», que se resuelve al actualizar y el resultado informa con su fuente (mismo criterio que la tabla de albedo e IR de Entorno).
+
+Lo que viene del contexto no se repite como parámetro:
+\begin{itemize}
+  \item \textbf{Misión:} dimensiones y masa de la envolvente, márgenes, presupuestos, \code{radiator\_faces} y \code{design\_life}.
+  \item \textbf{Entorno:} condiciones, modos de actitud, flujos, perfiles, tipo de órbita y período.
+  \item \textbf{Equipos:} equipos, límites, modos operativos y la función de disipación.
+\end{itemize}
+
+\subsection{Radiador (\code{radiator})}
+
+{\small
+\begin{xltabular}{\textwidth}{@{}P{3.4cm}P{2.6cm}LP{2.8cm}@{}}
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Default} & \textbf{Fuente del default} \\
+\midrule
+\endhead
+\code{candidate\_faces} & \code{list[enum Face]} & Vacío: las \code{radiator\_faces} de Misión (vacías: todas) & Misión \\
+\code{selected\_face} & \code{enum Face} & Vacío: automática (la factible de menor área) & \op{opinión} \\
+\code{coating} & \code{enum RadiatorCoating} & \code{silvered\_teflon} & \op{opinión} \\
+\code{absorptance\_bol} & \code{float} & Vacío: la del preset (Teflon plateado: 0,05) & [\f{3}, Tabla~4.1], extremo bajo \\
+\code{absorptance\_eol} & \code{float} & Vacío: la del preset (Teflon plateado: 0,14; OSR y pintura blanca: obligatorio) & [\f{8}] \\
+\code{emittance} & \code{float} & Vacío: la del preset (Teflon plateado: 0,78) & [\f{3}, Tabla~4.1] \\
+\bottomrule
+\end{xltabular}
+}
+
+\code{RadiatorCoating}: \code{silvered\_teflon} (5\,mil), \code{osr} (cuarzo 8\,mil: $\alpha$ BOL 0,05, $\varepsilon$ 0,80 [\f{3}]), \code{white\_paint} (S13G-LO: $\alpha$ BOL 0,20, $\varepsilon$ 0,85 [\f{3}]), \code{custom} (todo obligatorio).
+
+\subsection{Aislación multicapa (\code{insulation})}
+
+{\small
+\begin{xltabular}{\textwidth}{@{}P{4.4cm}P{2.6cm}LP{2.8cm}@{}}
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Default} & \textbf{Fuente del default} \\
+\midrule
+\endhead
+\code{effective\_emittance\_min} & \code{float} & 0,015 & [\f{3}, cap.~5, p.~165] \\
+\code{effective\_emittance\_max} & \code{float} & 0,030 & [\f{3}, cap.~5, p.~165] \\
+\code{outer\_layer} & \code{enum OuterLayer} & \code{aluminized\_kapton} (1\,mil) & \op{opinión} \\
+\code{outer\_absorptance\_bol} & \code{float} & Vacío: la del preset (0,38) & [\f{3}, Tabla~4.1] \\
+\code{outer\_absorptance\_eol} & \code{float} & Vacío: la del preset (0,48 = BOL + 0,10) & [\f{8}] \\
+\code{outer\_emittance} & \code{float} & Vacío: la del preset (0,67) & [\f{3}, Tabla~4.1] \\
+\bottomrule
+\end{xltabular}
+}
+
+\code{OuterLayer}: \code{aluminized\_kapton}, \code{beta\_cloth} ($\alpha$ BOL 0,32, $\varepsilon$ 0,86 [\f{3}]; $\alpha$ EOL obligatorio), \code{custom}.
+
+\subsection{Casos (\code{cases})}
+
+{\small
+\begin{xltabular}{\textwidth}{@{}P{3.6cm}P{4.6cm}LP{2cm}@{}}
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Default} & \textbf{Fuente} \\
+\midrule
+\endhead
+\code{attitude\_compatibility} & \code{map[ref(operating\_modes), list[ref(attitude\_modes)]]} & Vacío: todas las actitudes con todos los modos & \op{opinión} \\
+\code{custom\_cases} & \code{list[CustomCase]} & Vacía & --- \\
+\bottomrule
+\end{xltabular}
+}
+
+\textbf{\code{CustomCase}:} \code{id}, \code{name}, \code{condition\_id} (condición de Entorno: extremas, con ids semánticos como \code{max\_eclipse}, o propias), \code{attitude\_mode\_id}, \code{operating\_mode\_id}, \code{environment} (\code{min} | \code{max}), \code{properties} (\code{bol} | \code{eol}), \code{sizing} (\code{bool}, default sí). Más adelante: \code{duration} e \code{initial\_temperature} para transitorios (LEOP).
+
+\subsection{Rangos y heaters (\code{limits})}
+
+{\small
+\begin{xltabular}{\textwidth}{@{}P{4.6cm}P{4.4cm}P{1.6cm}L@{}}
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Default} & \textbf{Fuente del default} \\
+\midrule
+\endhead
+\code{off\_lower\_limit} & \code{enum} (\code{switch\_on} | \code{non\_operating}) & \code{switch\_on} & \op{opinión, conservador} \\
+\code{separately\_controlled\_items} & \code{list[ref(items)]} & Vacía & \op{opinión} \\
+\code{heater\_power\_margin} & \code{float} (fracción) & 0,25 & [\f{3}, cap.~15, Tabla~15.2 y p.~555] \\
+\bottomrule
+\end{xltabular}
+}
+
+\subsection{Modelo térmico (\code{thermal\_model})}
+
+{\small
+\begin{xltabular}{\textwidth}{@{}P{4.6cm}P{2.6cm}P{1.8cm}P{1.4cm}L@{}}
+\toprule
+\textbf{Campo} & \textbf{Tipo} & \textbf{Unidad} & \textbf{Default} & \textbf{Fuente del default} \\
+\midrule
+\endhead
+\code{effective\_specific\_heat} & \code{float} & J/(kg·K) & 900 & \op{opinión}; aluminio [\f{6}, Fig.~4-1] \\
+\code{specific\_heat\_uncertainty} & \code{float} (fracción) & --- & 0,3 & \op{opinión} \\
+\bottomrule
+\end{xltabular}
+}
+
+\subsection{Validaciones}
+
+\begin{itemize}
+  \item \textbf{Parámetros:} $\alpha$ y $\varepsilon$ en $(0, 1]$; \code{effective\_emittance\_min} $> 0$ y $\le$ \code{effective\_emittance\_max} (\code{order}); $c_p > 0$; margen de heaters $\ge 0$; incertidumbre de $c_p$ en $[0, 1)$; caras candidatas dentro de las permitidas por Misión (\code{not\_allowed}); \code{selected\_face} entre las candidatas; los obligatorios de presets sin valor (\code{required}).
+  \item \textbf{Referencias} (\code{invalid\_reference}), contra el contexto: modos operativos, modos de actitud, condiciones y equipos.
+  \item \textbf{Al actualizar:} \code{missing} y \code{context\_invalid} como en Entorno (ADR 0022). Un modo sin rango admisible o una cara no factible \textbf{no} hacen fallar la celda: son resultados con aviso \op{opinión}.
+\end{itemize}
+
+% ---------------------------------------------------------------------------
+\section{Propuesta de resultado}\label{sec:resultado}
+
+\subsection{Qué calcula, en orden}
+
+\begin{enumerate}
+  \item Disipación de cada modo operativo, con la función de Equipos (ADR 0026).
+  \item Rango de diseño y admisible de cada modo (sección~\ref{sec:rango}).
+  \item Candidatos: condición $\times$ actitud compatible $\times$ modo operativo, caliente y frío, cada uno con los dos $\varepsilon^*$; más los casos propios.
+  \item Por cara candidata: área requerida, área pasiva, heaters con el área y casos que mandan.
+  \item Cara elegida y punto de diseño.
+  \item Temperaturas libres, márgenes de diseño, $\tau$ y temperaturas de sumidero.
+  \item Oscilación orbital de los casos dimensionantes (transitorio de un nodo con los perfiles de Entorno, en los dos extremos de $C$).
+  \item Avisos.
+\end{enumerate}
+
+\subsection{Partes}
+
+{\small
+\begin{xltabular}{\textwidth}{@{}P{3.2cm}L@{}}
+\toprule
+\textbf{Parte} & \textbf{Contenido} \\
+\midrule
+\endhead
+\code{inputs\_used} & Disipación por modo, áreas de las caras, $C$ y su banda, $u$, propiedades ópticas usadas con su fuente (valor de preset o cargado) \\
+\code{ranges} & Por modo operativo: rango de diseño, rango admisible, equipo que fija cada extremo, factible o no, equipos en conflicto; intersección global informativa \\
+\code{cases} & Por candidato y caso propio: origen (\code{hot}, \code{cold}, \code{custom}), condición, actitud, modo, lado, BOL/EOL, $\varepsilon^*$ usada, $Q$, flujos absorbidos por cara; por cara candidata: área requerida (caliente) o heaters y temperatura libre (frío); $\tau$; si dimensiona \\
+\code{faces} & Por cara candidata: factible, área requerida y caso que manda, fracción de la cara, rechazo neto (W/m²), área pasiva y caso que manda, heaters y caso que manda \\
+\code{design\_point} & Cara, área, heaters, heaters con margen frente al presupuesto, ventana pasiva, temperaturas libres caliente y fría \\
+\code{sink\_temperatures} & Por condición $\times$ actitud $\times$ cara: sumidero del radiador y de la capa externa, promedio y pico \\
+\code{dynamics} & $\tau$, $\tau$/período, oscilación orbital de los casos dimensionantes en los extremos de $C$ \\
+\code{warnings} & Código, mensaje y referencia (área, factibilidad, presupuesto, masa de equipos, rango vacío, $\tau$ corta, defaults fuera de alcance) \\
+\code{provenance} & Celdas y cambios del contexto, parámetros usados, proveedor y versión (ADR 0021) \\
+\bottomrule
+\end{xltabular}
+}
+
+Todo es chico (decenas a miles de filas): JSON en el \code{.hestia}, como Entorno.
+
+% ---------------------------------------------------------------------------
+\section{Lo que queda abierto}\label{sec:abierto}
+
+Cada punto con su recomendación; decidir antes de especificar.
+
+\begin{enumerate}
+  \item \textbf{Semántica de los límites de Equipos.} Recomendado: son límites de diseño ECSS; documentarlo en \code{equipment.md}. Alternativa: un campo por equipo que diga si son de diseño, aceptación o calificación, y derivar.
+  \item \textbf{Incertidumbre por defecto de Misión.} Recomendado: 15\,K para la fase 0 [\f{2}], con 10\,K como piso [\f{1}]. Hoy es 10\,K. ¿Una sola política para las fases 0 y 1, o un valor por fase?
+  \item \textbf{Margen de heaters: de temperatura, de potencia o ambos.} ECSS pide que la predicción quede dentro del rango de diseño; Gilmore y GSFC tratan el margen de los equipos controlados por heaters como margen de potencia \textbf{en lugar} del de temperatura [\f{3}, \f{9}]. Recomendado: heaters calculados para mantener $T_{\text{mín},d} + u$ y además informar la potencia con $m_h$ = 25\,\% frente al presupuesto (conservador, doble). Alternativa GSFC: sin $u$ en el lado frío controlado y 70\,\% de ciclo de trabajo.
+  \item \textbf{Recubrimiento por defecto y alcance del $\alpha$ EOL.} Recomendado: Teflon plateado con $\alpha$ EOL 0,14 por defecto y aviso fuera de LEO o con vida mayor que $\sim$4,5 años. Alternativa estricta: $\alpha$ EOL siempre obligatorio.
+  \item \textbf{Compatibilidad actitud $\leftrightarrow$ modo operativo.} Recomendado: por defecto todas con todos, y el resultado muestra qué combinación dimensiona para que el usuario la restrinja. Alternativa: exigirla.
+  \item \textbf{Modos con duración máxima} (\code{max\_duration}). Recomendado para la primera versión: tratarlos como estacionarios (conservador) y avisar si dimensionan. Después: transitorio desde el modo previo (un caso propio con modo previo, duración y temperatura inicial). Ídem LEOP.
+  \item \textbf{Presupuesto de heaters de supervivencia.} Misión tiene un solo \code{heater\_power\_budget}. ¿Se agrega uno de supervivencia o modo seguro, o se marca qué modos operativos son de supervivencia?
+  \item \textbf{Límite inferior de los equipos apagados:} mínimo de encendido (recomendado) o no operativo.
+  \item \textbf{Equipos con control propio} fuera de la intersección: ¿se incluye en la primera versión?
+  \item \textbf{Margen de madurez de la disipación} (equipos nuevos frente a heredados). No se encontró fuente en esta investigación. ¿Va por equipo en Equipos, global en el balance, o no va?
+  \item \textbf{Gradiente entre equipos y radiador.} Un nodo lo ignora; la incertidumbre de fase 0 lo cubre en parte \op{opinión}. ¿Se agrega un $\Delta T$ explícito? Sin fuente para un default.
+  \item \textbf{Albedo e IR correlacionados y tiempo de promediado (Entorno).} Hoy Entorno suma máximos con máximos (conservador). Opciones: pares de NASA por tipo de caso (dominado por albedo, por IR o combinado) [\f{4}]; el balance informa $\tau$ para elegir el tiempo de promediado. Recomendado como default de Entorno: los valores de 90\,min, conservadores frente a las $\tau$ de horas de un satélite mediano \op{opinión}.
+  \item \textbf{Paneles solares montados en el cuerpo:} una cara con celdas ($\alpha$ alto y parte de la energía convertida) no entra en el modelo radiador + MLI. ¿Primera versión o después?
+  \item \textbf{Avisos en el contrato del resultado.} Hoy los problemas hacen fallar la celda; el balance necesita \code{warnings} que no fallen. Afecta el contrato común de etapas de cálculo (ADR 0022): probablemente pida un ADR.
+  \item \textbf{Umbral de $\tau$/período} para el aviso de validez del promedio (constante con nombre en \code{hestia\_core}).
+\end{enumerate}
+
+% ---------------------------------------------------------------------------
+\section{Supuestos de física para \code{physics-reviewer}}\label{sec:supuestos}
+
+\begin{enumerate}
+  \item \textbf{Nodo isotermo:} toda la masa y los equipos a una temperatura; el radiador a la temperatura del nodo (sin gradiente ni eficiencia de aleta).
+  \item \textbf{Promedio orbital exacto con inercia infinita:} con $T$ constante, el balance es lineal en los flujos y en $\sigma T^4$, así que los promedios de Entorno bastan. Verificar que la capa externa del MLI sin masa no rompe esa linealidad.
+  \item \textbf{Superficies grises y difusas:} absorbido = $\alpha$ (solar + albedo) + $\varepsilon \cdot$ IR; el albedo tiene espectro solar.
+  \item \textbf{MLI:} $\varepsilon^*$ constante con la temperatura (Gilmore da una correlación que depende de la temperatura media [\f{3}, cap.~5, p.~168]); capa externa sin masa; la expresión cerrada de $m_f$. Contrastar con [\f{5}, ec.~6-2].
+  \item \textbf{Geometría:} caja convexa sin sombras propias ni intercambio con paneles o apéndices (limitaciones de Entorno); el radiador ve solo espacio y Tierra.
+  \item \textbf{Monotonía:} caliente = flujos máximos + $\alpha$ EOL y frío = flujos mínimos + $\alpha$ BOL dan los extremos. Revisar la condición $\sigma T^4 > E_r$ en un radiador frío que mira a la Tierra a baja altura.
+  \item \textbf{$\varepsilon^*$:} evaluar los dos extremos y quedarse con el peor es suficiente.
+  \item \textbf{Fórmulas cerradas} ($A_\mathrm{req}$, $A_\mathrm{pas}$, $P$, temperatura libre): signos, unidades y residuo de energía nulo en la solución.
+  \item \textbf{Casos borde:} área $\le 0$, denominador $\le 0$ (cara que no rechaza), sin eclipse (SSO crepuscular), $Q = 0$, rango vacío, una sola cara candidata.
+  \item \textbf{Apilado de peores casos} (EOL + perihelio + albedo e IR máximos + disipación máxima): conservador; cuantificar cuánto frente a los pares de NASA.
+  \item \textbf{$\tau$ linealizada} $G = 4\sigma T^3(\ldots)$ y transitorio a régimen periódico: integrador, paso, tolerancia de convergencia y sensibilidad a $C$.
+  \item \textbf{Lógica del rango:} intersección por modo y reglas de respaldo para límites faltantes.
+  \item \textbf{Caso de referencia:} el ejemplo POAM de Gilmore [\f{3}, cap.~15, pp.~555--560] da área de radiador y temperatura fría con todos sus datos. Sirve de test con tolerancia y cita, leyendo los números del libro (la copia consultada tiene la ecuación 15.20 parcialmente ilegible).
+\end{enumerate}
+
+% ---------------------------------------------------------------------------
+\section*{Fuentes}\label{sec:fuentes}
+\addcontentsline{toc}{section}{Fuentes}
+
+\subsection*{Consultadas}
+
+{\small
+\begin{enumerate}[label={[\arabic*]},ref=\arabic*,leftmargin=*]
+  \item\label{f:1} ECSS-E-ST-31C. \textit{Space engineering — Thermal control general requirements}. ECSS Secretariat, ESA-ESTEC, Noordwijk, 15 de noviembre de 2008. Usadas: §3.2.1.1--3.2.1.20 y Fig.~3-1 (rangos y márgenes), §3.2.1.22 (temperatura de sumidero radiativo), §3.2.1.37 (caso de diseño), §4.1.1--4.1.4 (fases de la misión), §4.2.1 (casos de diseño, temperaturas y márgenes, asignación de potencia y masa), §4.4.1\,d (propiedades degradadas), §4.5.2.1\,c (incertidumbres). \url{https://ecss.nl/standard/ecss-e-st-31c-thermal-control/}
+  \item\label{f:2} ESA. \textit{ECSS-E-ST-31 Standardisation Training Course 2023}, Rev.~1. ESA Space Standardization, 2023. Diapositivas 59, 66, 69, 114, 115, 119, 120 y 121. \url{https://ecss.nl/wp-content/uploads/2023/05/ESA_ECSS-E-ST-31_Standardisation_Training_Course_2023_Rev1.pdf}
+  \item\label{f:3} Gilmore, D.~G. (ed.). \textit{Spacecraft Thermal Control Handbook, Volume I: Fundamental Technologies}, 2.ª ed. The Aerospace Press / AIAA, El Segundo, 2002. Capítulos usados:
+  \begin{itemize}
+    \item cap.~2, Clawson, Tsuyuki, Anderson, Justus, Batts, Ferguson y Gilmore, «Spacecraft Thermal Environments», pp.~22--31;
+    \item cap.~4, Gilmore, Stuckey y Fong, «Thermal Surface Finishes», pp.~143--155: Tabla~4.1 (p.~144) y Figs.~4.7, 4.9, 4.10 y 4.11;
+    \item cap.~5, Donabedian, Gilmore, Stultz, Tsuyuki y Lin, «Insulation», pp.~165--168;
+    \item cap.~6, Gilmore, «Radiators», pp.~207--209;
+    \item cap.~7, Gilmore, Lyra y Stultz, «Heaters», p.~230;
+    \item cap.~15, Gilmore y Collins, «Thermal Design Analysis»: Tabla~15.2 (pp.~532--533), pp.~536--537 y ejemplo POAM, pp.~553--560 (Tabla~15.5, ec.~15.16--15.21).
+  \end{itemize}
+  \item\label{f:4} Anderson, B.~J., Justus, C.~G. y Batts, G.~W. \textit{Guidelines for the Selection of Near-Earth Thermal Environment Parameters for Spacecraft Design}. NASA/TM-2001-211221, Marshall Space Flight Center, octubre de 2001. §4.2.2 y §4.2.3 (Tablas~4.2.3-1 a 4.2.3-3). \url{https://ntrs.nasa.gov/citations/20020004360}
+  \item\label{f:5} ECSS-E-HB-31-01 Part 7A. \textit{Space engineering — Thermal design handbook — Part 7: Insulations}. ECSS Secretariat, ESA-ESTEC, 5 de diciembre de 2011. Ec.~[6-2] (definición de la emitancia efectiva). \url{https://ecss.nl/hbs/active-handbooks/}
+  \item\label{f:6} ECSS-E-HB-31-01 Part 5A. \textit{Space engineering — Thermal design handbook — Part 5: Structural Materials: Metallic and Composite}. ECSS Secretariat, ESA-ESTEC, 5 de diciembre de 2011. Fig.~4-1 (aluminio) y Tabla~5-8 (compuestos). \url{https://ecss.nl/hbs/active-handbooks/}
+  \item\label{f:7} Henninger, J.~H. \textit{Solar Absorptance and Thermal Emittance of Some Common Spacecraft Thermal-Control Coatings}. NASA RP-1121, Goddard Space Flight Center, abril de 1984. Tablas de pinturas blancas (p.~8) y de películas y cintas (pp.~15--16). \url{https://ntrs.nasa.gov/citations/19840015630}
+  \item\label{f:8} Remaury, S., Nabarra, P., Bellouard, E. y d'Escrivan, S. (CNES). «In-flight thermal coatings ageing on the THERME experiment». 11th International Symposium on Materials in a Space Environment (ISMSE-11), 2009. Tablas 2 a 7 y §5.1. \url{http://esmat.esa.int/materials_news/isme09/pdf/10-In-flight/Remaury%20Paper.pdf}
+  \item\label{f:9} Peabody, H.~L. y Peabody, S.~A.~S. «Gaps in Thermal Design Guidelines in the Goddard Space Flight Center GOLD Rules». ICES-2018-268, 48th International Conference on Environmental Systems, Albuquerque, julio de 2018. §I, con la cita textual de la regla térmica de GSFC-STD-1000 Rev.~G (2016). \url{https://ntrs.nasa.gov/citations/20180004564}
+\end{enumerate}
+}
+
+\subsection*{No consultadas}
+
+\textit{Pendientes de verificar; no respaldan ningún valor de este informe.}
+
+{\small
+\begin{itemize}
+  \item Karam, R.~D. \textit{Satellite Thermal Control for Systems Engineers}. Progress in Astronautics and Aeronautics, vol.~181. AIAA, Reston, 1998. Según su índice publicado, la parte~1 trata la especificación de temperaturas, la~5 el análisis térmico del satélite (soluciones analíticas aproximadas y transitorios) y la~7 los ensayos con márgenes de temperatura: conviene contrastar con este informe las secciones~1 y~4.
+  \item GSFC-STD-1000 Rev.~G, \textit{Rules for the Design, Development, Verification, and Operation of Flight Systems}, Goddard Space Flight Center, 2016. Citada a través de [\f{9}].
+\end{itemize}
+}
+
+\end{document}

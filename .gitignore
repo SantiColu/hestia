@@ -27,5 +27,11 @@ node_modules/
 *.sqlite
 *.db
 
+# Research sources downloaded for docs/investigacion (copyrighted; local cache only)
+docs/investigacion/fuentes/
+
 # Claude Code local settings
 .claude/settings.local.json
+
+# Logs of the nightly research runs
+scripts/investigacion-nocturna/logs/
